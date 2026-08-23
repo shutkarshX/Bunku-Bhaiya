@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session
 
 from portal import (
     get_attendance,
@@ -11,34 +11,73 @@ from bunk_calculator import run_phase_1
 
 app = Flask(__name__)
 
-
-# =========================================
-# STORED ATTENDANCE DATA
-# =========================================
-
-attendance_data = {
-    "subjects": [],
-    "total_attended": 0,
-    "total_absent": 0,
-    "total_classes": 0,
-    "overall_percentage": 0
-}
+# Required for Flask sessions.
+# Change this to a long random value before deploying publicly.
+app.secret_key = "bunkmaster-dev-secret-key"
 
 
 # =========================================
-# STORED CALCULATOR STATE
+# DEFAULT CHECKPOINT SETTINGS
 # =========================================
 
-checkpoint_choices = {
+CHECKPOINT_CHOICES = {
     "2026-10-10": True,
     "2026-11-16": True
 }
 
-selected_leaves = {
-    "2026-08-29": 0,
-    "2026-10-10": 0,
-    "2026-11-16": 0
-}
+
+# =========================================
+# HELPER - EMPTY ATTENDANCE
+# =========================================
+
+def empty_attendance():
+
+    return {
+        "subjects": [],
+        "total_attended": 0,
+        "total_absent": 0,
+        "total_classes": 0,
+        "overall_percentage": 0
+    }
+
+
+# =========================================
+# HELPER - GET USER ATTENDANCE
+# =========================================
+
+def get_user_attendance():
+
+    return session.get(
+        "attendance_data",
+        empty_attendance()
+    )
+
+
+# =========================================
+# HELPER - GET USER LEAVE PLAN
+# =========================================
+
+def get_user_leaves():
+
+    return session.get(
+        "selected_leaves",
+        {
+            "2026-08-29": 0,
+            "2026-10-10": 0,
+            "2026-11-16": 0
+        }
+    )
+
+
+# =========================================
+# HELPER - SAVE USER LEAVE PLAN
+# =========================================
+
+def save_user_leaves(leaves):
+
+    session["selected_leaves"] = leaves
+
+    session.modified = True
 
 
 # =========================================
@@ -48,11 +87,18 @@ selected_leaves = {
 @app.route("/")
 def dashboard():
 
+    attendance_data = get_user_attendance()
+
     return render_template(
+
         "dashboard.html",
+
         attendance=attendance_data,
+
         phase_1=None,
+
         calculator_step=0,
+
         portal_error=None
     )
 
@@ -61,20 +107,30 @@ def dashboard():
 # GET ATTENDANCE
 # =========================================
 
-@app.route("/get-attendance", methods=["POST"])
+@app.route(
+    "/get-attendance",
+    methods=["POST"]
+)
 def get_attendance_page():
 
-    global attendance_data
-    global selected_leaves
+    username = request.form.get(
+        "username"
+    )
 
-    username = request.form.get("username")
-    password = request.form.get("password")
+    password = request.form.get(
+        "password"
+    )
 
-    print("\nStarting attendance retrieval...")
 
-    # -------------------------------------
-    # Try to retrieve attendance
-    # -------------------------------------
+    print()
+    print(
+        "Starting attendance retrieval..."
+    )
+
+
+    # =====================================
+    # GET ATTENDANCE
+    # =====================================
 
     try:
 
@@ -83,50 +139,97 @@ def get_attendance_page():
             password
         )
 
+
     except PortalUnavailableError as e:
 
         print()
-        print("======================================")
-        print("NIET PORTAL UNAVAILABLE")
-        print("======================================")
+        print(
+            "======================================"
+        )
+        print(
+            "NIET PORTAL UNAVAILABLE"
+        )
+        print(
+            "======================================"
+        )
+
         print(e)
         print()
 
+
         return render_template(
+
             "dashboard.html",
-            attendance={
-                "subjects": []
-            },
+
+            attendance=empty_attendance(),
+
             phase_1=None,
+
             calculator_step=0,
+
             portal_error="unavailable"
         )
+
 
     except PortalLoginError as e:
 
         print()
-        print("======================================")
-        print("NIET LOGIN FAILED")
-        print("======================================")
+        print(
+            "======================================"
+        )
+        print(
+            "NIET LOGIN FAILED"
+        )
+        print(
+            "======================================"
+        )
+
         print(e)
         print()
 
+
         return render_template(
+
             "dashboard.html",
-            attendance={
-                "subjects": []
-            },
+
+            attendance=empty_attendance(),
+
             phase_1=None,
+
             calculator_step=0,
+
             portal_error="login"
         )
 
-    # -------------------------------------
-    # Safety check
-    #
-    # Do not send empty attendance into
-    # the calculator.
-    # -------------------------------------
+
+    except Exception as e:
+
+        print()
+        print(
+            "Unexpected portal error:"
+        )
+
+        print(e)
+        print()
+
+
+        return render_template(
+
+            "dashboard.html",
+
+            attendance=empty_attendance(),
+
+            phase_1=None,
+
+            calculator_step=0,
+
+            portal_error="unavailable"
+        )
+
+
+    # =====================================
+    # EMPTY RESULT
+    # =====================================
 
     if not subjects:
 
@@ -134,51 +237,89 @@ def get_attendance_page():
             "No attendance data was returned."
         )
 
+
         return render_template(
+
             "dashboard.html",
-            attendance={
-                "subjects": []
-            },
+
+            attendance=empty_attendance(),
+
             phase_1=None,
+
             calculator_step=0,
+
             portal_error="unavailable"
         )
 
-    # -------------------------------------
-    # Calculate totals
-    # -------------------------------------
+
+    # =====================================
+    # CALCULATE TOTALS
+    # =====================================
 
     total_attended = 0
+
     total_absent = 0
+
 
     for subject in subjects:
 
-        total_attended += int(
-            subject.get(
-                "attendedLecture",
-                0
-            )
-        )
+        try:
 
-        total_absent += int(
-            subject.get(
-                "absentLecture",
-                0
+            total_attended += int(
+
+                subject.get(
+                    "attendedLecture",
+                    0
+                )
+
             )
-        )
+
+        except (
+            TypeError,
+            ValueError
+        ):
+
+            pass
+
+
+        try:
+
+            total_absent += int(
+
+                subject.get(
+                    "absentLecture",
+                    0
+                )
+
+            )
+
+        except (
+            TypeError,
+            ValueError
+        ):
+
+            pass
+
 
     total_classes = (
         total_attended +
         total_absent
     )
 
+
+    # =====================================
+    # OVERALL PERCENTAGE
+    # =====================================
+
     if total_classes > 0:
 
         overall_percentage = round(
+
             (
                 total_attended /
                 total_classes
             ) * 100,
+
             2
         )
 
@@ -186,9 +327,10 @@ def get_attendance_page():
 
         overall_percentage = 0
 
-    # -------------------------------------
-    # Store attendance
-    # -------------------------------------
+
+    # =====================================
+    # CREATE USER ATTENDANCE
+    # =====================================
 
     attendance_data = {
 
@@ -208,17 +350,41 @@ def get_attendance_page():
             overall_percentage
     }
 
-    # -------------------------------------
-    # Reset previous leave plan
-    # -------------------------------------
+
+    # =====================================
+    # SAVE TO THIS USER'S SESSION
+    # =====================================
+
+    session["attendance_data"] = (
+        attendance_data
+    )
+
+
+    # =====================================
+    # RESET THIS USER'S LEAVE PLAN
+    # =====================================
 
     selected_leaves = {
+
         "2026-08-29": 0,
+
         "2026-10-10": 0,
+
         "2026-11-16": 0
     }
 
+
+    save_user_leaves(
+        selected_leaves
+    )
+
+
+    # =====================================
+    # LOG
+    # =====================================
+
     print()
+
     print(
         "Website received:",
         len(subjects),
@@ -232,28 +398,43 @@ def get_attendance_page():
         total_classes
     )
 
-    # -------------------------------------
-    # Calculate First Sessional
-    # -------------------------------------
+    print(
+        "Overall:",
+        overall_percentage,
+        "%"
+    )
+
+
+    # =====================================
+    # FIRST CALCULATION
+    # =====================================
 
     phase_1_result = run_phase_1(
+
         attendance_data,
-        checkpoint_choices,
+
+        CHECKPOINT_CHOICES,
+
         selected_leaves
     )
 
+
     return render_template(
+
         "dashboard.html",
+
         attendance=attendance_data,
+
         phase_1=phase_1_result,
+
         calculator_step=1,
+
         portal_error=None
     )
 
 
 # =========================================
-# SESSION 1
-# USER CHOOSES LEAVE BEFORE 29 AUGUST
+# SESSIONAL 1
 # =========================================
 
 @app.route(
@@ -262,55 +443,109 @@ def get_attendance_page():
 )
 def sessional_1():
 
-    global selected_leaves
+    attendance_data = (
+        get_user_attendance()
+    )
+
+    selected_leaves = (
+        get_user_leaves()
+    )
+
+
+    # =====================================
+    # CURRENT INPUT
+    #
+    # Supports the current backend format.
+    # =====================================
+
+    raw_leave = request.form.get(
+        "leave_1_classes"
+    )
+
+
+    # Compatibility with the old form.
+
+    if raw_leave is None:
+
+        raw_leave = request.form.get(
+            "leave_1",
+            0
+        )
+
 
     try:
 
-        leave = int(
-            request.form.get(
-                "leave_1",
-                0
-            )
+        leave_classes = int(
+            raw_leave
         )
 
-    except (TypeError, ValueError):
+    except (
+        TypeError,
+        ValueError
+    ):
 
-        leave = 0
+        leave_classes = 0
 
-    leave = max(
+
+    leave_classes = max(
         0,
-        leave
+        leave_classes
     )
+
+
+    # =====================================
+    # SAVE FOR THIS USER ONLY
+    # =====================================
 
     selected_leaves[
         "2026-08-29"
-    ] = leave
+    ] = leave_classes
 
-    print()
-    print(
-        "First Sessional leave:",
-        leave,
-        "days"
-    )
 
-    phase_1_result = run_phase_1(
-        attendance_data,
-        checkpoint_choices,
+    save_user_leaves(
         selected_leaves
     )
 
+
+    print()
+
+    print(
+        "First Sessional:",
+        leave_classes,
+        "classes"
+    )
+
+
+    # =====================================
+    # RECALCULATE
+    # =====================================
+
+    phase_1_result = run_phase_1(
+
+        attendance_data,
+
+        CHECKPOINT_CHOICES,
+
+        selected_leaves
+    )
+
+
     return render_template(
+
         "dashboard.html",
+
         attendance=attendance_data,
+
         phase_1=phase_1_result,
+
         calculator_step=2,
+
         portal_error=None
     )
 
 
 # =========================================
-# SESSION 2
-# USER CHOOSES LEAVE BEFORE 10 OCTOBER
+# SESSIONAL 2
 # =========================================
 
 @app.route(
@@ -319,55 +554,105 @@ def sessional_1():
 )
 def sessional_2():
 
-    global selected_leaves
+    attendance_data = (
+        get_user_attendance()
+    )
+
+    selected_leaves = (
+        get_user_leaves()
+    )
+
+
+    # =====================================
+    # CURRENT INPUT
+    # =====================================
+
+    raw_leave = request.form.get(
+        "leave_2_classes"
+    )
+
+
+    if raw_leave is None:
+
+        raw_leave = request.form.get(
+            "leave_2",
+            0
+        )
+
 
     try:
 
-        leave = int(
-            request.form.get(
-                "leave_2",
-                0
-            )
+        leave_classes = int(
+            raw_leave
         )
 
-    except (TypeError, ValueError):
+    except (
+        TypeError,
+        ValueError
+    ):
 
-        leave = 0
+        leave_classes = 0
 
-    leave = max(
+
+    leave_classes = max(
         0,
-        leave
+        leave_classes
     )
+
+
+    # =====================================
+    # SAVE FOR THIS USER
+    # =====================================
 
     selected_leaves[
         "2026-10-10"
-    ] = leave
+    ] = leave_classes
 
-    print()
-    print(
-        "Second Sessional leave:",
-        leave,
-        "days"
-    )
 
-    phase_1_result = run_phase_1(
-        attendance_data,
-        checkpoint_choices,
+    save_user_leaves(
         selected_leaves
     )
 
+
+    print()
+
+    print(
+        "Second Sessional:",
+        leave_classes,
+        "classes"
+    )
+
+
+    # =====================================
+    # RECALCULATE
+    # =====================================
+
+    phase_1_result = run_phase_1(
+
+        attendance_data,
+
+        CHECKPOINT_CHOICES,
+
+        selected_leaves
+    )
+
+
     return render_template(
+
         "dashboard.html",
+
         attendance=attendance_data,
+
         phase_1=phase_1_result,
+
         calculator_step=3,
+
         portal_error=None
     )
 
 
 # =========================================
-# SESSION 3
-# USER CHOOSES LEAVE BEFORE 16 NOVEMBER
+# SESSIONAL 3
 # =========================================
 
 @app.route(
@@ -376,48 +661,124 @@ def sessional_2():
 )
 def sessional_3():
 
-    global selected_leaves
+    attendance_data = (
+        get_user_attendance()
+    )
+
+    selected_leaves = (
+        get_user_leaves()
+    )
+
+
+    # =====================================
+    # CURRENT INPUT
+    # =====================================
+
+    raw_leave = request.form.get(
+        "leave_3_classes"
+    )
+
+
+    if raw_leave is None:
+
+        raw_leave = request.form.get(
+            "leave_3",
+            0
+        )
+
 
     try:
 
-        leave = int(
-            request.form.get(
-                "leave_3",
-                0
-            )
+        leave_classes = int(
+            raw_leave
         )
 
-    except (TypeError, ValueError):
+    except (
+        TypeError,
+        ValueError
+    ):
 
-        leave = 0
+        leave_classes = 0
 
-    leave = max(
+
+    leave_classes = max(
         0,
-        leave
+        leave_classes
     )
+
+
+    # =====================================
+    # SAVE FOR THIS USER
+    # =====================================
 
     selected_leaves[
         "2026-11-16"
-    ] = leave
+    ] = leave_classes
 
-    print()
-    print(
-        "Third Sessional leave:",
-        leave,
-        "days"
-    )
 
-    phase_1_result = run_phase_1(
-        attendance_data,
-        checkpoint_choices,
+    save_user_leaves(
         selected_leaves
     )
 
+
+    print()
+
+    print(
+        "Third Sessional:",
+        leave_classes,
+        "classes"
+    )
+
+
+    # =====================================
+    # FINAL CALCULATION
+    # =====================================
+
+    phase_1_result = run_phase_1(
+
+        attendance_data,
+
+        CHECKPOINT_CHOICES,
+
+        selected_leaves
+    )
+
+
     return render_template(
+
         "dashboard.html",
+
         attendance=attendance_data,
+
         phase_1=phase_1_result,
+
         calculator_step=4,
+
+        portal_error=None
+    )
+
+
+# =========================================
+# LOGOUT / RESET SESSION
+# =========================================
+
+@app.route(
+    "/reset"
+)
+def reset_session():
+
+    session.clear()
+
+    return render_template(
+
+        "dashboard.html",
+
+        attendance=empty_attendance(),
+
+        phase_1=None,
+
+        calculator_step=0,
+
         portal_error=None
     )
 
