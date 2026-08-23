@@ -86,3 +86,16 @@ Bunku-Bhaiya/
 
 &#x20;   └── dashboard.html
 
+## Configuration
+
+BunkMaster uses a Flask session with a secret key provided through the
+`SECRET_KEY` environment variable.
+
+For local development, set the environment variable before running the app.
+
+The secret key is intentionally not stored in the repository.
+
+### Windows PowerShell
+
+```powershell
+[Environment]::SetEnvironmentVariable("SECRET_KEY","your-random-secret-here","User")
