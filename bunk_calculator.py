@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+import math
 
 from academic_calendar import (
     TEACHING_CLASSES_PER_DAY,
@@ -8,7 +9,7 @@ from academic_calendar import (
 
 
 # =========================================
-# BUNKMASTER - PHASE 1
+# BUNKMASTER CALCULATOR
 # =========================================
 
 CLASSES_PER_DAY = TEACHING_CLASSES_PER_DAY
@@ -28,10 +29,58 @@ def calculate_percentage(attended, total):
 
 
 # =========================================
+# CLASSES NEEDED TO REACH TARGET
+# =========================================
+
+def classes_needed_to_reach_target(
+    attended,
+    total_classes
+):
+
+    if total_classes == 0:
+        return 0
+
+    current_percentage = (
+        attended / total_classes
+    ) * 100
+
+    # Already at or above 75%
+    if current_percentage >= TARGET_ATTENDANCE:
+        return 0
+
+    # Calculate how many consecutive
+    # classes must be attended to reach
+    # the attendance target.
+    #
+    # (attended + x)
+    # ---------------------- >= 75%
+    # (total_classes + x)
+
+    target = TARGET_ATTENDANCE / 100
+
+    required_classes = math.ceil(
+        (
+            target * total_classes
+            - attended
+        )
+        /
+        (1 - target)
+    )
+
+    return max(
+        0,
+        required_classes
+    )
+
+
+# =========================================
 # COUNT TEACHING DAYS
 # =========================================
 
-def count_teaching_days(start_date, end_date):
+def count_teaching_days(
+    start_date,
+    end_date
+):
 
     count = 0
 
@@ -39,9 +88,12 @@ def count_teaching_days(start_date, end_date):
 
     while current <= end_date:
 
-        date_string = current.strftime("%Y-%m-%d")
+        date_string = (
+            current.strftime("%Y-%m-%d")
+        )
 
         if is_teaching_day(date_string):
+
             count += 1
 
         current += timedelta(days=1)
@@ -60,29 +112,54 @@ def find_maximum_safe_leave(
     teaching_days
 ):
 
+    # -------------------------------------
+    # Already below target.
+    #
+    # No additional leave is safe.
+    # -------------------------------------
+
+    current_percentage = (
+        calculate_percentage(
+            attended,
+            total_classes
+        )
+    )
+
+    if current_percentage < TARGET_ATTENDANCE:
+
+        return 0
+
     maximum_leave = 0
 
-    for leave_days in range(teaching_days + 1):
+    for leave_days in range(
+        teaching_days + 1
+    ):
 
         missed_classes = (
-            leave_days * CLASSES_PER_DAY
+            leave_days *
+            CLASSES_PER_DAY
         )
 
         future_attended = (
-            future_classes - missed_classes
+            future_classes -
+            missed_classes
         )
 
         final_attended = (
-            attended + future_attended
+            attended +
+            future_attended
         )
 
         final_total = (
-            total_classes + future_classes
+            total_classes +
+            future_classes
         )
 
-        percentage = calculate_percentage(
-            final_attended,
-            final_total
+        percentage = (
+            calculate_percentage(
+                final_attended,
+                final_total
+            )
         )
 
         if percentage >= TARGET_ATTENDANCE:
@@ -112,14 +189,11 @@ def calculate_requested_leave(
         int(requested_leave)
     )
 
-    # Maximum number of complete teaching
-    # days available in this period.
     maximum_possible_leave = (
-        future_classes // CLASSES_PER_DAY
+        future_classes //
+        CLASSES_PER_DAY
     )
 
-    # We don't silently allow a value larger
-    # than the actual number of teaching days.
     requested_leave = min(
         requested_leave,
         maximum_possible_leave
@@ -145,9 +219,11 @@ def calculate_requested_leave(
         future_classes
     )
 
-    projected_percentage = calculate_percentage(
-        projected_attended,
-        projected_total
+    projected_percentage = (
+        calculate_percentage(
+            projected_attended,
+            projected_total
+        )
     )
 
     return {
@@ -173,6 +249,76 @@ def calculate_requested_leave(
 
 
 # =========================================
+# DETERMINE ATTENDANCE STATUS
+# =========================================
+
+def determine_status(
+    attended,
+    total_classes,
+    future_classes
+):
+
+    current_percentage = (
+        calculate_percentage(
+            attended,
+            total_classes
+        )
+    )
+
+    # -------------------------------------
+    # SAFE
+    # -------------------------------------
+
+    if current_percentage >= TARGET_ATTENDANCE:
+
+        return "safe"
+
+
+    # -------------------------------------
+    # CURRENTLY BELOW 75%
+    # -------------------------------------
+
+    # Calculate the maximum attendance
+    # possible if every future class
+    # is attended.
+
+    maximum_attended = (
+        attended +
+        future_classes
+    )
+
+    maximum_total = (
+        total_classes +
+        future_classes
+    )
+
+    maximum_possible_percentage = (
+        calculate_percentage(
+            maximum_attended,
+            maximum_total
+        )
+    )
+
+    # -------------------------------------
+    # RECOVERY POSSIBLE
+    # -------------------------------------
+
+    if (
+        maximum_possible_percentage
+        >= TARGET_ATTENDANCE
+    ):
+
+        return "recovery"
+
+
+    # -------------------------------------
+    # RECOVERY IMPOSSIBLE
+    # -------------------------------------
+
+    return "impossible"
+
+
+# =========================================
 # PHASE 1 CALCULATOR
 # =========================================
 
@@ -183,25 +329,31 @@ def run_phase_1(
 ):
 
     # -------------------------------------
-    # Current portal attendance
+    # Starting portal attendance
     # -------------------------------------
 
-    starting_attended = attendance_data[
-        "total_attended"
-    ]
+    starting_attended = (
+        attendance_data[
+            "total_attended"
+        ]
+    )
 
-    starting_total = attendance_data[
-        "total_classes"
-    ]
+    starting_total = (
+        attendance_data[
+            "total_classes"
+        ]
+    )
 
     # -------------------------------------
     # Defaults
     # -------------------------------------
 
     if checkpoint_choices is None:
+
         checkpoint_choices = {}
 
     if requested_leaves is None:
+
         requested_leaves = {}
 
     # -------------------------------------
@@ -229,7 +381,7 @@ def run_phase_1(
     results = []
 
     # -------------------------------------
-    # Calculation starts from current date
+    # Current calculation date
     # -------------------------------------
 
     current_date = date(
@@ -239,15 +391,16 @@ def run_phase_1(
     )
 
     # -------------------------------------
-    # These represent the user's actual
-    # attendance plan as we move forward.
-    #
-    # If no leave has been selected yet,
-    # we assume all classes are attended.
+    # Actual attendance carried forward
     # -------------------------------------
 
-    actual_attended = starting_attended
-    actual_total = starting_total
+    actual_attended = (
+        starting_attended
+    )
+
+    actual_total = (
+        starting_total
+    )
 
     # =====================================
     # PROCESS CHECKPOINTS
@@ -262,7 +415,7 @@ def run_phase_1(
         )
 
         # ---------------------------------
-        # Checkpoint teaching-day status
+        # Is checkpoint itself a teaching day?
         # ---------------------------------
 
         checkpoint_is_teaching_day = (
@@ -285,7 +438,7 @@ def run_phase_1(
             include_checkpoint = bool(
                 checkpoint_choices.get(
                     checkpoint_key,
-                    False
+                    True
                 )
             )
 
@@ -295,7 +448,9 @@ def run_phase_1(
 
         if include_checkpoint:
 
-            calculation_end = checkpoint_date
+            calculation_end = (
+                checkpoint_date
+            )
 
         else:
 
@@ -308,13 +463,15 @@ def run_phase_1(
         # Count teaching days
         # ---------------------------------
 
-        teaching_days = count_teaching_days(
-            current_date,
-            calculation_end
+        teaching_days = (
+            count_teaching_days(
+                current_date,
+                calculation_end
+            )
         )
 
         # ---------------------------------
-        # Convert teaching days to classes
+        # Convert teaching days into classes
         # ---------------------------------
 
         future_classes = (
@@ -323,10 +480,56 @@ def run_phase_1(
         )
 
         # =================================
+        # CURRENT STATUS
+        # =================================
+
+        status = determine_status(
+            actual_attended,
+            actual_total,
+            future_classes
+        )
+
+        # =================================
+        # CURRENT ATTENDANCE
+        # =================================
+
+        starting_percentage = (
+            calculate_percentage(
+                actual_attended,
+                actual_total
+            )
+        )
+
+        # =================================
+        # RECOVERY INFORMATION
+        # =================================
+
+        classes_needed = (
+            classes_needed_to_reach_target(
+                actual_attended,
+                actual_total
+            )
+        )
+
+        maximum_attended_if_no_leave = (
+            actual_attended +
+            future_classes
+        )
+
+        maximum_total_if_no_leave = (
+            actual_total +
+            future_classes
+        )
+
+        maximum_possible_percentage = (
+            calculate_percentage(
+                maximum_attended_if_no_leave,
+                maximum_total_if_no_leave
+            )
+        )
+
+        # =================================
         # MAXIMUM SAFE LEAVE
-        #
-        # This is calculated using the
-        # user's ACTUAL current plan.
         # =================================
 
         maximum_leave = (
@@ -339,25 +542,32 @@ def run_phase_1(
         )
 
         # =================================
-        # USER REQUESTED LEAVE
-        #
-        # Normally this is empty during
-        # the first calculation.
+        # USER'S ACTUAL CHOICE
         # =================================
 
         requested_leave = requested_leaves.get(
             checkpoint_key,
-            None
+            0
+        )
+
+        try:
+
+            requested_leave = int(
+                requested_leave
+            )
+
+        except (TypeError, ValueError):
+
+            requested_leave = 0
+
+        requested_leave = max(
+            0,
+            requested_leave
         )
 
         # ---------------------------------
-        # If the user has not selected
-        # leave yet, assume ZERO leave.
+        # Calculate requested leave
         # ---------------------------------
-
-        if requested_leave is None:
-
-            requested_leave = 0
 
         requested_result = (
             calculate_requested_leave(
@@ -368,18 +578,32 @@ def run_phase_1(
             )
         )
 
-        # =================================
-        # IMPORTANT SAFETY CHECK
-        # =================================
+        # ---------------------------------
+        # Determine whether requested leave
+        # keeps attendance at or above 75%.
+        # ---------------------------------
 
         requested_leave_is_safe = (
+            requested_leave <= maximum_leave
+            and
             requested_result[
-                "requested_leave"
-            ] <= maximum_leave
+                "projected_percentage"
+            ] >= TARGET_ATTENDANCE
         )
 
         # =================================
-        # Remaining safe leave
+        # RECOVERY AFTER FUTURE CLASSES
+        # =================================
+
+        projected_without_leave = (
+            calculate_percentage(
+                maximum_attended_if_no_leave,
+                maximum_total_if_no_leave
+            )
+        )
+
+        # =================================
+        # REMAINING SAFE LEAVE
         # =================================
 
         remaining_safe_leave = (
@@ -417,6 +641,17 @@ def run_phase_1(
             "included":
                 include_checkpoint,
 
+            # -----------------------------
+            # STATUS
+            # -----------------------------
+
+            "status":
+                status,
+
+            # -----------------------------
+            # STARTING ATTENDANCE
+            # -----------------------------
+
             "starting_attended":
                 actual_attended,
 
@@ -425,12 +660,13 @@ def run_phase_1(
 
             "starting_percentage":
                 round(
-                    calculate_percentage(
-                        actual_attended,
-                        actual_total
-                    ),
+                    starting_percentage,
                     2
                 ),
+
+            # -----------------------------
+            # FUTURE CLASSES
+            # -----------------------------
 
             "teaching_days":
                 teaching_days,
@@ -438,11 +674,36 @@ def run_phase_1(
             "future_classes":
                 future_classes,
 
-            # Maximum safe leave
+            # -----------------------------
+            # SAFE LEAVE
+            # -----------------------------
+
             "maximum_leave":
                 maximum_leave,
 
-            # User's choice
+            # -----------------------------
+            # RECOVERY
+            # -----------------------------
+
+            "classes_needed_for_75":
+                classes_needed,
+
+            "maximum_possible_percentage":
+                round(
+                    maximum_possible_percentage,
+                    2
+                ),
+
+            "projected_without_leave":
+                round(
+                    projected_without_leave,
+                    2
+                ),
+
+            # -----------------------------
+            # USER CHOICE
+            # -----------------------------
+
             "requested_leave":
                 requested_result[
                     "requested_leave"
@@ -474,8 +735,10 @@ def run_phase_1(
             "remaining_safe_leave":
                 remaining_safe_leave,
 
-            # For compatibility with the
-            # existing dashboard
+            # -----------------------------
+            # COMPATIBILITY
+            # -----------------------------
+
             "final_attended":
                 requested_result[
                     "projected_attended"
@@ -498,8 +761,7 @@ def run_phase_1(
         })
 
         # =================================
-        # CARRY FORWARD THE USER'S ACTUAL
-        # PLAN — NOT THE MAXIMUM LEAVE
+        # CARRY FORWARD ACTUAL USER PLAN
         # =================================
 
         actual_attended = (
@@ -527,10 +789,12 @@ def run_phase_1(
 
         else:
 
-            current_date = checkpoint_date
+            current_date = (
+                checkpoint_date
+            )
 
     # =====================================
-    # RETURN RESULT
+    # RETURN
     # =====================================
 
     return {
@@ -540,6 +804,15 @@ def run_phase_1(
 
         "current_total":
             actual_total,
+
+        "current_percentage":
+            round(
+                calculate_percentage(
+                    actual_attended,
+                    actual_total
+                ),
+                2
+            ),
 
         "checkpoints":
             results
