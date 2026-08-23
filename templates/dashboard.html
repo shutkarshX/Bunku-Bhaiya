@@ -35,18 +35,95 @@
 
 
     <!-- ================================= -->
-    <!-- LOGIN -->
+    <!-- PORTAL ERROR: UNAVAILABLE -->
     <!-- ================================= -->
 
-    {% if not attendance.subjects %}
+    {% if portal_error == "unavailable" %}
 
-    <div class="summary" id="login-section">
+    <div class="summary">
+
+        <h2>⚠️ College Portal Unavailable</h2>
+
+        <p>
+            BunkMaster could not reach the NIET
+            attendance portal right now.
+        </p>
+
+        <p>
+            Your attendance has not been changed.
+            Please try again later.
+        </p>
+
+        <form
+            action="/"
+            method="GET">
+
+            <button
+                type="submit"
+                class="attendance-button">
+
+                Try Again
+
+            </button>
+
+        </form>
+
+    </div>
+
+
+    <!-- ================================= -->
+    <!-- PORTAL ERROR: LOGIN -->
+    <!-- ================================= -->
+
+    {% elif portal_error == "login" %}
+
+    <div class="summary">
+
+        <h2>❌ Login Failed</h2>
+
+        <p>
+            The NIET portal is reachable, but
+            your login was not successful.
+        </p>
+
+        <p>
+            Please check your college username
+            and password and try again.
+        </p>
+
+        <form
+            action="/"
+            method="GET">
+
+            <button
+                type="submit"
+                class="attendance-button">
+
+                Try Again
+
+            </button>
+
+        </form>
+
+    </div>
+
+
+    <!-- ================================= -->
+    <!-- NORMAL LOGIN -->
+    <!-- ================================= -->
+
+    {% elif not attendance.subjects %}
+
+
+    <div
+        class="summary"
+        id="login-section">
 
         <h2>Get Your Attendance</h2>
 
         <p>
-            Enter your college portal credentials to retrieve
-            your subject-wise attendance.
+            Enter your college portal credentials
+            to retrieve your subject-wise attendance.
         </p>
 
 
@@ -55,12 +132,14 @@
             method="POST"
             onsubmit="showLoading()">
 
+
             <input
                 type="text"
                 name="username"
                 placeholder="College username"
                 required
             >
+
 
             <input
                 type="password"
@@ -69,6 +148,7 @@
                 required
             >
 
+
             <button
                 type="submit"
                 class="attendance-button">
@@ -76,6 +156,7 @@
                 Get Attendance
 
             </button>
+
 
         </form>
 
@@ -104,6 +185,7 @@
 
         </video>
 
+
         <h2>Getting your attendance...</h2>
 
         <p>
@@ -112,6 +194,10 @@
 
     </div>
 
+
+    <!-- ================================= -->
+    <!-- NORMAL DASHBOARD -->
+    <!-- ================================= -->
 
     {% else %}
 
@@ -221,6 +307,79 @@
             </p>
 
 
+            <!-- STATUS -->
+
+            {% if first.status == "safe" %}
+
+
+                <div class="summary">
+
+                    <h3>🟢 Attendance is Safe</h3>
+
+                    <p>
+                        You are currently above the
+                        75% attendance requirement.
+                    </p>
+
+                </div>
+
+
+            {% elif first.status == "recovery" %}
+
+
+                <div class="summary">
+
+                    <h3>🟡 Attendance Recovery Needed</h3>
+
+                    <p>
+                        Your attendance is currently
+                        below 75%.
+                    </p>
+
+                    <p>
+
+                        You need to attend approximately
+
+                        <strong>
+                            {{ first.classes_needed_for_75 }}
+                        </strong>
+
+                        consecutive classes to reach 75%.
+
+                    </p>
+
+                </div>
+
+
+            {% else %}
+
+
+                <div class="summary">
+
+                    <h3>🔴 75% Not Reachable</h3>
+
+                    <p>
+                        Even if you attend every remaining
+                        class before this checkpoint, 75%
+                        cannot be reached.
+                    </p>
+
+                    <p>
+
+                        Maximum possible attendance:
+
+                        <strong>
+                            {{ first.maximum_possible_percentage }}%
+                        </strong>
+
+                    </p>
+
+                </div>
+
+
+            {% endif %}
+
+
             <div class="stats">
 
 
@@ -280,18 +439,40 @@
             </div>
 
 
-            <p>
+            {% if first.status == "safe" %}
 
-                You can safely take up to
 
-                <strong>
-                    {{ first.maximum_leave }}
-                    day(s)
-                </strong>
+                <p>
 
-                before this sessional.
+                    You can safely take up to
 
-            </p>
+                    <strong>
+                        {{ first.maximum_leave }}
+                        day(s)
+                    </strong>
+
+                    before this sessional.
+
+                </p>
+
+
+            {% elif first.status == "recovery" %}
+
+
+                <p>
+
+                    Additional leave is currently
+
+                    <strong>
+                        0 days
+                    </strong>
+
+                    until your attendance recovers.
+
+                </p>
+
+
+            {% endif %}
 
 
             {% if first.teaching_days == 0 %}
@@ -447,6 +628,78 @@
             </p>
 
 
+            <!-- STATUS -->
+
+            {% if second.status == "safe" %}
+
+
+                <div class="summary">
+
+                    <h3>🟢 Attendance is Safe</h3>
+
+                    <p>
+                        You are above the 75% requirement.
+                    </p>
+
+                </div>
+
+
+            {% elif second.status == "recovery" %}
+
+
+                <div class="summary">
+
+                    <h3>🟡 Attendance Recovery Needed</h3>
+
+                    <p>
+                        Your attendance is below 75%.
+                    </p>
+
+                    <p>
+
+                        You need to attend
+
+                        <strong>
+                            {{ second.classes_needed_for_75 }}
+                        </strong>
+
+                        consecutive classes to reach
+                        75%.
+
+                    </p>
+
+                </div>
+
+
+            {% else %}
+
+
+                <div class="summary">
+
+                    <h3>🔴 75% Not Reachable</h3>
+
+                    <p>
+                        Even attending every remaining
+                        class cannot reach 75% by this
+                        checkpoint.
+                    </p>
+
+                    <p>
+
+                        Maximum possible:
+
+                        <strong>
+                            {{ second.maximum_possible_percentage }}%
+                        </strong>
+
+                    </p>
+
+                </div>
+
+
+            {% endif %}
+
+
             <div class="stats">
 
 
@@ -506,6 +759,8 @@
             </div>
 
 
+            {% if second.status == "safe" %}
+
             <p>
 
                 Based on your previous choice,
@@ -519,6 +774,8 @@
                 before this sessional.
 
             </p>
+
+            {% endif %}
 
 
             <hr>
@@ -657,6 +914,78 @@
             </p>
 
 
+            <!-- STATUS -->
+
+            {% if third.status == "safe" %}
+
+
+                <div class="summary">
+
+                    <h3>🟢 Attendance is Safe</h3>
+
+                    <p>
+                        You are above the 75% requirement.
+                    </p>
+
+                </div>
+
+
+            {% elif third.status == "recovery" %}
+
+
+                <div class="summary">
+
+                    <h3>🟡 Attendance Recovery Needed</h3>
+
+                    <p>
+                        Your attendance is below 75%.
+                    </p>
+
+                    <p>
+
+                        You need to attend
+
+                        <strong>
+                            {{ third.classes_needed_for_75 }}
+                        </strong>
+
+                        consecutive classes to reach
+                        75%.
+
+                    </p>
+
+                </div>
+
+
+            {% else %}
+
+
+                <div class="summary">
+
+                    <h3>🔴 75% Not Reachable</h3>
+
+                    <p>
+                        Even attending every remaining
+                        class cannot reach 75% by this
+                        checkpoint.
+                    </p>
+
+                    <p>
+
+                        Maximum possible:
+
+                        <strong>
+                            {{ third.maximum_possible_percentage }}%
+                        </strong>
+
+                    </p>
+
+                </div>
+
+
+            {% endif %}
+
+
             <div class="stats">
 
 
@@ -716,6 +1045,8 @@
             </div>
 
 
+            {% if third.status == "safe" %}
+
             <p>
 
                 Based on your previous choices,
@@ -729,6 +1060,8 @@
                 before this sessional.
 
             </p>
+
+            {% endif %}
 
 
             <hr>
@@ -801,8 +1134,6 @@
     <div class="bunk-results">
 
 
-        <!-- FIRST -->
-
         <div class="bunk-card">
 
             <h3>
@@ -811,27 +1142,29 @@
 
 
             <p>
+
                 Leave taken:
 
                 <strong>
                     {{ first.requested_leave }}
                     day(s)
                 </strong>
+
             </p>
 
 
             <p>
+
                 Projected attendance:
 
                 <strong>
                     {{ first.requested_projected_percentage }}%
                 </strong>
+
             </p>
 
         </div>
 
-
-        <!-- SECOND -->
 
         <div class="bunk-card">
 
@@ -841,27 +1174,29 @@
 
 
             <p>
+
                 Leave taken:
 
                 <strong>
                     {{ second.requested_leave }}
                     day(s)
                 </strong>
+
             </p>
 
 
             <p>
+
                 Projected attendance:
 
                 <strong>
                     {{ second.requested_projected_percentage }}%
                 </strong>
+
             </p>
 
         </div>
 
-
-        <!-- THIRD -->
 
         <div class="bunk-card">
 
@@ -871,21 +1206,25 @@
 
 
             <p>
+
                 Leave taken:
 
                 <strong>
                     {{ third.requested_leave }}
                     day(s)
                 </strong>
+
             </p>
 
 
             <p>
+
                 Projected attendance:
 
                 <strong>
                     {{ third.requested_projected_percentage }}%
                 </strong>
+
             </p>
 
         </div>
@@ -1078,6 +1417,7 @@ function showLoading() {
             "login-section"
         );
 
+
     if (loginSection) {
 
         loginSection.style.display =
@@ -1090,6 +1430,7 @@ function showLoading() {
         document.getElementById(
             "loading-screen"
         );
+
 
     if (loadingScreen) {
 

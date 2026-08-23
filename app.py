@@ -1,5 +1,11 @@
 from flask import Flask, render_template, request
-from portal import get_attendance
+
+from portal import (
+    get_attendance,
+    PortalUnavailableError,
+    PortalLoginError
+)
+
 from bunk_calculator import run_phase_1
 
 
@@ -46,7 +52,8 @@ def dashboard():
         "dashboard.html",
         attendance=attendance_data,
         phase_1=None,
-        calculator_step=0
+        calculator_step=0,
+        portal_error=None
     )
 
 
@@ -66,13 +73,76 @@ def get_attendance_page():
     print("\nStarting attendance retrieval...")
 
     # -------------------------------------
-    # Get attendance
+    # Try to retrieve attendance
     # -------------------------------------
 
-    subjects = get_attendance(
-        username,
-        password
-    )
+    try:
+
+        subjects = get_attendance(
+            username,
+            password
+        )
+
+    except PortalUnavailableError as e:
+
+        print()
+        print("======================================")
+        print("NIET PORTAL UNAVAILABLE")
+        print("======================================")
+        print(e)
+        print()
+
+        return render_template(
+            "dashboard.html",
+            attendance={
+                "subjects": []
+            },
+            phase_1=None,
+            calculator_step=0,
+            portal_error="unavailable"
+        )
+
+    except PortalLoginError as e:
+
+        print()
+        print("======================================")
+        print("NIET LOGIN FAILED")
+        print("======================================")
+        print(e)
+        print()
+
+        return render_template(
+            "dashboard.html",
+            attendance={
+                "subjects": []
+            },
+            phase_1=None,
+            calculator_step=0,
+            portal_error="login"
+        )
+
+    # -------------------------------------
+    # Safety check
+    #
+    # Do not send empty attendance into
+    # the calculator.
+    # -------------------------------------
+
+    if not subjects:
+
+        print(
+            "No attendance data was returned."
+        )
+
+        return render_template(
+            "dashboard.html",
+            attendance={
+                "subjects": []
+            },
+            phase_1=None,
+            calculator_step=0,
+            portal_error="unavailable"
+        )
 
     # -------------------------------------
     # Calculate totals
@@ -122,7 +192,8 @@ def get_attendance_page():
 
     attendance_data = {
 
-        "subjects": subjects,
+        "subjects":
+            subjects,
 
         "total_attended":
             total_attended,
@@ -138,7 +209,7 @@ def get_attendance_page():
     }
 
     # -------------------------------------
-    # Reset user's leave plan
+    # Reset previous leave plan
     # -------------------------------------
 
     selected_leaves = {
@@ -162,10 +233,7 @@ def get_attendance_page():
     )
 
     # -------------------------------------
-    # FIRST SESSIONAL
-    #
-    # Calculate maximum safe leave BEFORE
-    # 29 August.
+    # Calculate First Sessional
     # -------------------------------------
 
     phase_1_result = run_phase_1(
@@ -178,7 +246,8 @@ def get_attendance_page():
         "dashboard.html",
         attendance=attendance_data,
         phase_1=phase_1_result,
-        calculator_step=1
+        calculator_step=1,
+        portal_error=None
     )
 
 
@@ -208,11 +277,10 @@ def sessional_1():
 
         leave = 0
 
-    leave = max(0, leave)
-
-    # -------------------------------------
-    # Store actual user choice
-    # -------------------------------------
+    leave = max(
+        0,
+        leave
+    )
 
     selected_leaves[
         "2026-08-29"
@@ -225,13 +293,6 @@ def sessional_1():
         "days"
     )
 
-    # -------------------------------------
-    # Recalculate everything.
-    #
-    # The calculator now carries the user's
-    # first choice into the second sessional.
-    # -------------------------------------
-
     phase_1_result = run_phase_1(
         attendance_data,
         checkpoint_choices,
@@ -242,7 +303,8 @@ def sessional_1():
         "dashboard.html",
         attendance=attendance_data,
         phase_1=phase_1_result,
-        calculator_step=2
+        calculator_step=2,
+        portal_error=None
     )
 
 
@@ -272,11 +334,10 @@ def sessional_2():
 
         leave = 0
 
-    leave = max(0, leave)
-
-    # -------------------------------------
-    # Store actual choice
-    # -------------------------------------
+    leave = max(
+        0,
+        leave
+    )
 
     selected_leaves[
         "2026-10-10"
@@ -289,13 +350,6 @@ def sessional_2():
         "days"
     )
 
-    # -------------------------------------
-    # Recalculate.
-    #
-    # First + second choices now carry
-    # forward to the third checkpoint.
-    # -------------------------------------
-
     phase_1_result = run_phase_1(
         attendance_data,
         checkpoint_choices,
@@ -306,7 +360,8 @@ def sessional_2():
         "dashboard.html",
         attendance=attendance_data,
         phase_1=phase_1_result,
-        calculator_step=3
+        calculator_step=3,
+        portal_error=None
     )
 
 
@@ -336,11 +391,10 @@ def sessional_3():
 
         leave = 0
 
-    leave = max(0, leave)
-
-    # -------------------------------------
-    # Store actual choice
-    # -------------------------------------
+    leave = max(
+        0,
+        leave
+    )
 
     selected_leaves[
         "2026-11-16"
@@ -353,10 +407,6 @@ def sessional_3():
         "days"
     )
 
-    # -------------------------------------
-    # Final calculation
-    # -------------------------------------
-
     phase_1_result = run_phase_1(
         attendance_data,
         checkpoint_choices,
@@ -367,7 +417,8 @@ def sessional_3():
         "dashboard.html",
         attendance=attendance_data,
         phase_1=phase_1_result,
-        calculator_step=4
+        calculator_step=4,
+        portal_error=None
     )
 
 
