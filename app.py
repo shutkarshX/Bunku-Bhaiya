@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request
 from portal import get_attendance
 from bunk_calculator import run_phase_1
-import academic_calendar
 
 
 app = Flask(__name__)
@@ -21,7 +20,23 @@ attendance_data = {
 
 
 # =========================================
-# HOME PAGE
+# STORED CALCULATOR STATE
+# =========================================
+
+checkpoint_choices = {
+    "2026-10-10": True,
+    "2026-11-16": True
+}
+
+selected_leaves = {
+    "2026-08-29": 0,
+    "2026-10-10": 0,
+    "2026-11-16": 0
+}
+
+
+# =========================================
+# HOME
 # =========================================
 
 @app.route("/")
@@ -30,7 +45,8 @@ def dashboard():
     return render_template(
         "dashboard.html",
         attendance=attendance_data,
-        phase_1=None
+        phase_1=None,
+        calculator_step=0
     )
 
 
@@ -42,6 +58,7 @@ def dashboard():
 def get_attendance_page():
 
     global attendance_data
+    global selected_leaves
 
     username = request.form.get("username")
     password = request.form.get("password")
@@ -49,7 +66,7 @@ def get_attendance_page():
     print("\nStarting attendance retrieval...")
 
     # -------------------------------------
-    # Get attendance from college portal
+    # Get attendance
     # -------------------------------------
 
     subjects = get_attendance(
@@ -120,6 +137,16 @@ def get_attendance_page():
             overall_percentage
     }
 
+    # -------------------------------------
+    # Reset user's leave plan
+    # -------------------------------------
+
+    selected_leaves = {
+        "2026-08-29": 0,
+        "2026-10-10": 0,
+        "2026-11-16": 0
+    }
+
     print()
     print(
         "Website received:",
@@ -135,91 +162,212 @@ def get_attendance_page():
     )
 
     # -------------------------------------
-    # Don't run calculator yet.
+    # FIRST SESSIONAL
     #
-    # Website will now ask the user
-    # whether checkpoint dates should
-    # be included.
-    # -------------------------------------
-
-    return render_template(
-        "dashboard.html",
-        attendance=attendance_data,
-        phase_1=None,
-        checkpoint_options=True
-    )
-
-
-# =========================================
-# RUN BUNK CALCULATOR
-# =========================================
-
-@app.route(
-    "/calculate-bunk",
-    methods=["POST"]
-)
-def calculate_bunk():
-
-    # -------------------------------------
-    # Read choices from website
-    # -------------------------------------
-
-    checkpoint_choices = {}
-
-    # 10 October
-    if request.form.get(
-        "checkpoint_2026_10_10"
-    ) == "yes":
-
-        checkpoint_choices[
-            "2026-10-10"
-        ] = True
-
-    else:
-
-        checkpoint_choices[
-            "2026-10-10"
-        ] = False
-
-    # 16 November
-    if request.form.get(
-        "checkpoint_2026_11_16"
-    ) == "yes":
-
-        checkpoint_choices[
-            "2026-11-16"
-        ] = True
-
-    else:
-
-        checkpoint_choices[
-            "2026-11-16"
-        ] = False
-
-    # -------------------------------------
-    # Run calculator
+    # Calculate maximum safe leave BEFORE
+    # 29 August.
     # -------------------------------------
 
     phase_1_result = run_phase_1(
         attendance_data,
-        checkpoint_choices
+        checkpoint_choices,
+        selected_leaves
     )
-
-    print()
-    print(
-        "Phase 1 calculator result:",
-        phase_1_result
-    )
-
-    # -------------------------------------
-    # Show results
-    # -------------------------------------
 
     return render_template(
         "dashboard.html",
         attendance=attendance_data,
         phase_1=phase_1_result,
-        checkpoint_options=False
+        calculator_step=1
+    )
+
+
+# =========================================
+# SESSION 1
+# USER CHOOSES LEAVE BEFORE 29 AUGUST
+# =========================================
+
+@app.route(
+    "/sessional-1",
+    methods=["POST"]
+)
+def sessional_1():
+
+    global selected_leaves
+
+    try:
+
+        leave = int(
+            request.form.get(
+                "leave_1",
+                0
+            )
+        )
+
+    except (TypeError, ValueError):
+
+        leave = 0
+
+    leave = max(0, leave)
+
+    # -------------------------------------
+    # Store actual user choice
+    # -------------------------------------
+
+    selected_leaves[
+        "2026-08-29"
+    ] = leave
+
+    print()
+    print(
+        "First Sessional leave:",
+        leave,
+        "days"
+    )
+
+    # -------------------------------------
+    # Recalculate everything.
+    #
+    # The calculator now carries the user's
+    # first choice into the second sessional.
+    # -------------------------------------
+
+    phase_1_result = run_phase_1(
+        attendance_data,
+        checkpoint_choices,
+        selected_leaves
+    )
+
+    return render_template(
+        "dashboard.html",
+        attendance=attendance_data,
+        phase_1=phase_1_result,
+        calculator_step=2
+    )
+
+
+# =========================================
+# SESSION 2
+# USER CHOOSES LEAVE BEFORE 10 OCTOBER
+# =========================================
+
+@app.route(
+    "/sessional-2",
+    methods=["POST"]
+)
+def sessional_2():
+
+    global selected_leaves
+
+    try:
+
+        leave = int(
+            request.form.get(
+                "leave_2",
+                0
+            )
+        )
+
+    except (TypeError, ValueError):
+
+        leave = 0
+
+    leave = max(0, leave)
+
+    # -------------------------------------
+    # Store actual choice
+    # -------------------------------------
+
+    selected_leaves[
+        "2026-10-10"
+    ] = leave
+
+    print()
+    print(
+        "Second Sessional leave:",
+        leave,
+        "days"
+    )
+
+    # -------------------------------------
+    # Recalculate.
+    #
+    # First + second choices now carry
+    # forward to the third checkpoint.
+    # -------------------------------------
+
+    phase_1_result = run_phase_1(
+        attendance_data,
+        checkpoint_choices,
+        selected_leaves
+    )
+
+    return render_template(
+        "dashboard.html",
+        attendance=attendance_data,
+        phase_1=phase_1_result,
+        calculator_step=3
+    )
+
+
+# =========================================
+# SESSION 3
+# USER CHOOSES LEAVE BEFORE 16 NOVEMBER
+# =========================================
+
+@app.route(
+    "/sessional-3",
+    methods=["POST"]
+)
+def sessional_3():
+
+    global selected_leaves
+
+    try:
+
+        leave = int(
+            request.form.get(
+                "leave_3",
+                0
+            )
+        )
+
+    except (TypeError, ValueError):
+
+        leave = 0
+
+    leave = max(0, leave)
+
+    # -------------------------------------
+    # Store actual choice
+    # -------------------------------------
+
+    selected_leaves[
+        "2026-11-16"
+    ] = leave
+
+    print()
+    print(
+        "Third Sessional leave:",
+        leave,
+        "days"
+    )
+
+    # -------------------------------------
+    # Final calculation
+    # -------------------------------------
+
+    phase_1_result = run_phase_1(
+        attendance_data,
+        checkpoint_choices,
+        selected_leaves
+    )
+
+    return render_template(
+        "dashboard.html",
+        attendance=attendance_data,
+        phase_1=phase_1_result,
+        calculator_step=4
     )
 
 

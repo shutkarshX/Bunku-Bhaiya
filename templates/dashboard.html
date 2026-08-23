@@ -20,6 +20,11 @@
 
 <div class="container">
 
+
+    <!-- ================================= -->
+    <!-- HEADER -->
+    <!-- ================================= -->
+
     <header>
 
         <h1>BunkMaster</h1>
@@ -91,7 +96,10 @@
             playsinline>
 
             <source
-                src="{{ url_for('static', filename='loading.mp4') }}"
+                src="{{ url_for(
+                    'static',
+                    filename='loading.mp4'
+                ) }}"
                 type="video/mp4">
 
         </video>
@@ -170,201 +178,44 @@
 
 
     <!-- ================================= -->
-    <!-- CHECKPOINT OPTIONS -->
+    <!-- STEP 1 -->
+    <!-- FIRST SESSIONAL -->
     <!-- ================================= -->
 
-    {% if checkpoint_options %}
+    {% if calculator_step == 1 and phase_1 %}
+
+    {% set first = phase_1.checkpoints[0] %}
+
 
     <div class="summary">
 
         <h2>Bunk Calculator</h2>
 
         <p>
-            Choose how checkpoint dates should be handled.
+            BunkMaster calculates your safe leave
+            before each sessional and carries your
+            actual choice forward.
         </p>
-
-
-        <form
-            action="/calculate-bunk"
-            method="POST">
-
-
-            <!-- ========================= -->
-            <!-- FIRST SESSIONAL -->
-            <!-- ========================= -->
-
-            <div class="checkpoint-card">
-
-                <h3>First Sessional</h3>
-
-                <p>
-                    Checkpoint:
-                    <strong>29 August 2026</strong>
-                </p>
-
-                <p>
-                    29 August is not a teaching day.
-                </p>
-
-                <input
-                    type="hidden"
-                    name="checkpoint_2026_08_29"
-                    value="no">
-
-            </div>
-
-
-            <!-- ========================= -->
-            <!-- SECOND SESSIONAL -->
-            <!-- ========================= -->
-
-            <div class="checkpoint-card">
-
-                <h3>Second Sessional</h3>
-
-                <p>
-                    Checkpoint:
-                    <strong>10 October 2026</strong>
-                </p>
-
-                <p>
-                    10 October is a teaching day.
-                </p>
-
-                <p>
-                    Should 10 October's 8 classes
-                    be included?
-                </p>
-
-
-                <label>
-
-                    <input
-                        type="radio"
-                        name="checkpoint_2026_10_10"
-                        value="yes"
-                        checked>
-
-                    Yes — include 10 October
-
-                </label>
-
-
-                <label>
-
-                    <input
-                        type="radio"
-                        name="checkpoint_2026_10_10"
-                        value="no">
-
-                    No — calculate before 10 October
-
-                </label>
-
-            </div>
-
-
-            <!-- ========================= -->
-            <!-- THIRD SESSIONAL -->
-            <!-- ========================= -->
-
-            <div class="checkpoint-card">
-
-                <h3>Third Sessional</h3>
-
-                <p>
-                    Checkpoint:
-                    <strong>16 November 2026</strong>
-                </p>
-
-                <p>
-                    16 November is a teaching day.
-                </p>
-
-                <p>
-                    Should 16 November's 8 classes
-                    be included?
-                </p>
-
-
-                <label>
-
-                    <input
-                        type="radio"
-                        name="checkpoint_2026_11_16"
-                        value="yes"
-                        checked>
-
-                    Yes — include 16 November
-
-                </label>
-
-
-                <label>
-
-                    <input
-                        type="radio"
-                        name="checkpoint_2026_11_16"
-                        value="no">
-
-                    No — calculate before 16 November
-
-                </label>
-
-            </div>
-
-
-            <!-- ========================= -->
-            <!-- CALCULATE BUTTON -->
-            <!-- ========================= -->
-
-            <button
-                type="submit"
-                class="attendance-button">
-
-                Calculate Safe Leave
-
-            </button>
-
-
-        </form>
 
     </div>
 
-    {% endif %}
+
+    <div class="bunk-results">
 
 
-    <!-- ================================= -->
-    <!-- BUNK RESULTS -->
-    <!-- ================================= -->
-
-    {% if phase_1 %}
-
-    <div class="summary">
-
-        <h2>Bunk Calculator</h2>
-
-        <p>
-            Your safe leave based on the
-            75% overall attendance requirement.
-        </p>
-
-
-        {% for checkpoint in phase_1.checkpoints %}
-
-
-        <div class="checkpoint-card">
+        <div class="bunk-card">
 
             <h3>
-                {{ checkpoint.checkpoint }}
+                First Sessional
             </h3>
 
 
             <p>
 
                 Checkpoint:
+
                 <strong>
-                    {{ checkpoint.date }}
+                    {{ first.date }}
                 </strong>
 
             </p>
@@ -376,25 +227,11 @@
                 <div class="stat-card">
 
                     <span>
-                        Maximum Safe Leave
+                        Current Attendance
                     </span>
 
                     <strong>
-                        {{ checkpoint.maximum_leave }}
-                        days
-                    </strong>
-
-                </div>
-
-
-                <div class="stat-card">
-
-                    <span>
-                        Projected Attendance
-                    </span>
-
-                    <strong>
-                        {{ checkpoint.final_percentage }}%
+                        {{ first.starting_percentage }}%
                     </strong>
 
                 </div>
@@ -407,7 +244,7 @@
                     </span>
 
                     <strong>
-                        {{ checkpoint.teaching_days }}
+                        {{ first.teaching_days }}
                     </strong>
 
                 </div>
@@ -420,7 +257,21 @@
                     </span>
 
                     <strong>
-                        {{ checkpoint.future_classes }}
+                        {{ first.future_classes }}
+                    </strong>
+
+                </div>
+
+
+                <div class="stat-card overall">
+
+                    <span>
+                        Maximum Safe Leave
+                    </span>
+
+                    <strong>
+                        {{ first.maximum_leave }}
+                        days
                     </strong>
 
                 </div>
@@ -429,25 +280,669 @@
             </div>
 
 
-            {% if checkpoint.included %}
-
             <p>
-                ✓ Checkpoint date included
+
+                You can safely take up to
+
+                <strong>
+                    {{ first.maximum_leave }}
+                    day(s)
+                </strong>
+
+                before this sessional.
+
             </p>
 
-            {% else %}
+
+            {% if first.teaching_days == 0 %}
 
             <p>
-                Calculation before checkpoint date
+                No teaching days occur before this
+                checkpoint.
             </p>
 
             {% endif %}
 
 
+            <hr>
+
+
+            <h3>
+                How many days will you take?
+            </h3>
+
+
+            <p>
+                Choose your actual leave.
+                This choice will be carried forward
+                to the next sessional.
+            </p>
+
+
+            <form
+                action="/sessional-1"
+                method="POST">
+
+
+                <input
+                    type="number"
+                    name="leave_1"
+                    min="0"
+                    max="{{ first.maximum_leave }}"
+                    value="0"
+                    required
+                >
+
+
+                <button
+                    type="submit"
+                    class="attendance-button">
+
+                    Continue to Second Sessional
+
+                </button>
+
+
+            </form>
+
+
         </div>
 
 
-        {% endfor %}
+    </div>
+
+    {% endif %}
+
+
+    <!-- ================================= -->
+    <!-- STEP 2 -->
+    <!-- SECOND SESSIONAL -->
+    <!-- ================================= -->
+
+    {% if calculator_step == 2 and phase_1 %}
+
+    {% set first = phase_1.checkpoints[0] %}
+    {% set second = phase_1.checkpoints[1] %}
+
+
+    <div class="summary">
+
+        <h2>Second Sessional</h2>
+
+        <p>
+            Your First Sessional choice has now
+            been carried forward.
+        </p>
+
+    </div>
+
+
+    <div class="bunk-results">
+
+
+        <!-- PREVIOUS CHOICE -->
+
+        <div class="bunk-card">
+
+            <h3>
+                First Sessional — Completed
+            </h3>
+
+
+            <p>
+
+                You selected:
+
+                <strong>
+                    {{ first.requested_leave }}
+                    day(s)
+                </strong>
+
+            </p>
+
+
+            <p>
+
+                Attendance after your choice:
+
+                <strong>
+                    {{ first.requested_projected_attended }}
+                    /
+                    {{ first.requested_projected_total }}
+                </strong>
+
+            </p>
+
+
+            <p>
+
+                Projected attendance:
+
+                <strong>
+                    {{ first.requested_projected_percentage }}%
+                </strong>
+
+            </p>
+
+        </div>
+
+
+        <!-- CURRENT SESSIONAL -->
+
+        <div class="bunk-card">
+
+            <h3>
+                Second Sessional
+            </h3>
+
+
+            <p>
+
+                Checkpoint:
+
+                <strong>
+                    {{ second.date }}
+                </strong>
+
+            </p>
+
+
+            <div class="stats">
+
+
+                <div class="stat-card">
+
+                    <span>
+                        Starting Attendance
+                    </span>
+
+                    <strong>
+                        {{ second.starting_percentage }}%
+                    </strong>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <span>
+                        Teaching Days
+                    </span>
+
+                    <strong>
+                        {{ second.teaching_days }}
+                    </strong>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <span>
+                        Future Classes
+                    </span>
+
+                    <strong>
+                        {{ second.future_classes }}
+                    </strong>
+
+                </div>
+
+
+                <div class="stat-card overall">
+
+                    <span>
+                        Maximum Safe Leave
+                    </span>
+
+                    <strong>
+                        {{ second.maximum_leave }}
+                        days
+                    </strong>
+
+                </div>
+
+
+            </div>
+
+
+            <p>
+
+                Based on your previous choice,
+                you can safely take up to
+
+                <strong>
+                    {{ second.maximum_leave }}
+                    day(s)
+                </strong>
+
+                before this sessional.
+
+            </p>
+
+
+            <hr>
+
+
+            <h3>
+                How many days will you take?
+            </h3>
+
+
+            <form
+                action="/sessional-2"
+                method="POST">
+
+
+                <input
+                    type="number"
+                    name="leave_2"
+                    min="0"
+                    max="{{ second.maximum_leave }}"
+                    value="0"
+                    required
+                >
+
+
+                <button
+                    type="submit"
+                    class="attendance-button">
+
+                    Continue to Third Sessional
+
+                </button>
+
+
+            </form>
+
+
+        </div>
+
+
+    </div>
+
+    {% endif %}
+
+
+    <!-- ================================= -->
+    <!-- STEP 3 -->
+    <!-- THIRD SESSIONAL -->
+    <!-- ================================= -->
+
+    {% if calculator_step == 3 and phase_1 %}
+
+    {% set first = phase_1.checkpoints[0] %}
+    {% set second = phase_1.checkpoints[1] %}
+    {% set third = phase_1.checkpoints[2] %}
+
+
+    <div class="summary">
+
+        <h2>Third Sessional</h2>
+
+        <p>
+            Your previous leave choices have been
+            carried forward.
+        </p>
+
+    </div>
+
+
+    <div class="bunk-results">
+
+
+        <!-- PREVIOUS RESULTS -->
+
+        <div class="bunk-card">
+
+            <h3>
+                Previous Choices
+            </h3>
+
+
+            <p>
+
+                First Sessional:
+
+                <strong>
+                    {{ first.requested_leave }}
+                    day(s)
+                </strong>
+
+            </p>
+
+
+            <p>
+
+                Second Sessional:
+
+                <strong>
+                    {{ second.requested_leave }}
+                    day(s)
+                </strong>
+
+            </p>
+
+
+            <p>
+
+                Current projected attendance:
+
+                <strong>
+                    {{ second.requested_projected_percentage }}%
+                </strong>
+
+            </p>
+
+        </div>
+
+
+        <!-- THIRD SESSIONAL -->
+
+        <div class="bunk-card">
+
+            <h3>
+                Third Sessional
+            </h3>
+
+
+            <p>
+
+                Checkpoint:
+
+                <strong>
+                    {{ third.date }}
+                </strong>
+
+            </p>
+
+
+            <div class="stats">
+
+
+                <div class="stat-card">
+
+                    <span>
+                        Starting Attendance
+                    </span>
+
+                    <strong>
+                        {{ third.starting_percentage }}%
+                    </strong>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <span>
+                        Teaching Days
+                    </span>
+
+                    <strong>
+                        {{ third.teaching_days }}
+                    </strong>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <span>
+                        Future Classes
+                    </span>
+
+                    <strong>
+                        {{ third.future_classes }}
+                    </strong>
+
+                </div>
+
+
+                <div class="stat-card overall">
+
+                    <span>
+                        Maximum Safe Leave
+                    </span>
+
+                    <strong>
+                        {{ third.maximum_leave }}
+                        days
+                    </strong>
+
+                </div>
+
+
+            </div>
+
+
+            <p>
+
+                Based on your previous choices,
+                you can safely take up to
+
+                <strong>
+                    {{ third.maximum_leave }}
+                    day(s)
+                </strong>
+
+                before this sessional.
+
+            </p>
+
+
+            <hr>
+
+
+            <h3>
+                How many days will you take?
+            </h3>
+
+
+            <form
+                action="/sessional-3"
+                method="POST">
+
+
+                <input
+                    type="number"
+                    name="leave_3"
+                    min="0"
+                    max="{{ third.maximum_leave }}"
+                    value="0"
+                    required
+                >
+
+
+                <button
+                    type="submit"
+                    class="attendance-button">
+
+                    Finish Bunk Calculation
+
+                </button>
+
+
+            </form>
+
+
+        </div>
+
+
+    </div>
+
+    {% endif %}
+
+
+    <!-- ================================= -->
+    <!-- STEP 4 -->
+    <!-- FINAL RESULT -->
+    <!-- ================================= -->
+
+    {% if calculator_step == 4 and phase_1 %}
+
+    {% set first = phase_1.checkpoints[0] %}
+    {% set second = phase_1.checkpoints[1] %}
+    {% set third = phase_1.checkpoints[2] %}
+
+
+    <div class="summary">
+
+        <h2>Your Final Bunk Plan</h2>
+
+        <p>
+            Here is your complete plan based on
+            the choices you made at each sessional.
+        </p>
+
+    </div>
+
+
+    <div class="bunk-results">
+
+
+        <!-- FIRST -->
+
+        <div class="bunk-card">
+
+            <h3>
+                First Sessional
+            </h3>
+
+
+            <p>
+                Leave taken:
+
+                <strong>
+                    {{ first.requested_leave }}
+                    day(s)
+                </strong>
+            </p>
+
+
+            <p>
+                Projected attendance:
+
+                <strong>
+                    {{ first.requested_projected_percentage }}%
+                </strong>
+            </p>
+
+        </div>
+
+
+        <!-- SECOND -->
+
+        <div class="bunk-card">
+
+            <h3>
+                Second Sessional
+            </h3>
+
+
+            <p>
+                Leave taken:
+
+                <strong>
+                    {{ second.requested_leave }}
+                    day(s)
+                </strong>
+            </p>
+
+
+            <p>
+                Projected attendance:
+
+                <strong>
+                    {{ second.requested_projected_percentage }}%
+                </strong>
+            </p>
+
+        </div>
+
+
+        <!-- THIRD -->
+
+        <div class="bunk-card">
+
+            <h3>
+                Third Sessional
+            </h3>
+
+
+            <p>
+                Leave taken:
+
+                <strong>
+                    {{ third.requested_leave }}
+                    day(s)
+                </strong>
+            </p>
+
+
+            <p>
+                Projected attendance:
+
+                <strong>
+                    {{ third.requested_projected_percentage }}%
+                </strong>
+            </p>
+
+        </div>
+
+
+        <!-- FINAL -->
+
+        <div class="bunk-card">
+
+            <h2>
+                Final Projected Attendance
+            </h2>
+
+
+            <div class="stat-card overall">
+
+                <span>
+                    Attendance
+                </span>
+
+                <strong>
+                    {{ third.requested_projected_percentage }}%
+                </strong>
+
+            </div>
+
+
+            <p>
+
+                Final attendance:
+
+                <strong>
+                    {{ third.requested_projected_attended }}
+                    /
+                    {{ third.requested_projected_total }}
+                </strong>
+
+            </p>
+
+
+            {% if third.requested_projected_percentage >= 75 %}
+
+            <p>
+                ✅ Your final plan maintains at least
+                75% attendance.
+            </p>
+
+            {% else %}
+
+            <p>
+                ⚠️ Your final plan falls below
+                the 75% requirement.
+            </p>
+
+            {% endif %}
+
+        </div>
 
 
     </div>
@@ -464,8 +959,8 @@
         <h2>Subject-wise Attendance</h2>
 
         <p>
-            Attendance retrieved directly
-            from the college portal.
+            Attendance retrieved directly from the
+            college portal.
         </p>
 
     </div>
@@ -480,17 +975,11 @@
                 <tr>
 
                     <th>Subject</th>
-
                     <th>Code</th>
-
                     <th>Present</th>
-
                     <th>Absent</th>
-
                     <th>Total</th>
-
                     <th>Attendance</th>
-
                     <th>Faculty</th>
 
                 </tr>
@@ -511,14 +1000,12 @@
                         ) }}
                     </td>
 
-
                     <td>
                         {{ subject.get(
                             "subjectCode",
                             "-"
                         ) }}
                     </td>
-
 
                     <td>
                         {{ subject.get(
@@ -527,7 +1014,6 @@
                         ) }}
                     </td>
 
-
                     <td>
                         {{ subject.get(
                             "absentLecture",
@@ -535,9 +1021,7 @@
                         ) }}
                     </td>
 
-
                     <td>
-
                         {{
                             subject.get(
                                 "attendedLecture",
@@ -549,9 +1033,7 @@
                                 0
                             )
                         }}
-
                     </td>
-
 
                     <td>
                         {{ subject.get(
@@ -559,7 +1041,6 @@
                             0
                         ) }}%
                     </td>
-
 
                     <td>
                         {{ subject.get(
@@ -597,7 +1078,6 @@ function showLoading() {
             "login-section"
         );
 
-
     if (loginSection) {
 
         loginSection.style.display =
@@ -610,7 +1090,6 @@ function showLoading() {
         document.getElementById(
             "loading-screen"
         );
-
 
     if (loadingScreen) {
 
