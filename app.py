@@ -1,3 +1,4 @@
+import os
 from flask import Flask, render_template, request, session
 
 from portal import (
@@ -13,7 +14,7 @@ app = Flask(__name__)
 
 # Required for Flask sessions.
 # Change this to a long random value before deploying publicly.
-app.secret_key = "bunkmaster-dev-secret-key"
+app.secret_key = os.environ.get("SECRET_KEY")
 
 
 # =========================================

@@ -40,7 +40,7 @@ def get_attendance(username, password):
             try:
 
                 browser = p.chromium.launch(
-                    headless=False
+                    headless=True
                 )
 
                 page = browser.new_page()
