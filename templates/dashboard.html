@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>BunkMaster - Attendance</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+    <header>
+
+        <h1>BunkMaster</h1>
+
+        <p>Attendance Dashboard</p>
+
+    </header>
+
+
+    <!-- ================================= -->
+    <!-- LOGIN -->
+    <!-- ================================= -->
+
+    {% if not attendance.subjects %}
+
+    <div class="summary" id="login-section">
+
+        <h2>Get Your Attendance</h2>
+
+        <p>
+            Enter your college portal credentials to retrieve
+            your subject-wise attendance.
+        </p>
+
+
+        <form
+            action="/get-attendance"
+            method="POST"
+            onsubmit="showLoading()">
+
+            <input
+                type="text"
+                name="username"
+                placeholder="College username"
+                required
+            >
+
+            <input
+                type="password"
+                name="password"
+                placeholder="College password"
+                required
+            >
+
+            <button
+                type="submit"
+                class="attendance-button">
+
+                Get Attendance
+
+            </button>
+
+        </form>
+
+    </div>
+
+
+    <!-- ================================= -->
+    <!-- LOADING -->
+    <!-- ================================= -->
+
+    <div
+        id="loading-screen"
+        class="loading-screen">
+
+        <video
+            id="loading-video"
+            loop
+            playsinline>
+
+            <source
+                src="{{ url_for('static', filename='loading.mp4') }}"
+                type="video/mp4">
+
+        </video>
+
+        <h2>Getting your attendance...</h2>
+
+        <p>
+            BunkMaster is checking the college portal.
+        </p>
+
+    </div>
+
+
+    {% else %}
+
+
+    <!-- ================================= -->
+    <!-- ATTENDANCE SUMMARY -->
+    <!-- ================================= -->
+
+    <div class="summary">
+
+        <h2>Attendance Summary</h2>
+
+
+        <div class="stats">
+
+
+            <div class="stat-card">
+
+                <span>Total Classes</span>
+
+                <strong>
+                    {{ attendance.total_classes }}
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <span>Attended</span>
+
+                <strong>
+                    {{ attendance.total_attended }}
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <span>Absent</span>
+
+                <strong>
+                    {{ attendance.total_absent }}
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card overall">
+
+                <span>Overall Attendance</span>
+
+                <strong>
+                    {{ attendance.overall_percentage }}%
+                </strong>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+
+    <!-- ================================= -->
+    <!-- CHECKPOINT OPTIONS -->
+    <!-- ================================= -->
+
+    {% if checkpoint_options %}
+
+    <div class="summary">
+
+        <h2>Bunk Calculator</h2>
+
+        <p>
+            Choose how checkpoint dates should be handled.
+        </p>
+
+
+        <form
+            action="/calculate-bunk"
+            method="POST">
+
+
+            <!-- ========================= -->
+            <!-- FIRST SESSIONAL -->
+            <!-- ========================= -->
+
+            <div class="checkpoint-card">
+
+                <h3>First Sessional</h3>
+
+                <p>
+                    Checkpoint:
+                    <strong>29 August 2026</strong>
+                </p>
+
+                <p>
+                    29 August is not a teaching day.
+                </p>
+
+                <input
+                    type="hidden"
+                    name="checkpoint_2026_08_29"
+                    value="no">
+
+            </div>
+
+
+            <!-- ========================= -->
+            <!-- SECOND SESSIONAL -->
+            <!-- ========================= -->
+
+            <div class="checkpoint-card">
+
+                <h3>Second Sessional</h3>
+
+                <p>
+                    Checkpoint:
+                    <strong>10 October 2026</strong>
+                </p>
+
+                <p>
+                    10 October is a teaching day.
+                </p>
+
+                <p>
+                    Should 10 October's 8 classes
+                    be included?
+                </p>
+
+
+                <label>
+
+                    <input
+                        type="radio"
+                        name="checkpoint_2026_10_10"
+                        value="yes"
+                        checked>
+
+                    Yes — include 10 October
+
+                </label>
+
+
+                <label>
+
+                    <input
+                        type="radio"
+                        name="checkpoint_2026_10_10"
+                        value="no">
+
+                    No — calculate before 10 October
+
+                </label>
+
+            </div>
+
+
+            <!-- ========================= -->
+            <!-- THIRD SESSIONAL -->
+            <!-- ========================= -->
+
+            <div class="checkpoint-card">
+
+                <h3>Third Sessional</h3>
+
+                <p>
+                    Checkpoint:
+                    <strong>16 November 2026</strong>
+                </p>
+
+                <p>
+                    16 November is a teaching day.
+                </p>
+
+                <p>
+                    Should 16 November's 8 classes
+                    be included?
+                </p>
+
+
+                <label>
+
+                    <input
+                        type="radio"
+                        name="checkpoint_2026_11_16"
+                        value="yes"
+                        checked>
+
+                    Yes — include 16 November
+
+                </label>
+
+
+                <label>
+
+                    <input
+                        type="radio"
+                        name="checkpoint_2026_11_16"
+                        value="no">
+
+                    No — calculate before 16 November
+
+                </label>
+
+            </div>
+
+
+            <!-- ========================= -->
+            <!-- CALCULATE BUTTON -->
+            <!-- ========================= -->
+
+            <button
+                type="submit"
+                class="attendance-button">
+
+                Calculate Safe Leave
+
+            </button>
+
+
+        </form>
+
+    </div>
+
+    {% endif %}
+
+
+    <!-- ================================= -->
+    <!-- BUNK RESULTS -->
+    <!-- ================================= -->
+
+    {% if phase_1 %}
+
+    <div class="summary">
+
+        <h2>Bunk Calculator</h2>
+
+        <p>
+            Your safe leave based on the
+            75% overall attendance requirement.
+        </p>
+
+
+        {% for checkpoint in phase_1.checkpoints %}
+
+
+        <div class="checkpoint-card">
+
+            <h3>
+                {{ checkpoint.checkpoint }}
+            </h3>
+
+
+            <p>
+
+                Checkpoint:
+                <strong>
+                    {{ checkpoint.date }}
+                </strong>
+
+            </p>
+
+
+            <div class="stats">
+
+
+                <div class="stat-card">
+
+                    <span>
+                        Maximum Safe Leave
+                    </span>
+
+                    <strong>
+                        {{ checkpoint.maximum_leave }}
+                        days
+                    </strong>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <span>
+                        Projected Attendance
+                    </span>
+
+                    <strong>
+                        {{ checkpoint.final_percentage }}%
+                    </strong>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <span>
+                        Teaching Days
+                    </span>
+
+                    <strong>
+                        {{ checkpoint.teaching_days }}
+                    </strong>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <span>
+                        Future Classes
+                    </span>
+
+                    <strong>
+                        {{ checkpoint.future_classes }}
+                    </strong>
+
+                </div>
+
+
+            </div>
+
+
+            {% if checkpoint.included %}
+
+            <p>
+                ✓ Checkpoint date included
+            </p>
+
+            {% else %}
+
+            <p>
+                Calculation before checkpoint date
+            </p>
+
+            {% endif %}
+
+
+        </div>
+
+
+        {% endfor %}
+
+
+    </div>
+
+    {% endif %}
+
+
+    <!-- ================================= -->
+    <!-- SUBJECT ATTENDANCE -->
+    <!-- ================================= -->
+
+    <div class="summary">
+
+        <h2>Subject-wise Attendance</h2>
+
+        <p>
+            Attendance retrieved directly
+            from the college portal.
+        </p>
+
+    </div>
+
+
+    <div class="table-container">
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>Subject</th>
+
+                    <th>Code</th>
+
+                    <th>Present</th>
+
+                    <th>Absent</th>
+
+                    <th>Total</th>
+
+                    <th>Attendance</th>
+
+                    <th>Faculty</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+            {% for subject in attendance.subjects %}
+
+                <tr>
+
+                    <td>
+                        {{ subject.get(
+                            "subjectName",
+                            "Unknown"
+                        ) }}
+                    </td>
+
+
+                    <td>
+                        {{ subject.get(
+                            "subjectCode",
+                            "-"
+                        ) }}
+                    </td>
+
+
+                    <td>
+                        {{ subject.get(
+                            "attendedLecture",
+                            0
+                        ) }}
+                    </td>
+
+
+                    <td>
+                        {{ subject.get(
+                            "absentLecture",
+                            0
+                        ) }}
+                    </td>
+
+
+                    <td>
+
+                        {{
+                            subject.get(
+                                "attendedLecture",
+                                0
+                            )
+                            +
+                            subject.get(
+                                "absentLecture",
+                                0
+                            )
+                        }}
+
+                    </td>
+
+
+                    <td>
+                        {{ subject.get(
+                            "percentageOfLec",
+                            0
+                        ) }}%
+                    </td>
+
+
+                    <td>
+                        {{ subject.get(
+                            "facultyName",
+                            "-"
+                        ) }}
+                    </td>
+
+                </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    {% endif %}
+
+</div>
+
+
+<!-- ================================= -->
+<!-- LOADING JAVASCRIPT -->
+<!-- ================================= -->
+
+<script>
+
+function showLoading() {
+
+    const loginSection =
+        document.getElementById(
+            "login-section"
+        );
+
+
+    if (loginSection) {
+
+        loginSection.style.display =
+            "none";
+
+    }
+
+
+    const loadingScreen =
+        document.getElementById(
+            "loading-screen"
+        );
+
+
+    if (loadingScreen) {
+
+        loadingScreen.style.display =
+            "block";
+
+
+        const video =
+            document.getElementById(
+                "loading-video"
+            );
+
+
+        if (video) {
+
+            video.currentTime = 5;
+
+            video.muted = false;
+
+            video.volume = 1.0;
+
+
+            video.play().catch(
+                function(error) {
+
+                    console.log(
+                        "Video playback:",
+                        error
+                    );
+
+                }
+            );
+
+        }
+
+    }
+
+}
+
+</script>
+
+
+</body>
+
+</html>

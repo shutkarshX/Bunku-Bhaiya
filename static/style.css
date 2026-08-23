@@ -1,0 +1,245 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    color: #1f2937;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 40px auto;
+}
+
+/* ---------------- HEADER ---------------- */
+
+header {
+    background: #111827;
+    color: white;
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+}
+
+header h1 {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+header p {
+    color: #d1d5db;
+}
+
+/* ---------------- SUMMARY ---------------- */
+
+.summary {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.summary h2 {
+    margin-bottom: 8px;
+}
+
+.summary p {
+    color: #6b7280;
+}
+
+/* ---------------- LOGIN FORM ---------------- */
+
+form {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 400px;
+}
+
+form input {
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 15px;
+}
+
+form input:focus {
+    outline: none;
+    border-color: #111827;
+}
+
+form button {
+    border: none;
+    cursor: pointer;
+}
+
+/* ---------------- BUTTON ---------------- */
+
+.attendance-button {
+    display: inline-block;
+    margin-top: 5px;
+    padding: 12px 22px;
+    background: #111827;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.attendance-button:hover {
+    opacity: 0.85;
+}
+
+/* ---------------- ATTENDANCE SUMMARY ---------------- */
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.stat-card {
+    padding: 20px;
+    background: #f9fafb;
+    border-radius: 10px;
+}
+
+.stat-card span {
+    display: block;
+    color: #6b7280;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.stat-card strong {
+    font-size: 26px;
+}
+
+.stat-card.overall {
+    background: #111827;
+    color: white;
+}
+
+.stat-card.overall span {
+    color: #d1d5db;
+}
+
+/* ---------------- TABLE ---------------- */
+
+.table-container {
+    background: white;
+    border-radius: 12px;
+    overflow-x: auto;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 850px;
+}
+
+th,
+td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+th {
+    background: #f9fafb;
+    font-weight: 600;
+}
+
+td {
+    font-size: 14px;
+}
+
+tr:hover {
+    background: #f9fafb;
+}
+
+/* ---------------- EMPTY STATE ---------------- */
+
+.empty {
+    background: white;
+    padding: 50px;
+    text-align: center;
+    border-radius: 12px;
+}
+
+.empty p {
+    margin-top: 10px;
+    color: #6b7280;
+}
+
+/* ---------------- MOBILE ---------------- */
+
+@media (max-width: 800px) {
+
+    .container {
+        width: 95%;
+        margin: 20px auto;
+    }
+
+    .stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    header h1 {
+        font-size: 26px;
+    }
+}
+
+@media (max-width: 500px) {
+
+    .stats {
+        grid-template-columns: 1fr;
+    }
+
+    header {
+        padding: 22px;
+    }
+
+    .summary {
+        padding: 20px;
+    }
+}
+
+/* ---------------- LOADING SCREEN ---------------- */
+
+.loading-screen {
+    display: none;
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.loading-screen video {
+    display: block;
+    width: 100%;
+    max-width: 500px;
+    max-height: 320px;
+    margin: 0 auto;
+    border-radius: 12px;
+    object-fit: contain;
+}
+
+.loading-screen h2 {
+    margin-top: 18px;
+    margin-bottom: 8px;
+}
+
+.loading-screen p {
+    color: #6b7280;
+}
