@@ -14,7 +14,16 @@ app = Flask(__name__)
 
 # Required for Flask sessions.
 # Change this to a long random value before deploying publicly.
-app.secret_key = os.environ.get("SECRET_KEY")
+
+SECRET_KEY = os.environ.get("SECRET_KEY")
+
+if not SECRET_KEY:
+    raise RuntimeError(
+        "SECRET_KEY environment variable is not set. "
+        "Please configure it before running BunkMaster."
+    )
+
+app.secret_key = SECRET_KEY
 
 
 # =========================================
