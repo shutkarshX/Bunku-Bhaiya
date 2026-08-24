@@ -429,8 +429,7 @@
                     </span>
 
                     <strong>
-                        {{ first.maximum_leave }}
-                        days
+                        {{ first.maximum_leave_display }}
                     </strong>
 
                 </div>
@@ -441,35 +440,32 @@
 
             {% if first.status == "safe" %}
 
+            <p>
 
-                <p>
+                You can safely take up to
 
-                    You can safely take up to
+                <strong>
+                    {{ first.maximum_leave_display }}
+                </strong>
 
-                    <strong>
-                        {{ first.maximum_leave }}
-                        day(s)
-                    </strong>
+                before this sessional.
 
-                    before this sessional.
-
-                </p>
+            </p>
 
 
             {% elif first.status == "recovery" %}
 
+            <p>
 
-                <p>
+                Additional leave is currently
 
-                    Additional leave is currently
+                <strong>
+                    0 days
+                </strong>
 
-                    <strong>
-                        0 days
-                    </strong>
+                until your attendance recovers.
 
-                    until your attendance recovers.
-
-                </p>
+            </p>
 
 
             {% endif %}
@@ -489,7 +485,7 @@
 
 
             <h3>
-                How many days will you take?
+                How much leave will you take?
             </h3>
 
 
@@ -502,17 +498,59 @@
 
             <form
                 action="/sessional-1"
-                method="POST">
+                method="POST"
+                data-maximum-classes="{{ first.maximum_leave_classes }}"
+                onsubmit="normalizeLeaveInputs(this)">
+
+                <div class="leave-inputs">
+
+                    <div>
+
+                        <label for="leave_1_days">
+                            Days
+                        </label>
+
+                        <input
+                            type="number"
+                            id="leave_1_days"
+                            name="leave_1_days"
+                            min="0"
+                            value="0"
+                            required
+                        >
+
+                    </div>
 
 
-                <input
-                    type="number"
-                    name="leave_1"
-                    min="0"
-                    max="{{ first.maximum_leave }}"
-                    value="0"
-                    required
-                >
+                    <div>
+
+                        <label for="leave_1_classes">
+                            Classes
+                        </label>
+
+                        <input
+                            type="number"
+                            id="leave_1_classes"
+                            name="leave_1_classes"
+                            min="0"
+                            value="0"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <p class="leave-preview">
+
+                    Total leave:
+
+                    <strong id="leave_1_preview">
+                        0 class(es)
+                    </strong>
+
+                </p>
 
 
                 <button
@@ -522,7 +560,6 @@
                     Continue to Second Sessional
 
                 </button>
-
 
             </form>
 
@@ -575,8 +612,7 @@
                 You selected:
 
                 <strong>
-                    {{ first.requested_leave }}
-                    day(s)
+                    {{ first.requested_leave_display }}
                 </strong>
 
             </p>
@@ -604,6 +640,18 @@
                 </strong>
 
             </p>
+
+
+            <p>
+
+                Remaining safe leave:
+
+                <strong>
+                    {{ first.remaining_safe_leave_display }}
+                </strong>
+
+            </p>
+
 
         </div>
 
@@ -749,8 +797,7 @@
                     </span>
 
                     <strong>
-                        {{ second.maximum_leave }}
-                        days
+                        {{ second.maximum_leave_display }}
                     </strong>
 
                 </div>
@@ -767,8 +814,7 @@
                 you can safely take up to
 
                 <strong>
-                    {{ second.maximum_leave }}
-                    day(s)
+                    {{ second.maximum_leave_display }}
                 </strong>
 
                 before this sessional.
@@ -782,23 +828,66 @@
 
 
             <h3>
-                How many days will you take?
+                How much leave will you take?
             </h3>
 
 
             <form
                 action="/sessional-2"
-                method="POST">
+                method="POST"
+                data-maximum-classes="{{ second.maximum_leave_classes }}"
+                onsubmit="normalizeLeaveInputs(this)">
 
 
-                <input
-                    type="number"
-                    name="leave_2"
-                    min="0"
-                    max="{{ second.maximum_leave }}"
-                    value="0"
-                    required
-                >
+                <div class="leave-inputs">
+
+                    <div>
+
+                        <label for="leave_2_days">
+                            Days
+                        </label>
+
+                        <input
+                            type="number"
+                            id="leave_2_days"
+                            name="leave_2_days"
+                            min="0"
+                            value="0"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div>
+
+                        <label for="leave_2_classes">
+                            Classes
+                        </label>
+
+                        <input
+                            type="number"
+                            id="leave_2_classes"
+                            name="leave_2_classes"
+                            min="0"
+                            value="0"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <p class="leave-preview">
+
+                    Total leave:
+
+                    <strong id="leave_2_preview">
+                        0 class(es)
+                    </strong>
+
+                </p>
 
 
                 <button
@@ -862,8 +951,7 @@
                 First Sessional:
 
                 <strong>
-                    {{ first.requested_leave }}
-                    day(s)
+                    {{ first.requested_leave_display }}
                 </strong>
 
             </p>
@@ -874,8 +962,7 @@
                 Second Sessional:
 
                 <strong>
-                    {{ second.requested_leave }}
-                    day(s)
+                    {{ second.requested_leave_display }}
                 </strong>
 
             </p>
@@ -890,6 +977,7 @@
                 </strong>
 
             </p>
+
 
         </div>
 
@@ -1035,8 +1123,7 @@
                     </span>
 
                     <strong>
-                        {{ third.maximum_leave }}
-                        days
+                        {{ third.maximum_leave_display }}
                     </strong>
 
                 </div>
@@ -1053,8 +1140,7 @@
                 you can safely take up to
 
                 <strong>
-                    {{ third.maximum_leave }}
-                    day(s)
+                    {{ third.maximum_leave_display }}
                 </strong>
 
                 before this sessional.
@@ -1068,23 +1154,66 @@
 
 
             <h3>
-                How many days will you take?
+                How much leave will you take?
             </h3>
 
 
             <form
                 action="/sessional-3"
-                method="POST">
+                method="POST"
+                data-maximum-classes="{{ third.maximum_leave_classes }}"
+                onsubmit="normalizeLeaveInputs(this)">
 
 
-                <input
-                    type="number"
-                    name="leave_3"
-                    min="0"
-                    max="{{ third.maximum_leave }}"
-                    value="0"
-                    required
-                >
+                <div class="leave-inputs">
+
+                    <div>
+
+                        <label for="leave_3_days">
+                            Days
+                        </label>
+
+                        <input
+                            type="number"
+                            id="leave_3_days"
+                            name="leave_3_days"
+                            min="0"
+                            value="0"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div>
+
+                        <label for="leave_3_classes">
+                            Classes
+                        </label>
+
+                        <input
+                            type="number"
+                            id="leave_3_classes"
+                            name="leave_3_classes"
+                            min="0"
+                            value="0"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <p class="leave-preview">
+
+                    Total leave:
+
+                    <strong id="leave_3_preview">
+                        0 class(es)
+                    </strong>
+
+                </p>
 
 
                 <button
@@ -1146,8 +1275,7 @@
                 Leave taken:
 
                 <strong>
-                    {{ first.requested_leave }}
-                    day(s)
+                    {{ first.requested_leave_display }}
                 </strong>
 
             </p>
@@ -1178,8 +1306,7 @@
                 Leave taken:
 
                 <strong>
-                    {{ second.requested_leave }}
-                    day(s)
+                    {{ second.requested_leave_display }}
                 </strong>
 
             </p>
@@ -1191,6 +1318,17 @@
 
                 <strong>
                     {{ second.requested_projected_percentage }}%
+                </strong>
+
+            </p>
+
+
+            <p>
+
+                Remaining safe leave:
+
+                <strong>
+                    {{ second.remaining_safe_leave_display }}
                 </strong>
 
             </p>
@@ -1210,8 +1348,7 @@
                 Leave taken:
 
                 <strong>
-                    {{ third.requested_leave }}
-                    day(s)
+                    {{ third.requested_leave_display }}
                 </strong>
 
             </p>
@@ -1223,6 +1360,17 @@
 
                 <strong>
                     {{ third.requested_projected_percentage }}%
+                </strong>
+
+            </p>
+
+
+            <p>
+
+                Remaining safe leave:
+
+                <strong>
+                    {{ third.remaining_safe_leave_display }}
                 </strong>
 
             </p>
@@ -1410,6 +1558,269 @@
 
 <script>
 
+function updateLeavePreview(form) {
+
+    const daysInput =
+        form.querySelector(
+            'input[name$="_days"]'
+        );
+
+    const classesInput =
+        form.querySelector(
+            'input[name$="_classes"]'
+        );
+
+    const preview =
+        form.querySelector(
+            '.leave-preview strong'
+        );
+
+
+    if (
+        !daysInput ||
+        !classesInput ||
+        !preview
+    ) {
+        return;
+    }
+
+
+    const classesPerDay = 8;
+
+
+    let days =
+        Math.max(
+            0,
+            parseInt(
+                daysInput.value || "0",
+                10
+            ) || 0
+        );
+
+
+    let classes =
+        Math.max(
+            0,
+            parseInt(
+                classesInput.value || "0",
+                10
+            ) || 0
+        );
+
+
+    let totalClasses =
+        days * classesPerDay + classes;
+
+
+    /*
+     * Maximum safe leave for this
+     * checkpoint.
+     *
+     * This is stored in raw classes.
+     */
+    const maximumClasses =
+        parseInt(
+            form.dataset.maximumClasses || "0",
+            10
+        ) || 0;
+
+
+    /*
+     * Never allow the frontend preview
+     * to exceed the actual safe leave.
+     */
+    if (
+        maximumClasses > 0 &&
+        totalClasses > maximumClasses
+    ) {
+
+        totalClasses = maximumClasses;
+
+
+        days =
+            Math.floor(
+                totalClasses / classesPerDay
+            );
+
+
+        classes =
+            totalClasses % classesPerDay;
+
+
+        daysInput.value = days;
+
+        classesInput.value = classes;
+
+    }
+
+
+    const normalizedDays =
+        Math.floor(
+            totalClasses / classesPerDay
+        );
+
+
+    const remainingClasses =
+        totalClasses % classesPerDay;
+
+
+    if (normalizedDays === 0) {
+
+        preview.textContent =
+            `${remainingClasses} class(es)`;
+
+    }
+
+    else if (remainingClasses === 0) {
+
+        preview.textContent =
+            `${normalizedDays} day(s)`;
+
+    }
+
+    else {
+
+        preview.textContent =
+            `${normalizedDays} day(s) ${remainingClasses} class(es)`;
+
+    }
+
+}
+
+
+/*
+ * Normalize Days + Classes before
+ * submitting the form.
+ */
+function normalizeLeaveInputs(form) {
+
+    const daysInput =
+        form.querySelector(
+            'input[name$="_days"]'
+        );
+
+    const classesInput =
+        form.querySelector(
+            'input[name$="_classes"]'
+        );
+
+
+    if (
+        !daysInput ||
+        !classesInput
+    ) {
+        return true;
+    }
+
+
+    const classesPerDay = 8;
+
+
+    let days =
+        Math.max(
+            0,
+            parseInt(
+                daysInput.value || "0",
+                10
+            ) || 0
+        );
+
+
+    let classes =
+        Math.max(
+            0,
+            parseInt(
+                classesInput.value || "0",
+                10
+            ) || 0
+        );
+
+
+    let total =
+        days * classesPerDay + classes;
+
+
+    /*
+     * Apply the same maximum safe
+     * leave limit before submitting.
+     */
+    const maximumClasses =
+        parseInt(
+            form.dataset.maximumClasses || "0",
+            10
+        ) || 0;
+
+
+    if (
+        maximumClasses > 0 &&
+        total > maximumClasses
+    ) {
+        total = maximumClasses;
+    }
+
+
+    daysInput.value =
+        Math.floor(
+            total / classesPerDay
+        );
+
+
+    classesInput.value =
+        total % classesPerDay;
+
+
+    updateLeavePreview(form);
+
+
+    return true;
+
+}
+
+
+/*
+ * Update the preview whenever
+ * the user changes either input.
+ */
+document
+    .querySelectorAll(
+        'form[action^="/sessional-"]'
+    )
+    .forEach(
+        function(form) {
+
+            const inputs =
+                form.querySelectorAll(
+                    'input[type="number"]'
+                );
+
+
+            inputs.forEach(
+                function(input) {
+
+                    input.addEventListener(
+                        "input",
+                        function() {
+
+                            updateLeavePreview(
+                                form
+                            );
+
+                        }
+                    );
+
+                }
+            );
+
+
+            updateLeavePreview(form);
+
+        }
+    );
+
+
+/*
+ * Login loading screen.
+ */
 function showLoading() {
 
     const loginSection =

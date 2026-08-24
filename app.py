@@ -7,14 +7,13 @@ from portal import (
     PortalLoginError
 )
 
-from bunk_calculator import run_phase_1
+from bunk_calculator import run_phase_1, classes_to_leave_display, days_and_classes_to_classes
 
 
 app = Flask(__name__)
 
 # Required for Flask sessions.
 # Change this to a long random value before deploying publicly.
-
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
 if not SECRET_KEY:
@@ -24,6 +23,9 @@ if not SECRET_KEY:
     )
 
 app.secret_key = SECRET_KEY
+
+# Make the leave formatter available directly inside Jinja templates.
+app.jinja_env.globals["classes_to_leave_display"] = classes_to_leave_display
 
 
 # =========================================
@@ -88,6 +90,43 @@ def save_user_leaves(leaves):
     session["selected_leaves"] = leaves
 
     session.modified = True
+
+
+# =========================================
+# HELPER - PARSE DAYS + CLASSES LEAVE INPUT
+# =========================================
+
+def get_requested_leave_classes(form, step):
+    """
+    Read the two user-facing fields and convert them into
+    one raw class count. The calculator uses raw classes
+    internally, so values such as 1 day + 10 classes become
+    18 classes automatically.
+    """
+    days_raw = form.get(
+        f"leave_{step}_days",
+        0
+    )
+
+    classes_raw = form.get(
+        f"leave_{step}_classes",
+        0
+    )
+
+    try:
+        days = int(days_raw)
+    except (TypeError, ValueError):
+        days = 0
+
+    try:
+        classes = int(classes_raw)
+    except (TypeError, ValueError):
+        classes = 0
+
+    return days_and_classes_to_classes(
+        days,
+        classes
+    )
 
 
 # =========================================
@@ -452,7 +491,6 @@ def get_attendance_page():
     methods=["POST"]
 )
 def sessional_1():
-
     attendance_data = (
         get_user_attendance()
     )
@@ -461,47 +499,14 @@ def sessional_1():
         get_user_leaves()
     )
 
-
     # =====================================
     # CURRENT INPUT
-    #
-    # Supports the current backend format.
     # =====================================
 
-    raw_leave = request.form.get(
-        "leave_1_classes"
+    leave_classes = get_requested_leave_classes(
+        request.form,
+        1
     )
-
-
-    # Compatibility with the old form.
-
-    if raw_leave is None:
-
-        raw_leave = request.form.get(
-            "leave_1",
-            0
-        )
-
-
-    try:
-
-        leave_classes = int(
-            raw_leave
-        )
-
-    except (
-        TypeError,
-        ValueError
-    ):
-
-        leave_classes = 0
-
-
-    leave_classes = max(
-        0,
-        leave_classes
-    )
-
 
     # =====================================
     # SAVE FOR THIS USER ONLY
@@ -511,59 +516,41 @@ def sessional_1():
         "2026-08-29"
     ] = leave_classes
 
-
     save_user_leaves(
         selected_leaves
     )
 
-
     print()
-
     print(
         "First Sessional:",
         leave_classes,
         "classes"
     )
 
-
     # =====================================
     # RECALCULATE
     # =====================================
 
     phase_1_result = run_phase_1(
-
         attendance_data,
-
         CHECKPOINT_CHOICES,
-
         selected_leaves
     )
 
-
     return render_template(
-
         "dashboard.html",
-
         attendance=attendance_data,
-
         phase_1=phase_1_result,
-
         calculator_step=2,
-
         portal_error=None
     )
 
-
-# =========================================
-# SESSIONAL 2
-# =========================================
 
 @app.route(
     "/sessional-2",
     methods=["POST"]
 )
 def sessional_2():
-
     attendance_data = (
         get_user_attendance()
     )
@@ -572,105 +559,58 @@ def sessional_2():
         get_user_leaves()
     )
 
-
     # =====================================
     # CURRENT INPUT
     # =====================================
 
-    raw_leave = request.form.get(
-        "leave_2_classes"
+    leave_classes = get_requested_leave_classes(
+        request.form,
+        2
     )
-
-
-    if raw_leave is None:
-
-        raw_leave = request.form.get(
-            "leave_2",
-            0
-        )
-
-
-    try:
-
-        leave_classes = int(
-            raw_leave
-        )
-
-    except (
-        TypeError,
-        ValueError
-    ):
-
-        leave_classes = 0
-
-
-    leave_classes = max(
-        0,
-        leave_classes
-    )
-
 
     # =====================================
-    # SAVE FOR THIS USER
+    # SAVE FOR THIS USER ONLY
     # =====================================
 
     selected_leaves[
         "2026-10-10"
     ] = leave_classes
 
-
     save_user_leaves(
         selected_leaves
     )
 
-
     print()
-
     print(
         "Second Sessional:",
         leave_classes,
         "classes"
     )
 
-
     # =====================================
     # RECALCULATE
     # =====================================
 
     phase_1_result = run_phase_1(
-
         attendance_data,
-
         CHECKPOINT_CHOICES,
-
         selected_leaves
     )
 
-
     return render_template(
-
         "dashboard.html",
-
         attendance=attendance_data,
-
         phase_1=phase_1_result,
-
         calculator_step=3,
-
         portal_error=None
     )
 
-
-# =========================================
-# SESSIONAL 3
-# =========================================
 
 @app.route(
     "/sessional-3",
     methods=["POST"]
 )
 def sessional_3():
-
     attendance_data = (
         get_user_attendance()
     )
@@ -679,91 +619,49 @@ def sessional_3():
         get_user_leaves()
     )
 
-
     # =====================================
     # CURRENT INPUT
     # =====================================
 
-    raw_leave = request.form.get(
-        "leave_3_classes"
+    leave_classes = get_requested_leave_classes(
+        request.form,
+        3
     )
-
-
-    if raw_leave is None:
-
-        raw_leave = request.form.get(
-            "leave_3",
-            0
-        )
-
-
-    try:
-
-        leave_classes = int(
-            raw_leave
-        )
-
-    except (
-        TypeError,
-        ValueError
-    ):
-
-        leave_classes = 0
-
-
-    leave_classes = max(
-        0,
-        leave_classes
-    )
-
 
     # =====================================
-    # SAVE FOR THIS USER
+    # SAVE FOR THIS USER ONLY
     # =====================================
 
     selected_leaves[
         "2026-11-16"
     ] = leave_classes
 
-
     save_user_leaves(
         selected_leaves
     )
 
-
     print()
-
     print(
         "Third Sessional:",
         leave_classes,
         "classes"
     )
 
-
     # =====================================
-    # FINAL CALCULATION
+    # RECALCULATE
     # =====================================
 
     phase_1_result = run_phase_1(
-
         attendance_data,
-
         CHECKPOINT_CHOICES,
-
         selected_leaves
     )
 
-
     return render_template(
-
         "dashboard.html",
-
         attendance=attendance_data,
-
         phase_1=phase_1_result,
-
         calculator_step=4,
-
         portal_error=None
     )
 
