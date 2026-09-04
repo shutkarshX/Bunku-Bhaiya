@@ -761,3 +761,285 @@ tbody tr:hover {
     }
 
 }
+
+
+/* =========================================
+   PHONE FRIENDLY OVERRIDES
+   ========================================= */
+
+html,
+body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+@media (max-width: 600px) {
+
+    .container {
+        width: calc(100% - 20px);
+        margin: 12px auto 28px;
+    }
+
+    header {
+        padding: 18px;
+        margin-bottom: 14px;
+        border-radius: 12px;
+    }
+
+    header h1 {
+        font-size: 24px;
+    }
+
+    header p {
+        font-size: 14px;
+    }
+
+    .summary {
+        padding: 16px;
+        margin-bottom: 14px;
+        border-radius: 12px;
+    }
+
+    .summary h2 {
+        font-size: 20px;
+    }
+
+    .summary h3 {
+        font-size: 18px;
+    }
+
+    .summary p {
+        font-size: 14px;
+    }
+
+    .stats {
+        gap: 8px;
+        margin-top: 14px;
+    }
+
+    .stat-card {
+        min-height: 76px;
+        padding: 13px;
+        border-radius: 10px;
+    }
+
+    .stat-card span {
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .stat-card strong {
+        font-size: 21px;
+    }
+
+    .bunk-results {
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+
+    .bunk-card {
+        padding: 16px;
+        border-radius: 12px;
+    }
+
+    .bunk-card h3 {
+        font-size: 19px;
+    }
+
+    .bunk-card p {
+        font-size: 14px;
+    }
+
+    .bunk-card > .summary {
+        margin: 14px 0;
+        padding: 13px;
+        border-radius: 10px;
+    }
+
+    .attendance-flow {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        margin: 14px 0;
+    }
+
+    .flow-card {
+        padding: 13px;
+        border-radius: 10px;
+    }
+
+    .flow-card strong {
+        font-size: 22px;
+    }
+
+    .flow-arrow {
+        font-size: 22px;
+        line-height: 1;
+    }
+
+    .safe-leave-box,
+    .projection-box {
+        padding: 14px;
+        border-radius: 10px;
+    }
+
+    .safe-leave-box strong {
+        font-size: 22px;
+    }
+
+    .projection-box strong {
+        font-size: 18px;
+        overflow-wrap: anywhere;
+    }
+
+    .leave-inputs {
+        width: 100%;
+        max-width: none;
+        gap: 8px;
+    }
+
+    .leave-inputs input {
+        padding: 12px;
+        min-height: 44px;
+    }
+
+    .leave-inputs label {
+        font-size: 13px;
+    }
+
+    .attendance-button {
+        width: 100%;
+        min-height: 44px;
+        padding: 11px 14px;
+        font-size: 14px;
+    }
+
+    form {
+        width: 100%;
+        max-width: none;
+    }
+
+    form input,
+    form select {
+        max-width: 100%;
+        font-size: 16px;
+    }
+
+    .login-methods {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .email-input-row {
+        max-width: 100%;
+    }
+
+    .email-domain {
+        font-size: 13px;
+    }
+
+    .carried-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .carried-grid > div {
+        padding: 12px;
+    }
+
+    .plan-attendance {
+        padding: 13px;
+    }
+
+    .plan-attendance strong {
+        font-size: 22px;
+        overflow-wrap: anywhere;
+    }
+
+    .final-result > strong {
+        font-size: 38px;
+    }
+
+    .empty {
+        padding: 30px 16px;
+    }
+
+    .table-container {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 12px;
+    }
+
+    .table-container table {
+        min-width: 680px;
+    }
+
+    th,
+    td {
+        padding: 11px 10px;
+        white-space: nowrap;
+        font-size: 13px;
+    }
+
+    .loading-screen {
+        padding: 20px 14px;
+        min-height: 300px;
+        border-radius: 12px;
+    }
+
+    .loading-screen video {
+        width: min(100%, 360px);
+        height: auto;
+        max-height: 230px;
+    }
+
+    .loading-copy h2 {
+        font-size: 20px;
+    }
+
+    .loading-copy p {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 380px) {
+
+    .container {
+        width: calc(100% - 14px);
+    }
+
+    header {
+        padding: 15px;
+    }
+
+    header h1 {
+        font-size: 22px;
+    }
+
+    .summary,
+    .bunk-card {
+        padding: 13px;
+    }
+
+    .stats {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .stat-card {
+        padding: 11px;
+    }
+
+    .stat-card strong {
+        font-size: 19px;
+    }
+
+    .leave-inputs {
+        grid-template-columns: 1fr;
+    }
+
+    .final-result > strong {
+        font-size: 34px;
+    }
+}
