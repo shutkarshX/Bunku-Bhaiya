@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<html lang="en">
 
 <head>
 
@@ -751,8 +752,7 @@
                 <h3>🟢 Attendance is Safe</h3>
 
                 <p>
-                    You are currently above the
-                    75% attendance requirement.
+                    You are above the 75% requirement.
                 </p>
 
             </div>
@@ -764,12 +764,11 @@
                 <h3>🟡 Attendance Recovery Needed</h3>
 
                 <p>
-                    Your attendance is currently
-                    below 75%.
+                    Your attendance is below 75%.
                 </p>
 
                 <p>
-                    You need to attend approximately
+                    You need to attend
                     <strong>
                         {{ second.classes_needed_for_75 }}
                     </strong>
@@ -785,13 +784,12 @@
                 <h3>🔴 75% Not Reachable</h3>
 
                 <p>
-                    Even if you attend every remaining
-                    class before this checkpoint, 75%
-                    cannot be reached.
+                    Even attending every remaining
+                    class cannot reach 75% by this checkpoint.
                 </p>
 
                 <p>
-                    Maximum possible attendance:
+                    Maximum possible:
                     <strong>
                         {{ second.maximum_possible_percentage }}%
                     </strong>
@@ -802,7 +800,7 @@
             {% endif %}
 
 
-            <!-- STARTING ATTENDANCE -->
+            <!-- FLOW -->
 
             <div class="attendance-flow">
 
@@ -843,8 +841,6 @@
             </div>
 
 
-            <!-- SAFE LEAVE -->
-
             <div class="safe-leave-box">
 
                 <span>Maximum Safe Leave</span>
@@ -854,8 +850,8 @@
                 </strong>
 
                 <p>
-                    This is the maximum you can miss
-                    while staying at or above 75%.
+                    Based on your current projected
+                    attendance.
                 </p>
 
             </div>
@@ -864,14 +860,12 @@
             <hr>
 
 
-            <!-- USER CHOICE -->
-
             <h3>
                 How much leave will you take?
             </h3>
 
             <p>
-                Enter the leave you actually plan to take.
+                Choose your actual leave for this period.
             </p>
 
 
@@ -934,8 +928,6 @@
                 </p>
 
 
-                <!-- LIVE PROJECTION -->
-
                 <div class="projection-box">
 
                     <span>
@@ -989,10 +981,22 @@
 
         <h2>Third Sessional</h2>
 
+        {% if second.state == "completed" %}
+
         <p>
-            Here is your attendance plan through
-            the final checkpoint.
+            The Second Sessional has already passed.
+            Your current attendance from the college
+            portal will be used for this calculation.
         </p>
+
+        {% else %}
+
+        <p>
+            Your Second Sessional expected attendance
+            has been carried forward to this checkpoint.
+        </p>
+
+        {% endif %}
 
         <p>
             <strong>Step 3 of 3</strong>
@@ -1003,6 +1007,85 @@
 
 
     <div class="bunk-results">
+
+
+        <!-- SECOND SESSIONAL / STARTING ATTENDANCE -->
+
+        <div class="bunk-card carried-forward">
+
+            {% if second.state == "completed" %}
+
+            <h3>
+                Second Sessional
+            </h3>
+
+            <p>
+                <strong>✅ Completed</strong>
+            </p>
+
+            <p>
+                The Second Sessional has already passed.
+                BunkMaster does not know your exact
+                attendance at that checkpoint because
+                you did not make a plan for it.
+            </p>
+
+            <p class="carry-message">
+                Your current attendance from the college
+                portal is being used as the starting
+                attendance for the Third Sessional.
+            </p>
+
+            {% else %}
+
+            <h3>
+                Second Sessional — Expected Attendance
+            </h3>
+
+            <p>
+                Based on your selected leave, your
+                attendance at the Second Sessional will be:
+            </p>
+
+            <div class="carried-grid">
+
+                <div>
+                    <span>Leave You Selected</span>
+                    <strong>
+                        {{ second.requested_leave_display }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Attendance at Second Sessional</span>
+                    <strong>
+                        {{ second.requested_projected_attended }}
+                        /
+                        {{ second.requested_projected_total }}
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Expected Percentage</span>
+                    <strong>
+                        {{ second.requested_projected_percentage }}%
+                    </strong>
+                </div>
+
+            </div>
+
+            <p class="carry-message">
+                This expected attendance will become
+                your starting attendance for the
+                Third Sessional.
+            </p>
+
+            {% endif %}
+
+        </div>
+
+
+        <!-- THIRD -->
 
         <div class="bunk-card">
 
@@ -1021,8 +1104,7 @@
                 <h3>🟢 Attendance is Safe</h3>
 
                 <p>
-                    You are currently above the
-                    75% attendance requirement.
+                    You are above the 75% requirement.
                 </p>
 
             </div>
@@ -1034,12 +1116,11 @@
                 <h3>🟡 Attendance Recovery Needed</h3>
 
                 <p>
-                    Your attendance is currently
-                    below 75%.
+                    Your attendance is below 75%.
                 </p>
 
                 <p>
-                    You need to attend approximately
+                    You need to attend
                     <strong>
                         {{ third.classes_needed_for_75 }}
                     </strong>
@@ -1055,13 +1136,12 @@
                 <h3>🔴 75% Not Reachable</h3>
 
                 <p>
-                    Even if you attend every remaining
-                    class before this checkpoint, 75%
-                    cannot be reached.
+                    Even attending every remaining
+                    class cannot reach 75%.
                 </p>
 
                 <p>
-                    Maximum possible attendance:
+                    Maximum possible:
                     <strong>
                         {{ third.maximum_possible_percentage }}%
                     </strong>
@@ -1071,8 +1151,6 @@
 
             {% endif %}
 
-
-            <!-- STARTING ATTENDANCE -->
 
             <div class="attendance-flow">
 
@@ -1113,8 +1191,6 @@
             </div>
 
 
-            <!-- SAFE LEAVE -->
-
             <div class="safe-leave-box">
 
                 <span>Maximum Safe Leave</span>
@@ -1124,8 +1200,8 @@
                 </strong>
 
                 <p>
-                    This is the maximum you can miss
-                    while staying at or above 75%.
+                    Based on your current projected
+                    attendance.
                 </p>
 
             </div>
@@ -1134,14 +1210,12 @@
             <hr>
 
 
-            <!-- USER CHOICE -->
-
             <h3>
                 How much leave will you take?
             </h3>
 
             <p>
-                Enter the leave you actually plan to take.
+                Choose your actual leave for this period.
             </p>
 
 
@@ -1204,12 +1278,10 @@
                 </p>
 
 
-                <!-- LIVE PROJECTION -->
-
                 <div class="projection-box">
 
                     <span>
-                        At the checkpoint
+                        At the final checkpoint
                     </span>
 
                     <strong id="projection_3">
@@ -1220,8 +1292,8 @@
                     </strong>
 
                     <p>
-                        This is your projected attendance
-                        at the Third Sessional.
+                        This will be your final projected
+                        attendance for the current plan.
                     </p>
 
                 </div>
@@ -1231,7 +1303,7 @@
                     type="submit"
                     class="attendance-button">
 
-                    Finish Attendance Plan
+                    Finish Bunk Calculation
 
                 </button>
 
@@ -1245,45 +1317,181 @@
 
 
     <!-- ================================= -->
-    <!-- SEMESTER COMPLETE -->
+    <!-- FINAL RESULT -->
     <!-- ================================= -->
 
     {% if calculator_step == 4 and phase_1 %}
 
+    {% set first = phase_1.checkpoints[0] %}
+    {% set second = phase_1.checkpoints[1] %}
+    {% set third = phase_1.checkpoints[2] %}
+
+
     <div class="summary">
 
-        <h2>Semester Attendance Plan</h2>
+        <h2>Your Final Bunk Plan</h2>
 
         <p>
-            All three sessional checkpoints have
-            passed or been completed.
+            Here is your complete attendance plan
+            based on the choices you made.
         </p>
 
     </div>
 
-    {% for checkpoint in phase_1.checkpoints %}
 
     <div class="bunk-results">
 
-        <div class="bunk-card">
 
-            <h3>{{ checkpoint.name }}</h3>
+        <!-- FIRST -->
+
+        <div class="bunk-card plan-card">
+
+            <span class="plan-step">
+                CHECKPOINT 1
+            </span>
+
+            <h3>First Sessional</h3>
 
             <p>
-                Checkpoint:
-                <strong>{{ checkpoint.date }}</strong>
+                Leave taken:
+                <strong>
+                    {{ first.requested_leave_display }}
+                </strong>
             </p>
 
-            {% if checkpoint.state == "completed" %}
+            <div class="plan-attendance">
 
-            <div class="summary">
+                <span>Attendance after checkpoint</span>
 
-                <h3>✅ Completed</h3>
+                <strong>
+                    {{ first.requested_projected_attended }}
+                    /
+                    {{ first.requested_projected_total }}
+                </strong>
 
-                <p>
-                    This checkpoint has already passed.
-                </p>
+                <small>
+                    {{ first.requested_projected_percentage }}%
+                </small>
 
+            </div>
+
+        </div>
+
+
+        <!-- SECOND -->
+
+        <div class="bunk-card plan-card">
+
+            <span class="plan-step">
+                CHECKPOINT 2
+            </span>
+
+            <h3>Second Sessional</h3>
+
+            <p>
+                Leave taken:
+                <strong>
+                    {{ second.requested_leave_display }}
+                </strong>
+            </p>
+
+            <div class="plan-attendance">
+
+                <span>Attendance after checkpoint</span>
+
+                <strong>
+                    {{ second.requested_projected_attended }}
+                    /
+                    {{ second.requested_projected_total }}
+                </strong>
+
+                <small>
+                    {{ second.requested_projected_percentage }}%
+                </small>
+
+            </div>
+
+            <p>
+                Remaining safe leave:
+                <strong>
+                    {{ second.remaining_safe_leave_display }}
+                </strong>
+            </p>
+
+        </div>
+
+
+        <!-- THIRD -->
+
+        <div class="bunk-card plan-card">
+
+            <span class="plan-step">
+                CHECKPOINT 3
+            </span>
+
+            <h3>Third Sessional</h3>
+
+            <p>
+                Leave taken:
+                <strong>
+                    {{ third.requested_leave_display }}
+                </strong>
+            </p>
+
+            <div class="plan-attendance">
+
+                <span>Final checkpoint attendance</span>
+
+                <strong>
+                    {{ third.requested_projected_attended }}
+                    /
+                    {{ third.requested_projected_total }}
+                </strong>
+
+                <small>
+                    {{ third.requested_projected_percentage }}%
+                </small>
+
+            </div>
+
+            <p>
+                Remaining safe leave:
+                <strong>
+                    {{ third.remaining_safe_leave_display }}
+                </strong>
+            </p>
+
+        </div>
+
+
+        <!-- FINAL -->
+
+        <div class="bunk-card final-result">
+
+            <span>FINAL PROJECTED ATTENDANCE</span>
+
+            <strong>
+                {{ third.requested_projected_percentage }}%
+            </strong>
+
+            <p>
+                {{ third.requested_projected_attended }}
+                /
+                {{ third.requested_projected_total }}
+                classes
+            </p>
+
+
+            {% if third.requested_projected_percentage >= 75 %}
+
+            <div class="final-status safe">
+                ✅ Your plan maintains at least 75% attendance.
+            </div>
+
+            {% else %}
+
+            <div class="final-status danger">
+                ⚠️ Your plan falls below the 75% requirement.
             </div>
 
             {% endif %}
@@ -1291,8 +1499,6 @@
         </div>
 
     </div>
-
-    {% endfor %}
 
     {% endif %}
 
@@ -1337,12 +1543,7 @@
 
             {% for subject in attendance.subjects %}
 
-                <tr
-                    class="subject-attendance-row"
-                    data-subject-index="{{ loop.index0 }}"
-                    onclick="showSubjectAttendance({{ loop.index0 }})"
-                    style="cursor:pointer;"
-                >
+                <tr>
 
                     <td>
                         {{ subject.get(
@@ -1411,130 +1612,41 @@
     </div>
 
 
-    <!-- ================================= -->
-    <!-- SELECTED SUBJECT ATTENDANCE DETAILS -->
-    <!-- ================================= -->
-
-    <div id="subject-attendance-details" style="display:none; margin-top:32px;">
-
-        {% for detail in attendance.subject_details %}
-
-        <div
-            class="subject-detail-panel"
-            data-subject-detail="{{ loop.index0 }}"
-            style="display:none;"
-        >
-
-            <div class="summary" style="margin-bottom:16px;">
-
-                <h2>Attendance Details of {{ detail.subject_name }}</h2>
-
-            </div>
-
-            {% if detail.records %}
-
-            <div class="table-container">
-
-                <table>
-
-                    <thead>
-                        <tr>
-                            <th>Sr. No.</th>
-                            <th>Date</th>
-                            <th>Lecture Time</th>
-                            <th>Session</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        {% for record in detail.records %}
-                        <tr>
-                            <td>{{ loop.index }}</td>
-                            <td>{{ record.get("Date", "") }}</td>
-                            <td>
-                                {{ record.get("stime", "") }}
-                                -
-                                {{ record.get("etime", "") }}
-                            </td>
-                            <td>{{ record.get("sessionNo", "") }}</td>
-                            <td>{{ record.get("presenty", "") }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-
-                </table>
-
-            </div>
-
-            {% else %}
-
-            <p>No attendance details were returned for this subject.</p>
-
-            {% endif %}
-
-        </div>
-
-        {% endfor %}
-
-    </div>
-
-
     {% endif %}
 
 </div>
 
 
 <!-- ================================= -->
+<!-- ================================= -->
+<!-- PORTAL ATTENDANCE DETAILS -->
+<!-- ================================= -->
+
+{% if attendance.subject_details %}
+<section style="margin-top:32px;">
+    <h2>Attendance Details</h2>
+    {% for detail in attendance.subject_details %}
+    <details style="margin-bottom:16px;">
+        <summary style="cursor:pointer; font-weight:700; padding:14px 0;">Attendance Details of {{ detail.subject_name }}</summary>
+        {% if detail.records %}
+        <div class="table-container">
+            <table>
+                <thead><tr>{% for key in detail.columns %}<th>{{ key }}</th>{% endfor %}</tr></thead>
+                <tbody>
+                {% for record in detail.records %}<tr>{% for key in detail.columns %}<td>{{ record.get(key, "") }}</td>{% endfor %}</tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}<p>No attendance details were returned for this subject.</p>{% endif %}
+    </details>
+    {% endfor %}
+</section>
+{% endif %}
+
 <!-- JAVASCRIPT -->
 <!-- ================================= -->
 
 <script>
-
-
-/* =========================================
-   SUBJECT ATTENDANCE DETAILS
-   ========================================= */
-
-function showSubjectAttendance(index) {
-
-    const container =
-        document.getElementById("subject-attendance-details");
-
-    if (!container) {
-        return;
-    }
-
-    const panels =
-        container.querySelectorAll("[data-subject-detail]");
-
-    let selectedPanel = null;
-
-    panels.forEach(function(panel) {
-
-        const selected =
-            panel.dataset.subjectDetail === String(index);
-
-        panel.style.display = selected ? "block" : "none";
-
-        if (selected) {
-            selectedPanel = panel;
-        }
-
-    });
-
-    if (!selectedPanel) {
-        container.style.display = "none";
-        return;
-    }
-
-    container.style.display = "block";
-
-    container.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-    });
-}
 
 
 /* =========================================
@@ -1810,88 +1922,31 @@ function setLoginMethod(method) {
     }
 }
 
-
-/* =========================================
-   GENERATED USERNAME
-   ========================================= */
-
 function updateGeneratedUsername() {
 
-    const year =
-        document.getElementById("admission-year").value;
+    const year = document.getElementById("admission-year").value;
+    const branch = document.getElementById("branch").value.trim().toLowerCase();
+    const studentNumber = document.getElementById("student-number").value.replace(/\D/g, "").slice(0, 3);
 
-    const branch =
-        document.getElementById("branch").value.trim().toLowerCase();
+    document.getElementById("student-number").value = studentNumber;
 
-    const studentNumber =
-        document.getElementById("student-number").value.trim();
+    // 2023 -> 0241, 2024 -> 0251, 2025 -> 0261, 2026 -> 0271
+    const yearCode = "0" + String(Number(year) + 1).slice(-2) + "1";
 
-    const output =
-        document.getElementById("generated-username");
+    const generated = branch && studentNumber.length === 3
+        ? `${yearCode}${branch}${studentNumber}@niet.co.in`
+        : "—";
 
-    const hidden =
-        document.getElementById("generated-username-input");
-
-    if (!branch || !studentNumber) {
-
-        output.textContent = "—";
-        hidden.value = "";
-        return;
-    }
-
-    const yearCode =
-        "0" + String(Number(year) + 1).slice(-2) + "1";
-
-    const username =
-        `${yearCode}${branch}${studentNumber}@niet.co.in`;
-
-    output.textContent = username;
-    hidden.value = username;
+    document.getElementById("generated-username").textContent = generated;
+    document.getElementById("generated-username-input").value = generated === "—" ? "" : generated;
 }
-
-
-/* =========================================
-   MANUAL USERNAME
-   ========================================= */
 
 function updateManualUsername() {
-
-    const manualUsername =
-        document.getElementById("manual-username");
-
-    const hidden =
-        document.getElementById("manual-username-input");
-
-    if (!manualUsername || !hidden) {
-        return;
-    }
-
-    let value =
-        manualUsername.value.trim();
-
-    if (!value) {
-        hidden.value = "";
-        return;
-    }
-
-    if (value.toLowerCase().endsWith("@niet.co.in")) {
-        value = value.slice(
-            0,
-            -"@niet.co.in".length
-        );
-    }
-
-    hidden.value =
-        `${value}@niet.co.in`;
+    const localPart = document.getElementById("manual-username").value.trim().toLowerCase();
+    document.getElementById("manual-username-input").value = localPart ? `${localPart}@niet.co.in` : "";
 }
 
-
-/* =========================================
-   LOGIN INITIALIZATION
-   ========================================= */
-
 document.addEventListener("DOMContentLoaded", function () {
-
     const manualUsername =
         document.getElementById("manual-username");
 
@@ -1902,179 +1957,87 @@ document.addEventListener("DOMContentLoaded", function () {
         );
     }
 
-    const manualFields =
-        document.getElementById("manual-login-fields");
+    /*
+       IMPORTANT:
+       No login method is selected when the page opens.
+       Both Manual and Generate fields stay hidden until
+       the user explicitly clicks one of the two buttons.
+    */
+    document.getElementById("manual-login-fields").style.display = "none";
+    document.getElementById("generate-login-fields").style.display = "none";
 
-    const generateFields =
-        document.getElementById("generate-login-fields");
+    manualUsername.disabled = true;
+    manualUsername.required = false;
 
-    if (manualFields) {
-        manualFields.style.display = "none";
-    }
+    document.getElementById("manual-username-input").disabled = true;
+    document.getElementById("manual-username-input").required = false;
 
-    if (generateFields) {
-        generateFields.style.display = "none";
-    }
-
-    if (manualUsername) {
-        manualUsername.disabled = true;
-        manualUsername.required = false;
-    }
-
-    const manualInput =
-        document.getElementById("manual-username-input");
-
-    const generatedInput =
-        document.getElementById("generated-username-input");
-
-    if (manualInput) {
-        manualInput.disabled = true;
-        manualInput.required = false;
-    }
-
-    if (generatedInput) {
-        generatedInput.disabled = true;
-        generatedInput.required = false;
-    }
+    document.getElementById("generated-username-input").disabled = true;
+    document.getElementById("generated-username-input").required = false;
 });
 
 
-/* =========================================
-   LOGIN INITIALIZATION
-   ========================================= */
-
-document.addEventListener("DOMContentLoaded", function () {
-
-    const manualUsername =
-        document.getElementById("manual-username");
-
-    if (manualUsername) {
-        manualUsername.addEventListener(
-            "input",
-            updateManualUsername
-        );
-    }
-
-    const manualFields =
-        document.getElementById("manual-login-fields");
-
-    const generateFields =
-        document.getElementById("generate-login-fields");
-
-    if (manualFields) {
-        manualFields.style.display = "none";
-    }
-
-    if (generateFields) {
-        generateFields.style.display = "none";
-    }
-
-    if (manualUsername) {
-        manualUsername.disabled = true;
-        manualUsername.required = false;
-    }
-
-    const manualInput =
-        document.getElementById("manual-username-input");
-
-    const generatedInput =
-        document.getElementById("generated-username-input");
-
-    if (manualInput) {
-        manualInput.disabled = true;
-        manualInput.required = false;
-    }
-
-    if (generatedInput) {
-        generatedInput.disabled = true;
-        generatedInput.required = false;
-    }
-});
-
 
 /* =========================================
-   LOGIN INITIALIZATION
-   ========================================= */
-
-document.addEventListener("DOMContentLoaded", function () {
-
-    const manualUsername =
-        document.getElementById("manual-username");
-
-    if (manualUsername) {
-        manualUsername.addEventListener(
-            "input",
-            updateManualUsername
-        );
-    }
-
-    const manualFields =
-        document.getElementById("manual-login-fields");
-
-    const generateFields =
-        document.getElementById("generate-login-fields");
-
-    if (manualFields) {
-        manualFields.style.display = "none";
-    }
-
-    if (generateFields) {
-        generateFields.style.display = "none";
-    }
-
-    if (manualUsername) {
-        manualUsername.disabled = true;
-        manualUsername.required = false;
-    }
-
-    const manualInput =
-        document.getElementById("manual-username-input");
-
-    const generatedInput =
-        document.getElementById("generated-username-input");
-
-    if (manualInput) {
-        manualInput.disabled = true;
-        manualInput.required = false;
-    }
-
-    if (generatedInput) {
-        generatedInput.disabled = true;
-        generatedInput.required = false;
-    }
-});
-
-
-/* =========================================
-   LOADING
+   LOGIN LOADING
    ========================================= */
 
 function showLoading() {
 
     const loginSection =
-        document.getElementById("login-section");
-
-    const loadingScreen =
-        document.getElementById("loading-screen");
-
-    const video =
-        document.getElementById("loading-video");
+        document.getElementById(
+            "login-section"
+        );
 
     if (loginSection) {
-        loginSection.style.display = "none";
+
+        loginSection.style.display =
+            "none";
+
     }
+
+    const loadingScreen =
+        document.getElementById(
+            "loading-screen"
+        );
 
     if (loadingScreen) {
-        loadingScreen.style.display = "flex";
+
+        loadingScreen.style.display =
+            "block";
+
+        const video =
+            document.getElementById(
+                "loading-video"
+            );
+
+        if (video) {
+
+            video.currentTime = 5;
+
+            video.muted = false;
+
+            video.volume = 1.0;
+
+            video.play().catch(
+                function(error) {
+
+                    console.log(
+                        "Video playback:",
+                        error
+                    );
+
+                }
+            );
+
+        }
+
     }
 
-    if (video) {
-        video.play().catch(function() {});
-    }
 }
 
-
 </script>
+
 
 </body>
 
