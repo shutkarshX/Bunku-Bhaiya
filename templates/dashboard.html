@@ -250,25 +250,29 @@
 
     <style>
         .loading-screen {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 18px;
-            text-align: center;
-            padding: 30px 40px;
-            min-height: 380px;
+  display: none;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 18px;
+  text-align: center;
+  padding: 30px 40px;
+  min-height: 380px;
+  width: 100%;
+  box-sizing: border-box;
+
         }
 
         .loading-screen video {
-            flex: 0 0 320px;
-            width: 427px;
-            height: 320px;
-            max-width: 100%;
-            max-height: none;
-            margin: 0 auto;
-            border-radius: 0;
-            object-fit: cover;
+  display: block;
+  width: 427px;
+  height: 320px;
+  max-width: 100%;
+  max-height: 320px;
+  margin: 0 auto;
+  border-radius: 0;
+  object-fit: cover;
+
         }
 
         .loading-copy {
