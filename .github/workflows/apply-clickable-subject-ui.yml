@@ -1,0 +1,154 @@
+name: Apply clickable subject UI
+
+on:
+  push:
+    branches:
+      - ui-changes
+    paths:
+      - '.github/workflows/apply-clickable-subject-ui.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ui-changes
+
+      - name: Patch dashboard
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          path = Path('templates/dashboard.html')
+          text = path.read_text(encoding='utf-8')
+
+          old_rows = '''    {% for subject in attendance.subjects %}
+
+    <tr>'''
+          new_rows = '''    {% for subject in attendance.subjects %}
+
+    <tr
+        class="subject-attendance-row"
+        data-subject-index="{{ loop.index0 }}"
+        onclick="showSubjectAttendance({{ loop.index0 }})"
+        style="cursor:pointer;"
+    >'''
+
+          if old_rows not in text:
+              raise SystemExit('Subject row marker not found')
+          text = text.replace(old_rows, new_rows, 1)
+
+          start_marker = '''<!-- ================================= -->
+    <!-- ================================= -->
+    <!-- PORTAL ATTENDANCE DETAILS -->
+    <!-- ================================= -->'''
+          end_marker = '''<!-- JAVASCRIPT -->'''
+
+          start = text.find(start_marker)
+          end = text.find(end_marker, start)
+          if start == -1 or end == -1:
+              raise SystemExit('Subject details section markers not found')
+
+          replacement = '''<!-- ================================= -->
+    <!-- ================================= -->
+    <!-- PORTAL ATTENDANCE DETAILS -->
+    <!-- ================================= -->
+
+    {% if attendance.subject_details %}
+    <div id="subject-attendance-details" style="display:none; margin-top:32px;">
+        {% for detail in attendance.subject_details %}
+        <div
+            class="subject-detail-panel"
+            data-subject-detail="{{ loop.index0 }}"
+            style="display:none;"
+        >
+            <div class="summary" style="margin-bottom:16px;">
+                <h2>Attendance Details of {{ detail.subject_name }}</h2>
+            </div>
+
+            {% if detail.records %}
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Sr. No.</th>
+                            <th>Date</th>
+                            <th>Lecture Time</th>
+                            <th>Session</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for record in detail.records %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ record.get("Date", "") }}</td>
+                            <td>{{ record.get("stime", "") }} - {{ record.get("etime", "") }}</td>
+                            <td>{{ record.get("sessionNo", "") }}</td>
+                            <td>{{ record.get("presenty", "") }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p>No attendance details were returned for this subject.</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+'''
+          text = text[:start] + replacement + text[end:]
+
+          js_marker = '''<!-- JAVASCRIPT -->'''
+          js = '''<script>
+function showSubjectAttendance(index) {
+    const container = document.getElementById("subject-attendance-details");
+    if (!container) return;
+
+    const panels = container.querySelectorAll("[data-subject-detail]");
+    let selectedPanel = null;
+
+    panels.forEach(function(panel) {
+        const selected = panel.dataset.subjectDetail === String(index);
+        panel.style.display = selected ? "block" : "none";
+        if (selected) selectedPanel = panel;
+    });
+
+    if (!selectedPanel) {
+        container.style.display = "none";
+        return;
+    }
+
+    container.style.display = "block";
+    container.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+</script>
+
+'''
+
+          # Put the helper immediately before the existing JavaScript marker,
+          # while retaining all existing dashboard JavaScript unchanged.
+          text = text.replace(js_marker, js + js_marker, 1)
+          path.write_text(text, encoding='utf-8')
+
+      - name: Commit dashboard patch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add templates/dashboard.html
+          if git diff --cached --quiet; then
+            echo "Dashboard already patched"
+            exit 0
+          fi
+          git commit -m "Make subject attendance rows clickable"
+          git push origin ui-changes
