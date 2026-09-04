@@ -1,0 +1,192 @@
+name: Apply subject details
+
+on:
+  push:
+    branches:
+      - ui-changes
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout ui-changes
+        uses: actions/checkout@v4
+        with:
+          ref: ui-changes
+          fetch-depth: 0
+
+      - name: Patch app and dashboard
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          app = Path("app.py")
+          text = app.read_text(encoding="utf-8")
+
+          old_import = '''from portal import (
+              get_attendance,
+              PortalUnavailableError,
+              PortalLoginError
+          )'''
+          new_import = '''from portal import (
+              get_attendance,
+              get_subject_details,
+              PortalUnavailableError,
+              PortalLoginError
+          )'''
+
+          if "get_subject_details" not in text:
+              if old_import not in text:
+                  raise SystemExit("Could not find app.py portal import block")
+              text = text.replace(old_import, new_import, 1)
+
+          old_render = '''    return render_template(
+
+        "dashboard.html",
+
+        attendance=attendance_data,
+
+        phase_1=phase_1,
+
+        calculator_step=calculator_step,
+
+        portal_error=portal_error
+
+    )'''
+
+          new_render = '''    details_token = None
+
+    try:
+        if attendance_data.get("subjects"):
+            details_token = attendance_data["subjects"][0].get(
+                "_bunkmaster_subject_details_token"
+            )
+    except (AttributeError, IndexError, TypeError):
+        details_token = None
+
+    template_attendance = dict(attendance_data)
+    template_attendance["subject_details"] = get_subject_details(
+        details_token
+    )
+
+    return render_template(
+
+        "dashboard.html",
+
+        attendance=template_attendance,
+
+        phase_1=phase_1,
+
+        calculator_step=calculator_step,
+
+        portal_error=portal_error
+
+    )'''
+
+          if 'template_attendance["subject_details"]' not in text:
+              if old_render not in text:
+                  raise SystemExit("Could not find app.py render block")
+              text = text.replace(old_render, new_render, 1)
+
+          app.write_text(text, encoding="utf-8")
+
+          dashboard = Path("templates/dashboard.html")
+          html = dashboard.read_text(encoding="utf-8")
+
+          marker = "<!-- JAVASCRIPT -->"
+          if "PORTAL ATTENDANCE DETAILS" not in html:
+              position = html.find(marker)
+              if position == -1:
+                  raise SystemExit("Could not find dashboard JavaScript marker")
+
+              section = '''<!-- ================================= -->
+<!-- PORTAL ATTENDANCE DETAILS -->
+<!-- ================================= -->
+
+{% if attendance.subject_details %}
+
+<div class="summary" style="margin-top:32px;">
+
+    <h2>Attendance Details</h2>
+
+    <p>
+        Attendance details received directly from the college portal.
+    </p>
+
+</div>
+
+{% for detail in attendance.subject_details %}
+
+<details style="margin-bottom:16px;">
+
+    <summary style="cursor:pointer; font-weight:700; padding:14px 0;">
+        Attendance Details of {{ detail.subject_name }}
+    </summary>
+
+    {% if detail.records %}
+
+    <div class="table-container">
+
+        <table>
+
+            <thead>
+                <tr>
+                    {% for key in detail.columns %}
+                    <th>{{ key }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for record in detail.records %}
+                <tr>
+                    {% for key in detail.columns %}
+                    <td>{{ record.get(key, "") }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+
+    </div>
+
+    {% else %}
+    <p>No attendance details were returned for this subject.</p>
+    {% endif %}
+
+</details>
+
+{% endfor %}
+
+{% endif %}
+
+
+'''
+              html = html[:position] + section + html[position:]
+              dashboard.write_text(html, encoding="utf-8")
+          PY
+
+      - name: Commit generated changes
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py templates/dashboard.html
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Show raw subject attendance details"
+            git push origin ui-changes
+          fi
+
+      - name: Remove temporary workflow
+        shell: bash
+        run: |
+          git rm -f .github/workflows/apply-subject-details.yml
+          git commit -m "Remove temporary update workflow"
+          git push origin ui-changes
