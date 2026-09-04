@@ -25,23 +25,25 @@ jobs:
           path = Path('templates/dashboard.html')
           text = path.read_text(encoding='utf-8')
 
-          old = '''    {% for subject in attendance.subjects %}
-    <tr>'''
-          new = '''    {% for subject in attendance.subjects %}
-    <tr
-        class="subject-attendance-row"
-        data-subject-index="{{ loop.index0 }}"
-        onclick="showSubjectAttendance({{ loop.index0 }})"
-        style="cursor:pointer;"
-    >'''
+          old = '''            {% for subject in attendance.subjects %}
+
+                <tr>'''
+          new = '''            {% for subject in attendance.subjects %}
+
+                <tr
+                    class="subject-attendance-row"
+                    data-subject-index="{{ loop.index0 }}"
+                    onclick="showSubjectAttendance({{ loop.index0 }})"
+                    style="cursor:pointer;"
+                >'''
           if old not in text:
               raise SystemExit('subject row marker not found')
           text = text.replace(old, new, 1)
 
           start_marker = '''<!-- ================================= -->
-    <!-- ================================= -->
-    <!-- PORTAL ATTENDANCE DETAILS -->
-    <!-- ================================= -->'''
+<!-- ================================= -->
+<!-- PORTAL ATTENDANCE DETAILS -->
+<!-- ================================= -->'''
           end_marker = '<!-- JAVASCRIPT -->'
           start = text.find(start_marker)
           end = text.find(end_marker, start)
@@ -49,49 +51,49 @@ jobs:
               raise SystemExit('details markers not found')
 
           replacement = '''<!-- ================================= -->
-    <!-- ================================= -->
-    <!-- PORTAL ATTENDANCE DETAILS -->
-    <!-- ================================= -->
+<!-- ================================= -->
+<!-- PORTAL ATTENDANCE DETAILS -->
+<!-- ================================= -->
 
-    {% if attendance.subject_details %}
-    <div id="subject-attendance-details" style="display:none; margin-top:32px;">
-        {% for detail in attendance.subject_details %}
-        <div class="subject-detail-panel" data-subject-detail="{{ loop.index0 }}" style="display:none;">
-            <div class="summary" style="margin-bottom:16px;">
-                <h2>Attendance Details of {{ detail.subject_name }}</h2>
-            </div>
-            {% if detail.records %}
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Sr. No.</th>
-                            <th>Date</th>
-                            <th>Lecture Time</th>
-                            <th>Session</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% for record in detail.records %}
-                        <tr>
-                            <td>{{ loop.index }}</td>
-                            <td>{{ record.get("Date", "") }}</td>
-                            <td>{{ record.get("stime", "") }} - {{ record.get("etime", "") }}</td>
-                            <td>{{ record.get("sessionNo", "") }}</td>
-                            <td>{{ record.get("presenty", "") }}</td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <p>No attendance details were returned for this subject.</p>
-            {% endif %}
+{% if attendance.subject_details %}
+<div id="subject-attendance-details" style="display:none; margin-top:32px;">
+    {% for detail in attendance.subject_details %}
+    <div class="subject-detail-panel" data-subject-detail="{{ loop.index0 }}" style="display:none;">
+        <div class="summary" style="margin-bottom:16px;">
+            <h2>Attendance Details of {{ detail.subject_name }}</h2>
         </div>
-        {% endfor %}
+        {% if detail.records %}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Sr. No.</th>
+                        <th>Date</th>
+                        <th>Lecture Time</th>
+                        <th>Session</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for record in detail.records %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ record.get("Date", "") }}</td>
+                        <td>{{ record.get("stime", "") }} - {{ record.get("etime", "") }}</td>
+                        <td>{{ record.get("sessionNo", "") }}</td>
+                        <td>{{ record.get("presenty", "") }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>No attendance details were returned for this subject.</p>
+        {% endif %}
     </div>
-    {% endif %}
+    {% endfor %}
+</div>
+{% endif %}
 
 '''
           text = text[:start] + replacement + text[end:]
