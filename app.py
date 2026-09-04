@@ -9,6 +9,7 @@ from flask import (
 
 from portal import (
     get_attendance,
+    get_subject_details,
     PortalUnavailableError,
     PortalLoginError
 )
@@ -311,7 +312,7 @@ def render_dashboard(
 
         "dashboard.html",
 
-        attendance=attendance_data,
+        attendance=(lambda d: (d.update({"subject_details": get_subject_details((d.get("subjects") or [{}])[0].get("_bunkmaster_subject_details_token"))}), d)[1])(dict(attendance_data)),
 
         phase_1=phase_1,
 

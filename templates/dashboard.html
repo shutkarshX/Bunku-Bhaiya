@@ -1618,6 +1618,31 @@
 
 
 <!-- ================================= -->
+<!-- ================================= -->
+<!-- PORTAL ATTENDANCE DETAILS -->
+<!-- ================================= -->
+
+{% if attendance.subject_details %}
+<section style="margin-top:32px;">
+    <h2>Attendance Details</h2>
+    {% for detail in attendance.subject_details %}
+    <details style="margin-bottom:16px;">
+        <summary style="cursor:pointer; font-weight:700; padding:14px 0;">Attendance Details of {{ detail.subject_name }}</summary>
+        {% if detail.records %}
+        <div class="table-container">
+            <table>
+                <thead><tr>{% for key in detail.columns %}<th>{{ key }}</th>{% endfor %}</tr></thead>
+                <tbody>
+                {% for record in detail.records %}<tr>{% for key in detail.columns %}<td>{{ record.get(key, "") }}</td>{% endfor %}</tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}<p>No attendance details were returned for this subject.</p>{% endif %}
+    </details>
+    {% endfor %}
+</section>
+{% endif %}
+
 <!-- JAVASCRIPT -->
 <!-- ================================= -->
 
