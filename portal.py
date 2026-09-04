@@ -61,7 +61,14 @@ def _today_logged_classes(page, course_data):
                 params={"encoSubjectwiseStudentId": encrypted_id},
                 timeout=15000,
             )
-            response.raise_for_status()
+
+            # Playwright APIResponse exposes ok/status rather than
+            # requests.Response.raise_for_status().
+            if not response.ok:
+                raise RuntimeError(
+                    f"HTTP {response.status} while retrieving subject attendance"
+                )
+
             records = response.json()
 
             if not isinstance(records, list):
