@@ -22,33 +22,33 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
+          import re
+
           path = Path('templates/dashboard.html')
           text = path.read_text(encoding='utf-8')
 
-          old = '''            {% for subject in attendance.subjects %}
-
-                <tr>'''
-          new = '''            {% for subject in attendance.subjects %}
-
+          row_pattern = r'(?m)(^\s*\{\% for subject in attendance\.subjects \%\}\s*\n)\s*<tr>'
+          row_replacement = r'''\1
                 <tr
                     class="subject-attendance-row"
                     data-subject-index="{{ loop.index0 }}"
                     onclick="showSubjectAttendance({{ loop.index0 }})"
                     style="cursor:pointer;"
                 >'''
-          if old not in text:
+          text, row_count = re.subn(row_pattern, row_replacement, text, count=1)
+          if row_count != 1:
               raise SystemExit('subject row marker not found')
-          text = text.replace(old, new, 1)
 
-          start_marker = '''<!-- ================================= -->
-<!-- ================================= -->
-<!-- PORTAL ATTENDANCE DETAILS -->
-<!-- ================================= -->'''
+          start_marker = '<!-- PORTAL ATTENDANCE DETAILS -->'
           end_marker = '<!-- JAVASCRIPT -->'
           start = text.find(start_marker)
           end = text.find(end_marker, start)
           if start < 0 or end < 0:
               raise SystemExit('details markers not found')
+
+          section_start = text.rfind('<!-- ================================= -->', 0, start)
+          if section_start < 0:
+              section_start = start
 
           replacement = '''<!-- ================================= -->
 <!-- ================================= -->
@@ -96,9 +96,10 @@ jobs:
 {% endif %}
 
 '''
-          text = text[:start] + replacement + text[end:]
+          text = text[:section_start] + replacement + text[end:]
 
-          helper = '''<script>
+          if 'function showSubjectAttendance(index)' not in text:
+              helper = '''<script>
 function showSubjectAttendance(index) {
     const container = document.getElementById("subject-attendance-details");
     if (!container) return;
@@ -119,9 +120,18 @@ function showSubjectAttendance(index) {
 </script>
 
 '''
-          if 'function showSubjectAttendance(index)' not in text:
               text = text.replace(end_marker, helper + end_marker, 1)
+
           path.write_text(text, encoding='utf-8')
+
+      - name: Verify patch
+        run: |
+          grep -q 'onclick="showSubjectAttendance({{ loop.index0 }})"' templates/dashboard.html
+          grep -q '<th>Sr. No.</th>' templates/dashboard.html
+          grep -q '<th>Lecture Time</th>' templates/dashboard.html
+          grep -q '<th>Session</th>' templates/dashboard.html
+          grep -q '<th>Status</th>' templates/dashboard.html
+          grep -q 'function showSubjectAttendance(index)' templates/dashboard.html
 
       - name: Commit dashboard patch
         run: |
