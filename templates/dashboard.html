@@ -248,6 +248,60 @@
     <!-- LOADING -->
     <!-- ================================= -->
 
+    <style>
+        .loading-screen {
+            display: none;
+            align-items: center;
+            gap: 56px;
+            text-align: left;
+            padding: 30px 86px;
+            min-height: 380px;
+        }
+
+        .loading-screen video {
+            flex: 0 0 427px;
+            width: 427px;
+            height: 320px;
+            max-width: 100%;
+            max-height: none;
+            margin: 0;
+            border-radius: 0;
+            object-fit: cover;
+        }
+
+        .loading-copy {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .loading-copy h2 {
+            margin: 0 0 8px;
+            font-size: 24px;
+        }
+
+        .loading-copy p {
+            margin: 0;
+            color: #6b7280;
+            font-size: 16px;
+        }
+
+        @media (max-width: 800px) {
+            .loading-screen {
+                flex-direction: column;
+                gap: 20px;
+                padding: 24px;
+                text-align: center;
+            }
+
+            .loading-screen video {
+                flex-basis: auto;
+                width: 100%;
+                height: auto;
+                max-height: 320px;
+            }
+        }
+    </style>
+
     <div
         id="loading-screen"
         class="loading-screen">
@@ -266,11 +320,13 @@
 
         </video>
 
-        <h2>Getting your attendance...</h2>
+        <div class="loading-copy">
+            <h2>Getting your attendance...</h2>
 
-        <p>
-            BunkMaster is checking the college portal.
-        </p>
+            <p>
+                BunkMaster is checking the college portal.
+            </p>
+        </div>
 
     </div>
 
