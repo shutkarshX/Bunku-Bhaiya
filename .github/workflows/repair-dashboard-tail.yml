@@ -1,0 +1,22 @@
+name: Repair dashboard tail
+on:
+  push:
+    branches: [ui-changes]
+permissions:
+  contents: write
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ui-changes
+          fetch-depth: 0
+      - name: Restore login initialization
+        run: |
+          python -c 'from pathlib import Path; p=Path("templates/dashboard.html"); s=p.read_text(); marker="/* =========================================\n   LOADING\n   ========================================= */"; block="""/* =========================================\n   LOGIN INITIALIZATION\n   ========================================= */\n\ndocument.addEventListener("DOMContentLoaded", function () {\n\n    const manualUsername =\n        document.getElementById("manual-username");\n\n    if (manualUsername) {\n        manualUsername.addEventListener(\n            "input",\n            updateManualUsername\n        );\n    }\n\n    const manualFields =\n        document.getElementById("manual-login-fields");\n\n    const generateFields =\n        document.getElementById("generate-login-fields");\n\n    if (manualFields) {\n        manualFields.style.display = "none";\n    }\n\n    if (generateFields) {\n        generateFields.style.display = "none";\n    }\n\n    if (manualUsername) {\n        manualUsername.disabled = true;\n        manualUsername.required = false;\n    }\n\n    const manualInput =\n        document.getElementById("manual-username-input");\n\n    const generatedInput =\n        document.getElementById("generated-username-input");\n\n    if (manualInput) {\n        manualInput.disabled = true;\n        manualInput.required = false;\n    }\n\n    if (generatedInput) {\n        generatedInput.disabled = true;\n        generatedInput.required = false;\n    }\n});\n\n\n"""; assert marker in s; s=s.replace(marker,block+marker,1); p.write_text(s)' 
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add templates/dashboard.html
+          git diff --cached --quiet || (git commit -m 'Restore dashboard login initialization' && git push origin ui-changes)
