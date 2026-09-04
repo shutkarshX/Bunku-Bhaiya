@@ -8,6 +8,8 @@ ATTENDANCE_TARGET = 75
 
 # ONLY these dates are teaching days.
 # Weekdays are NOT automatically teaching days.
+# Sessional examination days are also teaching days because
+# attendance is recorded for the normal 8 classes on those days.
 
 TEACHING_DAYS = {
 
@@ -41,6 +43,16 @@ TEACHING_DAYS = {
     # November 2026
     "2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05",
     "2026-11-06", "2026-11-16",
+
+    # Sessional examination days — attendance is recorded for these days too.
+    # First Sessional Exam: Aug 31 - Sep 3
+    "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03",
+
+    # Second Sessional Exam: Oct 12 - Oct 15
+    "2026-10-12", "2026-10-13", "2026-10-14", "2026-10-15",
+
+    # Third Sessional Exam: Nov 17 - Nov 20
+    "2026-11-17", "2026-11-18", "2026-11-19", "2026-11-20",
 }
 
 
