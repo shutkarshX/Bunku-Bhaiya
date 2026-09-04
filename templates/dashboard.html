@@ -251,26 +251,28 @@
     <style>
         .loading-screen {
             display: none;
+            flex-direction: column;
             align-items: center;
-            gap: 56px;
-            text-align: left;
-            padding: 30px 86px;
+            justify-content: center;
+            gap: 18px;
+            text-align: center;
+            padding: 30px 40px;
             min-height: 380px;
         }
 
         .loading-screen video {
-            flex: 0 0 427px;
+            flex: 0 0 320px;
             width: 427px;
             height: 320px;
             max-width: 100%;
             max-height: none;
-            margin: 0;
+            margin: 0 auto;
             border-radius: 0;
             object-fit: cover;
         }
 
         .loading-copy {
-            flex: 1;
+            width: 100%;
             min-width: 0;
         }
 
