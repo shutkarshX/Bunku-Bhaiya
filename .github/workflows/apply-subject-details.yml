@@ -13,39 +13,134 @@ jobs:
         with:
           ref: ui-changes
           fetch-depth: 0
-      - name: Patch files
+      - name: Patch dashboard
         run: |
           python - <<'PY'
           from pathlib import Path
 
-          p = Path('app.py')
-          s = p.read_text()
-          s = s.replace('    get_attendance,\n    PortalUnavailableError,', '    get_attendance,\n    get_subject_details,\n    PortalUnavailableError,', 1)
-          old = '''        attendance=attendance_data,\n\n        phase_1=phase_1,'''
-          new = '''        attendance=(lambda d: (d.update({"subject_details": get_subject_details((d.get("subjects") or [{}])[0].get("_bunkmaster_subject_details_token"))}), d)[1])(dict(attendance_data)),\n\n        phase_1=phase_1,'''
-          if 'get_subject_details' not in s:
-              raise SystemExit('import patch failed')
-          if 'subject_details": get_subject_details' not in s:
-              if old not in s:
-                  raise SystemExit('render patch target not found')
-              s = s.replace(old, new, 1)
-          p.write_text(s)
-
           p = Path('templates/dashboard.html')
           s = p.read_text()
           marker = '<!-- JAVASCRIPT -->'
-          if 'Attendance Details of {{ detail.subject_name }}' not in s:
-              i = s.find(marker)
-              if i < 0:
-                  raise SystemExit('dashboard marker not found')
-              block = '''<!-- ================================= -->\n<!-- PORTAL ATTENDANCE DETAILS -->\n<!-- ================================= -->\n\n{% if attendance.subject_details %}\n<section style="margin-top:32px;">\n    <h2>Attendance Details</h2>\n    {% for detail in attendance.subject_details %}\n    <details style="margin-bottom:16px;">\n        <summary style="cursor:pointer; font-weight:700; padding:14px 0;">Attendance Details of {{ detail.subject_name }}</summary>\n        {% if detail.records %}\n        <div class="table-container">\n            <table>\n                <thead><tr>{% for key in detail.columns %}<th>{{ key }}</th>{% endfor %}</tr></thead>\n                <tbody>\n                {% for record in detail.records %}<tr>{% for key in detail.columns %}<td>{{ record.get(key, "") }}</td>{% endfor %}</tr>{% endfor %}\n                </tbody>\n            </table>\n        </div>\n        {% else %}<p>No attendance details were returned for this subject.</p>{% endif %}\n    </details>\n    {% endfor %}\n</section>\n{% endif %}\n\n'''
-              s = s[:i] + block + s[i:]
-              p.write_text(s)
+          if marker not in s:
+              raise SystemExit('dashboard marker not found')
+
+          # Replace the previously-added raw-details section with the
+          # college-style selected-subject section.
+          starts = [
+              '<!-- ================================= -->\n    <!-- PORTAL ATTENDANCE DETAILS -->',
+              '<!-- ================================= -->\n<!-- PORTAL ATTENDANCE DETAILS -->',
+              '<!-- ================================= -->\n    <!-- SELECTED SUBJECT ATTENDANCE DETAILS -->',
+              '<!-- ================================= -->\n<!-- SELECTED SUBJECT ATTENDANCE DETAILS -->',
+          ]
+          start = -1
+          for candidate in starts:
+              start = s.find(candidate)
+              if start >= 0:
+                  break
+
+          if start >= 0:
+              end = s.find(marker, start)
+              if end < 0:
+                  raise SystemExit('subject-details end marker not found')
+          else:
+              end = s.find(marker)
+              start = end
+
+          block = '''    <!-- ================================= -->
+    <!-- SELECTED SUBJECT ATTENDANCE DETAILS -->
+    <!-- ================================= -->
+
+    <div id="subject-attendance-details" style="display:none; margin-top:32px;">
+
+        {% for detail in attendance.subject_details %}
+
+        <div
+            class="subject-detail-panel"
+            data-subject-detail="{{ loop.index0 }}"
+            style="display:none;"
+        >
+
+            <div class="summary" style="margin-bottom:16px;">
+
+                <h2>Attendance Details of {{ detail.subject_name }}</h2>
+
+            </div>
+
+            {% if detail.records %}
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Sr. No.</th>
+                            <th>Date</th>
+                            <th>Lecture Time</th>
+                            <th>Session</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for record in detail.records %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ record.get("Date", "") }}</td>
+                            <td>{{ record.get("stime", "") }} - {{ record.get("etime", "") }}</td>
+                            <td>{{ record.get("sessionNo", "") }}</td>
+                            <td>{{ record.get("presenty", "") }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            {% else %}
+
+            <p>No attendance details were returned for this subject.</p>
+
+            {% endif %}
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+
+    {% endif %}
+
+</div>
+
+
+'''
+          s = s[:start] + block + s[end:]
+
+          # Make every subject row clickable.
+          row_old = '''                <tr>\n\n                    <td>\n                        {{ subject.get(\n                            "subjectName",\n                            "Unknown"\n                        ) }}'''
+          row_new = '''                <tr\n                    class="subject-attendance-row"\n                    data-subject-index="{{ loop.index0 }}"\n                    onclick="showSubjectAttendance({{ loop.index0 }})"\n                    style="cursor:pointer;"\n                >\n\n                    <td>\n                        {{ subject.get(\n                            "subjectName",\n                            "Unknown"\n                        ) }}'''
+          if 'onclick="showSubjectAttendance(' not in s:
+              if row_old not in s:
+                  raise SystemExit('subject row pattern not found')
+              s = s.replace(row_old, row_new, 1)
+
+          # Add the click handler once.
+          js_marker = '''/* =========================================\n   FORMAT LEAVE\n   ========================================= */'''
+          if 'function showSubjectAttendance(index)' not in s:
+              js = '''/* =========================================\n   SUBJECT ATTENDANCE DETAILS\n   ========================================= */\n\nfunction showSubjectAttendance(index) {\n\n    const container =\n        document.getElementById("subject-attendance-details");\n\n    if (!container) {\n        return;\n    }\n\n    const panels =\n        container.querySelectorAll("[data-subject-detail]");\n\n    let selectedPanel = null;\n\n    panels.forEach(function(panel) {\n\n        const selected =\n            panel.dataset.subjectDetail === String(index);\n\n        panel.style.display = selected ? "block" : "none";\n\n        if (selected) {\n            selectedPanel = panel;\n        }\n\n    });\n\n    if (!selectedPanel) {\n        container.style.display = "none";\n        return;\n    }\n\n    container.style.display = "block";\n\n    container.scrollIntoView({\n        behavior: "smooth",\n        block: "start"\n    });\n}\n\n\n/* =========================================\n   FORMAT LEAVE\n   ========================================= */'''
+              if js_marker not in s:
+                  raise SystemExit('JS marker not found')
+              s = s.replace(js_marker, js, 1)
+
+          p.write_text(s)
           PY
       - name: Commit changes
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add app.py templates/dashboard.html
-          git commit -m 'Show raw subject attendance details' || exit 0
+          git add templates/dashboard.html
+          git commit -m 'Show college-style subject attendance details' || exit 0
           git push origin ui-changes
