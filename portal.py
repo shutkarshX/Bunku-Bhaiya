@@ -47,7 +47,11 @@ def _today_logged_classes(page, course_data):
     today = date.today()
     today_logged = 0
 
-    print("Checking today's logged classes across", len(subject_ids), "subjects...")
+    print(
+        "Checking today's logged classes across",
+        len(subject_ids),
+        "subjects..."
+    )
 
     for index, encrypted_id in enumerate(subject_ids, start=1):
         try:
@@ -75,7 +79,9 @@ def _today_logged_classes(page, course_data):
                 # A record normally represents one lecture. If the portal
                 # reports consecutive lectures, count all of them.
                 try:
-                    count = int(record.get("noOfConsicativeLectur") or 1)
+                    count = int(
+                        record.get("noOfConsicativeLectur") or 1
+                    )
                 except (TypeError, ValueError):
                     count = 1
 
@@ -232,10 +238,11 @@ def get_attendance(username, password):
                     "The course data could not be retrieved from the NIET portal."
                 )
 
-            # New: use the authenticated portal session to inspect every subject
+            # Use the authenticated portal session to inspect every subject
             # and determine how many of today's classes are already logged.
             today_logged, remaining_today = _today_logged_classes(
-                page, course_data
+                page,
+                course_data
             )
 
             # Problem 2 is already available from the aggregate endpoint.
@@ -250,18 +257,29 @@ def get_attendance(username, password):
                 except (TypeError, ValueError):
                     pass
 
+            # Preserve the new values inside the existing subject-list shape.
+            # This keeps app.py backwards compatible while allowing the
+            # calculator/session to carry today's state across requests.
+            attendance_data[0][
+                "_bunkmaster_today_logged"
+            ] = today_logged
+
+            attendance_data[0][
+                "_bunkmaster_remaining_today"
+            ] = remaining_today
+
+            attendance_data[0][
+                "_bunkmaster_unmarked_classes"
+            ] = unmarked_classes
+
             print("Today's logged classes:", today_logged)
             print("Today's remaining classes:", remaining_today)
             print("Unmarked classes:", unmarked_classes)
-            print(f"[TIME] TOTAL: {time.perf_counter() - total_start:.2f}s")
+            print(
+                f"[TIME] TOTAL: {time.perf_counter() - total_start:.2f}s"
+            )
 
-            return {
-                "attendance": attendance_data,
-                "course_list": course_data,
-                "today_logged": today_logged,
-                "remaining_today": remaining_today,
-                "unmarked_classes": unmarked_classes,
-            }
+            return attendance_data
 
         except (PortalUnavailableError, PortalLoginError):
             raise
