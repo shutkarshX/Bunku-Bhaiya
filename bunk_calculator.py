@@ -27,6 +27,29 @@ def _get_remaining_today(attendance_data):
     return max(0, remaining)
 
 
+def _restore_current_attendance(checkpoint, attended, total):
+    """Restore fields that must describe real current attendance."""
+    percentage = calculate_percentage(
+        attended,
+        total
+    )
+
+    checkpoint["starting_attended"] = attended
+    checkpoint["starting_total"] = total
+    checkpoint["starting_percentage"] = round(
+        percentage,
+        2
+    )
+    checkpoint["classes_needed_for_75"] = (
+        classes_needed_to_reach_target(
+            attended,
+            total
+        )
+    )
+
+    return percentage
+
+
 def run_phase_1(
     attendance_data,
     checkpoint_choices=None,
@@ -81,6 +104,51 @@ def run_phase_1(
         []
     )
 
+    if not checkpoints:
+        return result
+
+    # -----------------------------------------
+    # Completed checkpoints must describe the
+    # real portal attendance, not the synthetic
+    # today's-attended classes used internally.
+    # -----------------------------------------
+
+    for checkpoint in checkpoints:
+        if checkpoint.get("state") != "completed":
+            continue
+
+        current_percentage = _restore_current_attendance(
+            checkpoint,
+            actual_attended,
+            actual_total
+        )
+
+        checkpoint["status"] = determine_status(
+            actual_attended,
+            actual_total,
+            0
+        )
+        checkpoint["maximum_possible_percentage"] = round(
+            current_percentage,
+            2
+        )
+        checkpoint["projected_without_leave"] = round(
+            current_percentage,
+            2
+        )
+        checkpoint["requested_projected_attended"] = actual_attended
+        checkpoint["requested_projected_total"] = actual_total
+        checkpoint["requested_projected_percentage"] = round(
+            current_percentage,
+            2
+        )
+        checkpoint["final_attended"] = actual_attended
+        checkpoint["final_total"] = actual_total
+        checkpoint["final_percentage"] = round(
+            current_percentage,
+            2
+        )
+
     if active_index is None:
         return result
 
@@ -94,26 +162,13 @@ def run_phase_1(
         + remaining_today
     )
 
-    actual_starting_percentage = calculate_percentage(
+    current_percentage = _restore_current_attendance(
+        active,
         actual_attended,
         actual_total
     )
 
-    active["starting_attended"] = actual_attended
-    active["starting_total"] = actual_total
-    active["starting_percentage"] = round(
-        actual_starting_percentage,
-        2
-    )
-
     active["future_classes"] = adjusted_future_classes
-
-    active["classes_needed_for_75"] = (
-        classes_needed_to_reach_target(
-            actual_attended,
-            actual_total
-        )
-    )
 
     active["status"] = determine_status(
         actual_attended,
