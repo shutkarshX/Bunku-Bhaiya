@@ -124,13 +124,105 @@
         <form
             action="/get-attendance"
             method="POST"
-            onsubmit="showLoading()">
+            onsubmit="updateManualUsername(); showLoading()">
+
+            <div class="login-methods">
+
+                <button
+                    type="button"
+                    class="attendance-button"
+                    id="manual-login-button"
+                    onclick="setLoginMethod('manual')">
+
+                    ✍️ Enter Email Manually
+
+                </button>
+
+                <button
+                    type="button"
+                    class="attendance-button"
+                    id="generate-login-button"
+                    onclick="setLoginMethod('generate')">
+
+                    ⚡ Generate NIET Email
+
+                </button>
+
+            </div>
+
+            <div id="manual-login-fields" style="display: none !important;">
+
+                <div class="email-input-row" style="display:flex !important; align-items:center !important; width:100% !important; gap:0 !important;">
+
+                    <input
+                        type="text"
+                        id="manual-username"
+                        placeholder="College email"
+                        autocomplete="username"
+                        required
+                        style="display:block !important; visibility:visible !important; opacity:1 !important; flex:1 1 auto !important; width:100% !important; min-width:0 !important; box-sizing:border-box !important;"
+                    >
+
+                    <span class="email-domain" style="display:block !important; visibility:visible !important; white-space:nowrap !important; margin-left:8px !important;">@niet.co.in</span>
+
+                </div>
+
+            </div>
+
+            <div
+                id="generate-login-fields"
+                style="display: none;">
+
+                <label for="admission-year">Admission Year</label>
+
+                <select
+                    id="admission-year"
+                    onchange="updateGeneratedUsername()">
+
+                    <option value="2023">2023</option>
+                    <option value="2024">2024</option>
+                    <option value="2025" selected>2025</option>
+                    <option value="2026">2026</option>
+
+                </select>
+
+                <input
+                    type="text"
+                    id="branch"
+                    placeholder="Branch (e.g. CSDS)"
+                    maxlength="10"
+                    oninput="updateGeneratedUsername()"
+                >
+
+                <input
+                    type="text"
+                    id="student-number"
+                    placeholder="3-digit student number"
+                    inputmode="numeric"
+                    maxlength="3"
+                    pattern="[0-9]{3}"
+                    oninput="updateGeneratedUsername()"
+                >
+
+                <p>
+                    Your NIET email:
+                    <strong id="generated-username">—</strong>
+                </p>
+
+            </div>
 
             <input
-                type="text"
+                type="hidden"
                 name="username"
-                placeholder="College username"
-                required
+                id="generated-username-input"
+                disabled
+            >
+
+            <input
+                type="hidden"
+                name="username"
+                id="manual-username-input"
+                disabled
             >
 
             <input
@@ -1762,6 +1854,103 @@ document
         updateLeavePreview(form);
 
     });
+
+
+/* =========================================
+   LOGIN METHOD
+   ========================================= */
+
+function setLoginMethod(method) {
+
+    const manualFields = document.getElementById("manual-login-fields");
+    const generateFields = document.getElementById("generate-login-fields");
+    const manualUsername = document.getElementById("manual-username");
+    const generatedUsername = document.getElementById("generated-username-input");
+    const manualUsernameInput = document.getElementById("manual-username-input");
+    const manualButton = document.getElementById("manual-login-button");
+    const generateButton = document.getElementById("generate-login-button");
+
+    if (method === "generate") {
+        manualFields.style.setProperty("display", "none", "important");
+        generateFields.style.setProperty("display", "block", "important");
+        manualUsername.disabled = true;
+        manualUsername.required = false;
+        manualUsernameInput.disabled = true;
+        manualUsernameInput.required = false;
+        generatedUsername.disabled = false;
+        generatedUsername.required = true;
+        manualButton.classList.remove("active");
+        generateButton.classList.add("active");
+        updateGeneratedUsername();
+    } else {
+        manualFields.style.setProperty("display", "block", "important");
+        generateFields.style.setProperty("display", "none", "important");
+        manualUsername.disabled = false;
+        manualUsername.required = true;
+        generatedUsername.disabled = true;
+        generatedUsername.required = false;
+        manualUsernameInput.disabled = false;
+        manualUsernameInput.required = true;
+        generateButton.classList.remove("active");
+        manualButton.classList.add("active");
+        updateManualUsername();
+    }
+}
+
+function updateGeneratedUsername() {
+
+    const year = document.getElementById("admission-year").value;
+    const branch = document.getElementById("branch").value.trim().toLowerCase();
+    const studentNumber = document.getElementById("student-number").value.replace(/\D/g, "").slice(0, 3);
+
+    document.getElementById("student-number").value = studentNumber;
+
+    // 2023 -> 0241, 2024 -> 0251, 2025 -> 0261, 2026 -> 0271
+    const yearCode = "0" + String(Number(year) + 1).slice(-2) + "1";
+
+    const generated = branch && studentNumber.length === 3
+        ? `${yearCode}${branch}${studentNumber}@niet.co.in`
+        : "—";
+
+    document.getElementById("generated-username").textContent = generated;
+    document.getElementById("generated-username-input").value = generated === "—" ? "" : generated;
+}
+
+function updateManualUsername() {
+    const localPart = document.getElementById("manual-username").value.trim().toLowerCase();
+    document.getElementById("manual-username-input").value = localPart ? `${localPart}@niet.co.in` : "";
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const manualUsername =
+        document.getElementById("manual-username");
+
+    if (manualUsername) {
+        manualUsername.addEventListener(
+            "input",
+            updateManualUsername
+        );
+    }
+
+    /*
+       IMPORTANT:
+       No login method is selected when the page opens.
+       Both Manual and Generate fields stay hidden until
+       the user explicitly clicks one of the two buttons.
+    */
+    document.getElementById("manual-login-fields").style.display = "none";
+    document.getElementById("generate-login-fields").style.display = "none";
+
+    manualUsername.disabled = true;
+    manualUsername.required = false;
+
+    document.getElementById("manual-username-input").disabled = true;
+    document.getElementById("manual-username-input").required = false;
+
+    document.getElementById("generated-username-input").disabled = true;
+    document.getElementById("generated-username-input").required = false;
+});
+
 
 
 /* =========================================
