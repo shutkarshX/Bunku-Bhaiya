@@ -1,5 +1,6 @@
 from datetime import date, datetime
 import time
+import uuid
 
 from playwright.sync_api import sync_playwright
 
@@ -14,6 +15,18 @@ class PortalUnavailableError(Exception):
 class PortalLoginError(Exception):
     """The NIET portal was reachable but login failed."""
     pass
+
+
+# Raw subject-wise attendance responses are kept server-side so the Flask
+# cookie session does not have to carry hundreds of attendance records.
+_SUBJECT_DETAILS_CACHE = {}
+
+
+def get_subject_details(details_token):
+    """Return cached raw subject-wise attendance details for a token."""
+    if not details_token:
+        return []
+    return _SUBJECT_DETAILS_CACHE.get(details_token, [])
 
 
 def _parse_portal_date(value):
@@ -33,7 +46,7 @@ def _parse_portal_date(value):
 
 
 def _today_logged_classes(page, course_data):
-    """Count today's logged lecture/classes across every subject."""
+    """Count today's classes while retaining the exact portal responses."""
     subject_ids = []
 
     for course in course_data:
@@ -48,6 +61,7 @@ def _today_logged_classes(page, course_data):
 
     today = date.today()
     today_logged = 0
+    subject_details = []
 
     print(
         "Checking today's logged classes across",
@@ -75,6 +89,33 @@ def _today_logged_classes(page, course_data):
 
             if not isinstance(records, list):
                 raise ValueError("Subject attendance response was not a list")
+
+            # Keep the response exactly as returned by the portal. Only the
+            # subject label is added outside the raw records for display.
+            subject_name = f"Subject {index}"
+            for course in course_data:
+                if course.get("encoSubjectwiseStudentId") == encrypted_id:
+                    subject_name = (
+                        course.get("subjectName")
+                        or course.get("courseName")
+                        or course.get("subjectCode")
+                        or subject_name
+                    )
+                    break
+
+            columns = []
+            for record in records:
+                if isinstance(record, dict):
+                    for key in record.keys():
+                        if key not in columns:
+                            columns.append(key)
+
+            subject_details.append({
+                "subject_name": subject_name,
+                "subject_id": encrypted_id,
+                "records": records,
+                "columns": columns,
+            })
 
             subject_today = 0
 
@@ -120,7 +161,7 @@ def _today_logged_classes(page, course_data):
         remaining_today = 0
         print("Today is not a teaching day; remaining classes: 0")
 
-    return today_logged, remaining_today
+    return today_logged, remaining_today, subject_details
 
 
 def get_attendance(username, password):
@@ -253,12 +294,22 @@ def get_attendance(username, password):
                     "The course data could not be retrieved from the NIET portal."
                 )
 
-            # Use the authenticated portal session to inspect every subject
-            # and determine how many of today's classes are already logged.
-            today_logged, remaining_today = _today_logged_classes(
+            # Use the authenticated portal session to inspect every subject.
+            # These are the same 13 calls already needed for today's count;
+            # their raw responses are retained for the dashboard details.
+            (
+                today_logged,
+                remaining_today,
+                subject_details,
+            ) = _today_logged_classes(
                 page,
                 course_data
             )
+
+            # Keep the raw subject-wise responses server-side. The token is
+            # small enough to safely carry in the Flask cookie session.
+            details_token = uuid.uuid4().hex
+            _SUBJECT_DETAILS_CACHE[details_token] = subject_details
 
             # Problem 2 is already available from the aggregate endpoint.
             # Keep it informational; these classes have occurred and must NOT
@@ -286,6 +337,10 @@ def get_attendance(username, password):
             attendance_data[0][
                 "_bunkmaster_unmarked_classes"
             ] = unmarked_classes
+
+            attendance_data[0][
+                "_bunkmaster_subject_details_token"
+            ] = details_token
 
             print("Today's logged classes:", today_logged)
             print("Today's remaining classes:", remaining_today)
