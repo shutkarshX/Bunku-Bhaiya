@@ -1940,6 +1940,59 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 /* =========================================
+   LOGIN INITIALIZATION
+   ========================================= */
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const manualUsername =
+        document.getElementById("manual-username");
+
+    if (manualUsername) {
+        manualUsername.addEventListener(
+            "input",
+            updateManualUsername
+        );
+    }
+
+    const manualFields =
+        document.getElementById("manual-login-fields");
+
+    const generateFields =
+        document.getElementById("generate-login-fields");
+
+    if (manualFields) {
+        manualFields.style.display = "none";
+    }
+
+    if (generateFields) {
+        generateFields.style.display = "none";
+    }
+
+    if (manualUsername) {
+        manualUsername.disabled = true;
+        manualUsername.required = false;
+    }
+
+    const manualInput =
+        document.getElementById("manual-username-input");
+
+    const generatedInput =
+        document.getElementById("generated-username-input");
+
+    if (manualInput) {
+        manualInput.disabled = true;
+        manualInput.required = false;
+    }
+
+    if (generatedInput) {
+        generatedInput.disabled = true;
+        generatedInput.required = false;
+    }
+});
+
+
+/* =========================================
    LOADING
    ========================================= */
 
