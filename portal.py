@@ -3,6 +3,8 @@ import time
 
 from playwright.sync_api import sync_playwright
 
+from academic_calendar import is_teaching_day
+
 
 class PortalUnavailableError(Exception):
     """The NIET portal could not be reached or loaded."""
@@ -110,7 +112,13 @@ def _today_logged_classes(page, course_data):
                 "The portal did not return today's class data for all subjects."
             )
 
-    remaining_today = max(0, 8 - today_logged)
+    # Today only contributes classes if the academic calendar says it is a
+    # teaching day. Off days must never be treated as eight remaining classes.
+    if is_teaching_day(today.isoformat()):
+        remaining_today = max(0, 8 - today_logged)
+    else:
+        remaining_today = 0
+        print("Today is not a teaching day; remaining classes: 0")
 
     return today_logged, remaining_today
 
@@ -301,3 +309,5 @@ def get_attendance(username, password):
                     browser.close()
                 except Exception as e:
                     print("Browser cleanup warning:", e)
+                except Exception:
+                    pass
