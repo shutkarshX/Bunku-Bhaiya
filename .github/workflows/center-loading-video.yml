@@ -1,0 +1,52 @@
+name: Center loading video
+
+on:
+  push:
+    branches:
+      - ui-changes
+    paths:
+      - '.github/workflows/center-loading-video.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ui-changes
+
+      - name: Center loading video
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          path = Path('templates/dashboard.html')
+          text = path.read_text(encoding='utf-8')
+          old = '''        .loading-screen {\n            display: none;\n            align-items: center;\n            gap: 56px;\n            text-align: left;\n            padding: 30px 86px;\n            min-height: 380px;\n        }'''
+          new = '''        .loading-screen {\n            display: none;\n            flex-direction: column;\n            align-items: center;\n            justify-content: center;\n            gap: 18px;\n            text-align: center;\n            padding: 30px 40px;\n            min-height: 380px;\n        }'''
+          if old not in text:
+              raise SystemExit('Expected loading CSS not found; refusing to change dashboard')
+          text = text.replace(old, new, 1)
+          old_video = '''        .loading-screen video {\n            flex: 0 0 427px;\n            width: 427px;\n            height: 320px;\n            max-width: 100%;\n            max-height: none;\n            margin: 0;\n            border-radius: 0;\n            object-fit: cover;\n        }'''
+          new_video = '''        .loading-screen video {\n            flex: 0 0 320px;\n            width: 427px;\n            height: 320px;\n            max-width: 100%;\n            max-height: none;\n            margin: 0 auto;\n            border-radius: 0;\n            object-fit: cover;\n        }'''
+          if old_video not in text:
+              raise SystemExit('Expected loading video CSS not found; refusing to change dashboard')
+          text = text.replace(old_video, new_video, 1)
+          text = re.sub(r'''        \.loading-copy \{.*?        \}\n\n        \.loading-copy h2''', '''        .loading-copy {\n            width: 100%;\n            min-width: 0;\n        }\n\n        .loading-copy h2''', text, count=1, flags=re.S)
+          path.write_text(text, encoding='utf-8')
+
+      - name: Verify
+        run: |
+          grep -q 'flex-direction: column;' templates/dashboard.html
+          grep -q 'justify-content: center;' templates/dashboard.html
+          grep -q 'onclick="showSubjectAttendance({{ loop.index0 }})"' templates/dashboard.html
+
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add templates/dashboard.html
+          git diff --cached --quiet || (git commit -m 'Center loading video' && git push origin ui-changes)
