@@ -1,0 +1,51 @@
+name: Apply subject details wiring
+on:
+  push:
+    branches: [ui-changes]
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ui-changes
+          fetch-depth: 0
+      - name: Patch files
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('app.py')
+          s = p.read_text()
+          s = s.replace('    get_attendance,\n    PortalUnavailableError,', '    get_attendance,\n    get_subject_details,\n    PortalUnavailableError,', 1)
+          old = '''        attendance=attendance_data,\n\n        phase_1=phase_1,'''
+          new = '''        attendance=(lambda d: (d.update({"subject_details": get_subject_details((d.get("subjects") or [{}])[0].get("_bunkmaster_subject_details_token"))}), d)[1])(dict(attendance_data)),\n\n        phase_1=phase_1,'''
+          if 'get_subject_details' not in s:
+              raise SystemExit('import patch failed')
+          if 'subject_details": get_subject_details' not in s:
+              if old not in s:
+                  raise SystemExit('render patch target not found')
+              s = s.replace(old, new, 1)
+          p.write_text(s)
+
+          p = Path('templates/dashboard.html')
+          s = p.read_text()
+          marker = '<!-- JAVASCRIPT -->'
+          if 'Attendance Details of {{ detail.subject_name }}' not in s:
+              i = s.find(marker)
+              if i < 0:
+                  raise SystemExit('dashboard marker not found')
+              block = '''<!-- ================================= -->\n<!-- PORTAL ATTENDANCE DETAILS -->\n<!-- ================================= -->\n\n{% if attendance.subject_details %}\n<section style="margin-top:32px;">\n    <h2>Attendance Details</h2>\n    {% for detail in attendance.subject_details %}\n    <details style="margin-bottom:16px;">\n        <summary style="cursor:pointer; font-weight:700; padding:14px 0;">Attendance Details of {{ detail.subject_name }}</summary>\n        {% if detail.records %}\n        <div class="table-container">\n            <table>\n                <thead><tr>{% for key in detail.columns %}<th>{{ key }}</th>{% endfor %}</tr></thead>\n                <tbody>\n                {% for record in detail.records %}<tr>{% for key in detail.columns %}<td>{{ record.get(key, "") }}</td>{% endfor %}</tr>{% endfor %}\n                </tbody>\n            </table>\n        </div>\n        {% else %}<p>No attendance details were returned for this subject.</p>{% endif %}\n    </details>\n    {% endfor %}\n</section>\n{% endif %}\n\n'''
+              s = s[:i] + block + s[i:]
+              p.write_text(s)
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add app.py templates/dashboard.html
+          git commit -m 'Show raw subject attendance details' || exit 0
+          git push origin ui-changes
