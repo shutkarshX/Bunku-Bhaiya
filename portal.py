@@ -1,10 +1,8 @@
-from playwright.sync_api import sync_playwright
+from datetime import date, datetime
 import time
 
+from playwright.sync_api import sync_playwright
 
-# =========================================
-# PORTAL ERRORS
-# =========================================
 
 class PortalUnavailableError(Exception):
     """The NIET portal could not be reached or loaded."""
@@ -16,642 +14,265 @@ class PortalLoginError(Exception):
     pass
 
 
-# =========================================
-# GET ATTENDANCE
-# =========================================
+def _parse_portal_date(value):
+    """Convert the portal's attendance date string into a date."""
+    if not value:
+        return None
 
-def get_attendance(
-    username,
-    password
-):
+    value = str(value).strip()
 
+    for fmt in ("%b %d, %Y", "%B %d, %Y"):
+        try:
+            return datetime.strptime(value, fmt).date()
+        except ValueError:
+            pass
+
+    return None
+
+
+def _today_logged_classes(page, course_data):
+    """Count today's logged lecture/classes across every subject."""
+    subject_ids = []
+
+    for course in course_data:
+        encrypted_id = course.get("encoSubjectwiseStudentId")
+        if encrypted_id and encrypted_id not in subject_ids:
+            subject_ids.append(encrypted_id)
+
+    if not subject_ids:
+        raise PortalUnavailableError(
+            "The course data did not contain subject attendance IDs."
+        )
+
+    today = date.today()
+    today_logged = 0
+
+    print("Checking today's logged classes across", len(subject_ids), "subjects...")
+
+    for index, encrypted_id in enumerate(subject_ids, start=1):
+        try:
+            response = page.request.get(
+                "https://nietcloud.niet.co.in/"
+                "stu_getSubjectWiseStudentAttendance.json",
+                params={"encoSubjectwiseStudentId": encrypted_id},
+                timeout=15000,
+            )
+            response.raise_for_status()
+            records = response.json()
+
+            if not isinstance(records, list):
+                raise ValueError("Subject attendance response was not a list")
+
+            subject_today = 0
+
+            for record in records:
+                if not isinstance(record, dict):
+                    continue
+
+                if _parse_portal_date(record.get("Date")) != today:
+                    continue
+
+                # A record normally represents one lecture. If the portal
+                # reports consecutive lectures, count all of them.
+                try:
+                    count = int(record.get("noOfConsicativeLectur") or 1)
+                except (TypeError, ValueError):
+                    count = 1
+
+                subject_today += max(1, count)
+
+            today_logged += subject_today
+            print(
+                f"  Subject {index}/{len(subject_ids)}: "
+                f"{subject_today} logged today"
+            )
+
+        except Exception as e:
+            print(
+                f"Could not retrieve today's sessions for subject "
+                f"{index}: {e}"
+            )
+            # Accuracy matters here: do not silently return a partial count.
+            raise PortalUnavailableError(
+                "The portal did not return today's class data for all subjects."
+            )
+
+    remaining_today = max(0, 8 - today_logged)
+
+    return today_logged, remaining_today
+
+
+def get_attendance(username, password):
     total_start = time.perf_counter()
-
     attendance_data = []
-
-    print()
-    print(
-        "======================================"
-    )
-    print(
-        "Starting attendance retrieval..."
-    )
-    print(
-        "======================================"
-    )
-
-
-    # =====================================
-    # PLAYWRIGHT
-    # =====================================
+    course_data = []
 
     with sync_playwright() as p:
-
         browser = None
         page = None
 
         try:
-
-            # =================================
-            # LAUNCH CHROMIUM
-            # =================================
-
-            t0 = time.perf_counter()
-
             try:
-
-                browser = p.chromium.launch(
-                    headless=True
-                )
-
+                browser = p.chromium.launch(headless=True)
             except Exception as e:
-
-                print(
-                    "Could not launch Chromium:"
-                )
-
-                print(e)
-
-                raise PortalUnavailableError(
-                    "Unable to start the browser."
-                )
-
-            t1 = time.perf_counter()
-
-            print(
-                f"[TIME] Browser startup: "
-                f"{t1 - t0:.2f}s"
-            )
-
-
-            # =================================
-            # CREATE PAGE
-            # =================================
+                print("Could not launch Chromium:", e)
+                raise PortalUnavailableError("Unable to start the browser.")
 
             try:
-
                 page = browser.new_page()
-
             except Exception as e:
+                print("Could not create browser page:", e)
+                raise PortalUnavailableError("Unable to create a browser session.")
 
-                print(
-                    "Could not create browser page:"
-                )
-
-                print(e)
-
-                raise PortalUnavailableError(
-                    "Unable to create a browser session."
-                )
-
-
-            # =================================
-            # 1. OPEN LOGIN PAGE
-            # =================================
-
-            t0 = time.perf_counter()
-
+            # Open login page.
             try:
-
                 page.goto(
-
                     "https://nietcloud.niet.co.in/login.htm",
-
                     wait_until="domcontentloaded",
-
-                    timeout=15000
-
+                    timeout=15000,
                 )
-
             except Exception as e:
-
-                print()
-                print(
-                    "======================================"
-                )
-                print(
-                    "NIET PORTAL UNAVAILABLE"
-                )
-                print(
-                    "======================================"
-                )
-
-                print(
-                    "Could not reach the college portal."
-                )
-
-                print(e)
-
-                print()
-
+                print("Could not reach the college portal:", e)
                 raise PortalUnavailableError(
-
-                    "The NIET college portal is currently "
-                    "unreachable."
-
+                    "The NIET college portal is currently unreachable."
                 )
 
-
-            t1 = time.perf_counter()
-
-            print(
-                f"[TIME] Login page: "
-                f"{t1 - t0:.2f}s"
-            )
-
-
-            # =================================
-            # 2. LOGIN
-            # =================================
-
-            t0 = time.perf_counter()
+            # Login.
+            try:
+                page.locator("#j_username").fill(username)
+                page.locator("#password-1").fill(password)
+                page.locator("button[type='submit']").click()
+            except Exception as e:
+                print("Could not submit login:", e)
+                raise PortalUnavailableError("The NIET login page could not be used.")
 
             try:
-
-                page.locator(
-                    "#j_username"
-                ).fill(
-                    username
-                )
-
-
-                page.locator(
-                    "#password-1"
-                ).fill(
-                    password
-                )
-
-
-                page.locator(
-                    "button[type='submit']"
-                ).click()
-
-
-            except Exception as e:
-
-                print(
-                    "Could not submit login:"
-                )
-
-                print(e)
-
-                raise PortalUnavailableError(
-
-                    "The NIET login page could not "
-                    "be used."
-
-                )
-
-
-            # =================================
-            # WAIT FOR LOGIN
-            # =================================
-
-            try:
-
-                page.wait_for_url(
-
-                    "**/home.htm",
-
-                    timeout=15000
-
-                )
-
+                page.wait_for_url("**/home.htm", timeout=15000)
             except Exception:
-
-                print()
-                print(
-                    "======================================"
-                )
-                print(
-                    "NIET LOGIN FAILED"
-                )
-                print(
-                    "======================================"
-                )
-
-                print(
-                    "Current URL:",
-                    page.url
-                )
-
-                print()
-
-
-                # ---------------------------------
-                # Portal itself disappeared
-                # ---------------------------------
-
-                if (
-
-                    "nietcloud.niet.co.in"
-
-                    not in page.url
-
-                ):
-
+                print("NIET login failed. Current URL:", page.url)
+                if "nietcloud.niet.co.in" not in page.url:
                     raise PortalUnavailableError(
-
-                        "The NIET portal became "
-                        "unreachable."
-
+                        "The NIET portal became unreachable."
                     )
-
-
-                # ---------------------------------
-                # Portal reachable but credentials
-                # were not accepted
-                # ---------------------------------
-
                 raise PortalLoginError(
-
-                    "The NIET portal was reached, "
-                    "but login was not successful."
-
+                    "The NIET portal was reached, but login was not successful."
                 )
 
-
-            t1 = time.perf_counter()
-
-            print(
-                f"[TIME] Login: "
-                f"{t1 - t0:.2f}s"
-            )
-
-            print(
-                "Logged in:",
-                page.url
-            )
-
-
-            # =================================
-            # 3. ATTENDANCE API LISTENER
-            # =================================
-
-            def handle_response(
-                response
-            ):
-
-                if (
-
-                    "stu_getStudentBatchCourseAttendanceList.json"
-
-                    in response.url
-
-                ):
-
-                    print(
-                        "Subject-wise attendance "
-                        "request found."
-                    )
-
-
-                    try:
-
-                        data = (
-                            response.json()
-                        )
-
-
-                        if isinstance(
-                            data,
-                            list
-                        ):
-
+            # Capture both existing aggregate attendance and the course list.
+            def handle_response(response):
+                try:
+                    if "stu_getStudentBatchCourseAttendanceList.json" in response.url:
+                        data = response.json()
+                        if isinstance(data, list):
                             attendance_data.clear()
+                            attendance_data.extend(data)
+                            print("Captured", len(attendance_data), "subjects")
 
-                            attendance_data.extend(
-                                data
-                            )
+                    elif "stu_getStudentBatchCourseList.json" in response.url:
+                        data = response.json()
+                        if isinstance(data, list):
+                            course_data.clear()
+                            course_data.extend(data)
+                            print("Captured", len(course_data), "course records")
+                except Exception as e:
+                    print("Could not read portal response:", e)
 
+            page.on("response", handle_response)
 
-                        print(
-                            "Captured",
-                            len(
-                                attendance_data
-                            ),
-                            "subjects"
-                        )
-
-
-                    except Exception as e:
-
-                        print(
-                            "Could not read attendance:",
-                            e
-                        )
-
-
-            page.on(
-                "response",
-                handle_response
-            )
-
-
-            # =================================
-            # 4. ACADEMIC FUNCTIONS
-            # =================================
-
-            t0 = time.perf_counter()
-
+            # Open Academic Functions.
             try:
-
-                academic = page.locator(
-
-                    'a[pid="20009"]'
-
-                )
-
-
-                academic.wait_for(
-
-                    state="visible",
-
-                    timeout=10000
-
-                )
-
-
+                academic = page.locator('a[pid="20009"]')
+                academic.wait_for(state="visible", timeout=10000)
                 academic.click()
-
-
             except Exception as e:
-
-                print(
-                    "Academic Functions page "
-                    "could not be opened:"
-                )
-
-                print(e)
-
+                print("Academic Functions could not be opened:", e)
                 raise PortalUnavailableError(
-
-                    "The NIET portal did not respond "
-                    "correctly after login."
-
+                    "The NIET portal did not respond correctly after login."
                 )
 
-
-            t1 = time.perf_counter()
-
-            print(
-                f"[TIME] Academic Functions: "
-                f"{t1 - t0:.2f}s"
-            )
-
-
-            # =================================
-            # 5. COURSES
-            # =================================
-
-            t0 = time.perf_counter()
-
+            # Open Courses. This also triggers the course-list request.
             try:
-
-                courses = page.locator(
-
-                    'a[pid="24732"]'
-
-                )
-
-
-                courses.wait_for(
-
-                    state="visible",
-
-                    timeout=10000
-
-                )
-
-
+                courses = page.locator('a[pid="24732"]')
+                courses.wait_for(state="visible", timeout=10000)
                 courses.click()
-
-
             except Exception as e:
-
-                print(
-                    "Courses page "
-                    "could not be opened:"
-                )
-
-                print(e)
-
+                print("Courses could not be opened:", e)
                 raise PortalUnavailableError(
-
-                    "The NIET portal did not respond "
-                    "correctly while opening courses."
-
+                    "The NIET portal did not respond correctly while opening courses."
                 )
 
-
-            t1 = time.perf_counter()
-
-            print(
-                f"[TIME] Courses: "
-                f"{t1 - t0:.2f}s"
-            )
-
-
-            # =================================
-            # 6. ATTENDANCE
-            # =================================
-
-            t0 = time.perf_counter()
-
+            # Open Attendance. This triggers the aggregate attendance request.
             try:
-
-                attendance_button = (
-
-                    page.locator(
-
-                        'button[data-tab="attendanceTab"]'
-
-                    )
-
+                attendance_button = page.locator(
+                    'button[data-tab="attendanceTab"]'
                 )
-
-
-                attendance_button.wait_for(
-
-                    state="visible",
-
-                    timeout=10000
-
-                )
-
-
+                attendance_button.wait_for(state="visible", timeout=10000)
                 attendance_button.click()
-
-
-                print(
-                    "Attendance clicked."
-                )
-
-
             except Exception as e:
-
-                print(
-                    "Attendance section "
-                    "could not be opened:"
-                )
-
-                print(e)
-
+                print("Attendance section could not be opened:", e)
                 raise PortalUnavailableError(
-
-                    "The NIET attendance page "
-                    "could not be opened."
-
+                    "The NIET attendance page could not be opened."
                 )
 
-
-            # =================================
-            # 7. WAIT FOR ATTENDANCE API
-            # =================================
-
-            deadline = (
-
-                time.perf_counter()
-
-                + 10
-
-            )
-
-
+            # Wait for both existing API responses.
+            deadline = time.perf_counter() + 10
             while (
-
-                not attendance_data
-
-                and
-
-                time.perf_counter()
-                < deadline
-
+                (not attendance_data or not course_data)
+                and time.perf_counter() < deadline
             ):
-
-                page.wait_for_timeout(
-                    50
-                )
-
-
-            t1 = time.perf_counter()
-
-            print(
-                f"[TIME] Attendance + API: "
-                f"{t1 - t0:.2f}s"
-            )
-
-
-            print(
-                "Subjects received:",
-                len(
-                    attendance_data
-                )
-            )
-
-
-            # =================================
-            # 8. NO DATA
-            # =================================
+                page.wait_for_timeout(50)
 
             if not attendance_data:
-
                 raise PortalUnavailableError(
-
-                    "The attendance data could not "
-                    "be retrieved from the NIET portal."
-
+                    "The attendance data could not be retrieved from the NIET portal."
                 )
 
+            if not course_data:
+                raise PortalUnavailableError(
+                    "The course data could not be retrieved from the NIET portal."
+                )
 
-            # =================================
-            # 9. TOTAL TIME
-            # =================================
-
-            total_end = (
-                time.perf_counter()
+            # New: use the authenticated portal session to inspect every subject
+            # and determine how many of today's classes are already logged.
+            today_logged, remaining_today = _today_logged_classes(
+                page, course_data
             )
 
-
-            print()
-            print(
-                "======================================"
-            )
-
-            print(
-                f"[TIME] TOTAL: "
-                f"{total_end - total_start:.2f}s"
-            )
-
-            print(
-                "======================================"
-            )
-
-            print()
-
-
-            return attendance_data
-
-
-        # =====================================
-        # KNOWN PORTAL ERRORS
-        # =====================================
-
-        except (
-            PortalUnavailableError,
-            PortalLoginError
-        ):
-
-            raise
-
-
-        # =====================================
-        # UNEXPECTED ERROR
-        # =====================================
-
-        except Exception as e:
-
-            print()
-            print(
-                "======================================"
-            )
-
-            print(
-                "UNEXPECTED PORTAL ERROR"
-            )
-
-            print(
-                "======================================"
-            )
-
-            print(e)
-
-            print()
-
-
-            raise PortalUnavailableError(
-
-                "The NIET portal is currently unavailable."
-
-            )
-
-
-        # =====================================
-        # ALWAYS CLOSE BROWSER
-        # =====================================
-
-        finally:
-
-            if browser is not None:
-
+            # Problem 2 is already available from the aggregate endpoint.
+            # Keep it informational; these classes have occurred and must NOT
+            # be added to future_classes.
+            unmarked_classes = 0
+            for subject in attendance_data:
                 try:
-
-                    browser.close()
-
-                except Exception as e:
-
-                    print(
-                        "Browser cleanup warning:"
+                    unmarked_classes += int(
+                        subject.get("totalUnFreezedAttendance") or 0
                     )
+                except (TypeError, ValueError):
+                    pass
 
-                    print(e)
+            print("Today's logged classes:", today_logged)
+            print("Today's remaining classes:", remaining_today)
+            print("Unmarked classes:", unmarked_classes)
+            print(f"[TIME] TOTAL: {time.perf_counter() - total_start:.2f}s")
+
+            return {
+                "attendance": attendance_data,
+                "course_list": course_data,
+                "today_logged": today_logged,
+                "remaining_today": remaining_today,
+                "unmarked_classes": unmarked_classes,
+            }
+
+        except (PortalUnavailableError, PortalLoginError):
+            raise
+        except Exception as e:
+            print("Unexpected portal error:", e)
+            raise PortalUnavailableError(
+                "The NIET portal is currently unavailable."
+            )
+        finally:
+            if browser is not None:
+                try:
+                    browser.close()
+                except Exception as e:
+                    print("Browser cleanup warning:", e)
