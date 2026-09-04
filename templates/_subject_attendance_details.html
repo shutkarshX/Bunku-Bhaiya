@@ -1,0 +1,9 @@
+{% for record in records %}
+<tr>
+    <td>{{ record.get("sessionNo", "-") }}</td>
+    <td>{{ record.get("Date", "-") }}</td>
+    <td>{{ record.get("stime", "-") }} - {{ record.get("etime", "-") }}</td>
+    <td>{{ record.get("sessionNo", "-") }}</td>
+    <td>{{ record.get("presenty", "-") }}</td>
+</tr>
+{% endfor %}

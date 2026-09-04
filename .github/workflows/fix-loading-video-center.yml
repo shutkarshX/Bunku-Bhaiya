@@ -1,0 +1,76 @@
+name: Fix loading video centering
+
+on:
+  push:
+    branches:
+      - ui-changes
+    paths:
+      - '.github/workflows/fix-loading-video-center.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix-loading:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ui-changes
+
+      - name: Center loading video
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          path = Path('templates/dashboard.html')
+          text = path.read_text(encoding='utf-8')
+
+          pattern = r'(\.loading-screen\s*\{).*?(\n\s*\})'
+          replacement = r'''\1
+            display: none;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 18px;
+            text-align: center;
+            padding: 30px 40px;
+            min-height: 380px;
+            width: 100%;
+            box-sizing: border-box;
+          \2'''
+          text, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit('loading-screen CSS block not found')
+
+          video_pattern = r'(\.loading-screen video\s*\{).*?(\n\s*\})'
+          video_replacement = r'''\1
+            display: block;
+            width: 427px;
+            height: 320px;
+            max-width: 100%;
+            max-height: 320px;
+            margin: 0 auto;
+            border-radius: 0;
+            object-fit: cover;
+          \2'''
+          text, count = re.subn(video_pattern, video_replacement, text, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit('loading video CSS block not found')
+
+          path.write_text(text, encoding='utf-8')
+
+      - name: Verify
+        run: |
+          grep -q 'flex-direction: column !important' templates/dashboard.html
+          grep -q 'align-items: center !important' templates/dashboard.html
+          grep -q 'justify-content: center !important' templates/dashboard.html
+          grep -q 'showSubjectAttendance(index)' templates/dashboard.html
+
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add templates/dashboard.html
+          git diff --cached --quiet || (git commit -m 'Center loading video' && git push origin ui-changes)

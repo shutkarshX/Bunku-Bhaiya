@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<html lang="en">
 
 <head>
 
@@ -124,13 +123,105 @@
         <form
             action="/get-attendance"
             method="POST"
-            onsubmit="showLoading()">
+            onsubmit="updateManualUsername(); showLoading()">
+
+            <div class="login-methods">
+
+                <button
+                    type="button"
+                    class="attendance-button"
+                    id="manual-login-button"
+                    onclick="setLoginMethod('manual')">
+
+                    ✍️ Enter Email Manually
+
+                </button>
+
+                <button
+                    type="button"
+                    class="attendance-button"
+                    id="generate-login-button"
+                    onclick="setLoginMethod('generate')">
+
+                    ⚡ Generate NIET Email
+
+                </button>
+
+            </div>
+
+            <div id="manual-login-fields" style="display: none !important;">
+
+                <div class="email-input-row" style="display:flex !important; align-items:center !important; width:100% !important; gap:0 !important;">
+
+                    <input
+                        type="text"
+                        id="manual-username"
+                        placeholder="College email"
+                        autocomplete="username"
+                        required
+                        style="display:block !important; visibility:visible !important; opacity:1 !important; flex:1 1 auto !important; width:100% !important; min-width:0 !important; box-sizing:border-box !important;"
+                    >
+
+                    <span class="email-domain" style="display:block !important; visibility:visible !important; white-space:nowrap !important; margin-left:8px !important;">@niet.co.in</span>
+
+                </div>
+
+            </div>
+
+            <div
+                id="generate-login-fields"
+                style="display: none;">
+
+                <label for="admission-year">Admission Year</label>
+
+                <select
+                    id="admission-year"
+                    onchange="updateGeneratedUsername()">
+
+                    <option value="2023">2023</option>
+                    <option value="2024">2024</option>
+                    <option value="2025" selected>2025</option>
+                    <option value="2026">2026</option>
+
+                </select>
+
+                <input
+                    type="text"
+                    id="branch"
+                    placeholder="Branch (e.g. CSDS)"
+                    maxlength="10"
+                    oninput="updateGeneratedUsername()"
+                >
+
+                <input
+                    type="text"
+                    id="student-number"
+                    placeholder="3-digit student number"
+                    inputmode="numeric"
+                    maxlength="3"
+                    pattern="[0-9]{3}"
+                    oninput="updateGeneratedUsername()"
+                >
+
+                <p>
+                    Your NIET email:
+                    <strong id="generated-username">—</strong>
+                </p>
+
+            </div>
 
             <input
-                type="text"
+                type="hidden"
                 name="username"
-                placeholder="College username"
-                required
+                id="generated-username-input"
+                disabled
+            >
+
+            <input
+                type="hidden"
+                name="username"
+                id="manual-username-input"
+                disabled
             >
 
             <input
@@ -157,6 +248,66 @@
     <!-- LOADING -->
     <!-- ================================= -->
 
+    <style>
+        .loading-screen {
+  display: none;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 18px;
+  text-align: center;
+  padding: 30px 40px;
+  min-height: 380px;
+  width: 100%;
+  box-sizing: border-box;
+
+        }
+
+        .loading-screen video {
+  display: block;
+  width: 427px;
+  height: 320px;
+  max-width: 100%;
+  max-height: 320px;
+  margin: 0 auto;
+  border-radius: 0;
+  object-fit: cover;
+
+        }
+
+        .loading-copy {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .loading-copy h2 {
+            margin: 0 0 8px;
+            font-size: 24px;
+        }
+
+        .loading-copy p {
+            margin: 0;
+            color: #6b7280;
+            font-size: 16px;
+        }
+
+        @media (max-width: 800px) {
+            .loading-screen {
+                flex-direction: column;
+                gap: 20px;
+                padding: 24px;
+                text-align: center;
+            }
+
+            .loading-screen video {
+                flex-basis: auto;
+                width: 100%;
+                height: auto;
+                max-height: 320px;
+            }
+        }
+    </style>
+
     <div
         id="loading-screen"
         class="loading-screen">
@@ -175,11 +326,13 @@
 
         </video>
 
-        <h2>Getting your attendance...</h2>
+        <div class="loading-copy">
+            <h2>Getting your attendance...</h2>
 
-        <p>
-            BunkMaster is checking the college portal.
-        </p>
+            <p>
+                BunkMaster is checking the college portal.
+            </p>
+        </div>
 
     </div>
 
@@ -660,7 +813,8 @@
                 <h3>🟢 Attendance is Safe</h3>
 
                 <p>
-                    You are above the 75% requirement.
+                    You are currently above the
+                    75% attendance requirement.
                 </p>
 
             </div>
@@ -672,11 +826,12 @@
                 <h3>🟡 Attendance Recovery Needed</h3>
 
                 <p>
-                    Your attendance is below 75%.
+                    Your attendance is currently
+                    below 75%.
                 </p>
 
                 <p>
-                    You need to attend
+                    You need to attend approximately
                     <strong>
                         {{ second.classes_needed_for_75 }}
                     </strong>
@@ -692,12 +847,13 @@
                 <h3>🔴 75% Not Reachable</h3>
 
                 <p>
-                    Even attending every remaining
-                    class cannot reach 75% by this checkpoint.
+                    Even if you attend every remaining
+                    class before this checkpoint, 75%
+                    cannot be reached.
                 </p>
 
                 <p>
-                    Maximum possible:
+                    Maximum possible attendance:
                     <strong>
                         {{ second.maximum_possible_percentage }}%
                     </strong>
@@ -708,7 +864,7 @@
             {% endif %}
 
 
-            <!-- FLOW -->
+            <!-- STARTING ATTENDANCE -->
 
             <div class="attendance-flow">
 
@@ -749,6 +905,8 @@
             </div>
 
 
+            <!-- SAFE LEAVE -->
+
             <div class="safe-leave-box">
 
                 <span>Maximum Safe Leave</span>
@@ -758,8 +916,8 @@
                 </strong>
 
                 <p>
-                    Based on your current projected
-                    attendance.
+                    This is the maximum you can miss
+                    while staying at or above 75%.
                 </p>
 
             </div>
@@ -768,12 +926,14 @@
             <hr>
 
 
+            <!-- USER CHOICE -->
+
             <h3>
                 How much leave will you take?
             </h3>
 
             <p>
-                Choose your actual leave for this period.
+                Enter the leave you actually plan to take.
             </p>
 
 
@@ -836,6 +996,8 @@
                 </p>
 
 
+                <!-- LIVE PROJECTION -->
+
                 <div class="projection-box">
 
                     <span>
@@ -889,22 +1051,10 @@
 
         <h2>Third Sessional</h2>
 
-        {% if second.state == "completed" %}
-
         <p>
-            The Second Sessional has already passed.
-            Your current attendance from the college
-            portal will be used for this calculation.
+            Here is your attendance plan through
+            the final checkpoint.
         </p>
-
-        {% else %}
-
-        <p>
-            Your Second Sessional expected attendance
-            has been carried forward to this checkpoint.
-        </p>
-
-        {% endif %}
 
         <p>
             <strong>Step 3 of 3</strong>
@@ -915,85 +1065,6 @@
 
 
     <div class="bunk-results">
-
-
-        <!-- SECOND SESSIONAL / STARTING ATTENDANCE -->
-
-        <div class="bunk-card carried-forward">
-
-            {% if second.state == "completed" %}
-
-            <h3>
-                Second Sessional
-            </h3>
-
-            <p>
-                <strong>✅ Completed</strong>
-            </p>
-
-            <p>
-                The Second Sessional has already passed.
-                BunkMaster does not know your exact
-                attendance at that checkpoint because
-                you did not make a plan for it.
-            </p>
-
-            <p class="carry-message">
-                Your current attendance from the college
-                portal is being used as the starting
-                attendance for the Third Sessional.
-            </p>
-
-            {% else %}
-
-            <h3>
-                Second Sessional — Expected Attendance
-            </h3>
-
-            <p>
-                Based on your selected leave, your
-                attendance at the Second Sessional will be:
-            </p>
-
-            <div class="carried-grid">
-
-                <div>
-                    <span>Leave You Selected</span>
-                    <strong>
-                        {{ second.requested_leave_display }}
-                    </strong>
-                </div>
-
-                <div>
-                    <span>Attendance at Second Sessional</span>
-                    <strong>
-                        {{ second.requested_projected_attended }}
-                        /
-                        {{ second.requested_projected_total }}
-                    </strong>
-                </div>
-
-                <div>
-                    <span>Expected Percentage</span>
-                    <strong>
-                        {{ second.requested_projected_percentage }}%
-                    </strong>
-                </div>
-
-            </div>
-
-            <p class="carry-message">
-                This expected attendance will become
-                your starting attendance for the
-                Third Sessional.
-            </p>
-
-            {% endif %}
-
-        </div>
-
-
-        <!-- THIRD -->
 
         <div class="bunk-card">
 
@@ -1012,7 +1083,8 @@
                 <h3>🟢 Attendance is Safe</h3>
 
                 <p>
-                    You are above the 75% requirement.
+                    You are currently above the
+                    75% attendance requirement.
                 </p>
 
             </div>
@@ -1024,11 +1096,12 @@
                 <h3>🟡 Attendance Recovery Needed</h3>
 
                 <p>
-                    Your attendance is below 75%.
+                    Your attendance is currently
+                    below 75%.
                 </p>
 
                 <p>
-                    You need to attend
+                    You need to attend approximately
                     <strong>
                         {{ third.classes_needed_for_75 }}
                     </strong>
@@ -1044,12 +1117,13 @@
                 <h3>🔴 75% Not Reachable</h3>
 
                 <p>
-                    Even attending every remaining
-                    class cannot reach 75%.
+                    Even if you attend every remaining
+                    class before this checkpoint, 75%
+                    cannot be reached.
                 </p>
 
                 <p>
-                    Maximum possible:
+                    Maximum possible attendance:
                     <strong>
                         {{ third.maximum_possible_percentage }}%
                     </strong>
@@ -1059,6 +1133,8 @@
 
             {% endif %}
 
+
+            <!-- STARTING ATTENDANCE -->
 
             <div class="attendance-flow">
 
@@ -1099,6 +1175,8 @@
             </div>
 
 
+            <!-- SAFE LEAVE -->
+
             <div class="safe-leave-box">
 
                 <span>Maximum Safe Leave</span>
@@ -1108,8 +1186,8 @@
                 </strong>
 
                 <p>
-                    Based on your current projected
-                    attendance.
+                    This is the maximum you can miss
+                    while staying at or above 75%.
                 </p>
 
             </div>
@@ -1118,12 +1196,14 @@
             <hr>
 
 
+            <!-- USER CHOICE -->
+
             <h3>
                 How much leave will you take?
             </h3>
 
             <p>
-                Choose your actual leave for this period.
+                Enter the leave you actually plan to take.
             </p>
 
 
@@ -1186,10 +1266,12 @@
                 </p>
 
 
+                <!-- LIVE PROJECTION -->
+
                 <div class="projection-box">
 
                     <span>
-                        At the final checkpoint
+                        At the checkpoint
                     </span>
 
                     <strong id="projection_3">
@@ -1200,8 +1282,8 @@
                     </strong>
 
                     <p>
-                        This will be your final projected
-                        attendance for the current plan.
+                        This is your projected attendance
+                        at the Third Sessional.
                     </p>
 
                 </div>
@@ -1211,7 +1293,7 @@
                     type="submit"
                     class="attendance-button">
 
-                    Finish Bunk Calculation
+                    Finish Attendance Plan
 
                 </button>
 
@@ -1225,181 +1307,45 @@
 
 
     <!-- ================================= -->
-    <!-- FINAL RESULT -->
+    <!-- SEMESTER COMPLETE -->
     <!-- ================================= -->
 
     {% if calculator_step == 4 and phase_1 %}
 
-    {% set first = phase_1.checkpoints[0] %}
-    {% set second = phase_1.checkpoints[1] %}
-    {% set third = phase_1.checkpoints[2] %}
-
-
     <div class="summary">
 
-        <h2>Your Final Bunk Plan</h2>
+        <h2>Semester Attendance Plan</h2>
 
         <p>
-            Here is your complete attendance plan
-            based on the choices you made.
+            All three sessional checkpoints have
+            passed or been completed.
         </p>
 
     </div>
 
+    {% for checkpoint in phase_1.checkpoints %}
 
     <div class="bunk-results">
 
+        <div class="bunk-card">
 
-        <!-- FIRST -->
-
-        <div class="bunk-card plan-card">
-
-            <span class="plan-step">
-                CHECKPOINT 1
-            </span>
-
-            <h3>First Sessional</h3>
+            <h3>{{ checkpoint.name }}</h3>
 
             <p>
-                Leave taken:
-                <strong>
-                    {{ first.requested_leave_display }}
-                </strong>
+                Checkpoint:
+                <strong>{{ checkpoint.date }}</strong>
             </p>
 
-            <div class="plan-attendance">
+            {% if checkpoint.state == "completed" %}
 
-                <span>Attendance after checkpoint</span>
+            <div class="summary">
 
-                <strong>
-                    {{ first.requested_projected_attended }}
-                    /
-                    {{ first.requested_projected_total }}
-                </strong>
+                <h3>✅ Completed</h3>
 
-                <small>
-                    {{ first.requested_projected_percentage }}%
-                </small>
+                <p>
+                    This checkpoint has already passed.
+                </p>
 
-            </div>
-
-        </div>
-
-
-        <!-- SECOND -->
-
-        <div class="bunk-card plan-card">
-
-            <span class="plan-step">
-                CHECKPOINT 2
-            </span>
-
-            <h3>Second Sessional</h3>
-
-            <p>
-                Leave taken:
-                <strong>
-                    {{ second.requested_leave_display }}
-                </strong>
-            </p>
-
-            <div class="plan-attendance">
-
-                <span>Attendance after checkpoint</span>
-
-                <strong>
-                    {{ second.requested_projected_attended }}
-                    /
-                    {{ second.requested_projected_total }}
-                </strong>
-
-                <small>
-                    {{ second.requested_projected_percentage }}%
-                </small>
-
-            </div>
-
-            <p>
-                Remaining safe leave:
-                <strong>
-                    {{ second.remaining_safe_leave_display }}
-                </strong>
-            </p>
-
-        </div>
-
-
-        <!-- THIRD -->
-
-        <div class="bunk-card plan-card">
-
-            <span class="plan-step">
-                CHECKPOINT 3
-            </span>
-
-            <h3>Third Sessional</h3>
-
-            <p>
-                Leave taken:
-                <strong>
-                    {{ third.requested_leave_display }}
-                </strong>
-            </p>
-
-            <div class="plan-attendance">
-
-                <span>Final checkpoint attendance</span>
-
-                <strong>
-                    {{ third.requested_projected_attended }}
-                    /
-                    {{ third.requested_projected_total }}
-                </strong>
-
-                <small>
-                    {{ third.requested_projected_percentage }}%
-                </small>
-
-            </div>
-
-            <p>
-                Remaining safe leave:
-                <strong>
-                    {{ third.remaining_safe_leave_display }}
-                </strong>
-            </p>
-
-        </div>
-
-
-        <!-- FINAL -->
-
-        <div class="bunk-card final-result">
-
-            <span>FINAL PROJECTED ATTENDANCE</span>
-
-            <strong>
-                {{ third.requested_projected_percentage }}%
-            </strong>
-
-            <p>
-                {{ third.requested_projected_attended }}
-                /
-                {{ third.requested_projected_total }}
-                classes
-            </p>
-
-
-            {% if third.requested_projected_percentage >= 75 %}
-
-            <div class="final-status safe">
-                ✅ Your plan maintains at least 75% attendance.
-            </div>
-
-            {% else %}
-
-            <div class="final-status danger">
-                ⚠️ Your plan falls below the 75% requirement.
             </div>
 
             {% endif %}
@@ -1407,6 +1353,8 @@
         </div>
 
     </div>
+
+    {% endfor %}
 
     {% endif %}
 
@@ -1451,7 +1399,12 @@
 
             {% for subject in attendance.subjects %}
 
-                <tr>
+                <tr
+                    class="subject-attendance-row"
+                    data-subject-index="{{ loop.index0 }}"
+                    onclick="showSubjectAttendance({{ loop.index0 }})"
+                    style="cursor:pointer;"
+                >
 
                     <td>
                         {{ subject.get(
@@ -1520,6 +1473,75 @@
     </div>
 
 
+    <!-- ================================= -->
+    <!-- SELECTED SUBJECT ATTENDANCE DETAILS -->
+    <!-- ================================= -->
+
+    <div id="subject-attendance-details" style="display:none; margin-top:32px;">
+
+        {% for detail in attendance.subject_details %}
+
+        <div
+            class="subject-detail-panel"
+            data-subject-detail="{{ loop.index0 }}"
+            style="display:none;"
+        >
+
+            <div class="summary" style="margin-bottom:16px;">
+
+                <h2>Attendance Details of {{ detail.subject_name }}</h2>
+
+            </div>
+
+            {% if detail.records %}
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Sr. No.</th>
+                            <th>Date</th>
+                            <th>Lecture Time</th>
+                            <th>Session</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for record in detail.records %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ record.get("Date", "") }}</td>
+                            <td>
+                                {{ record.get("stime", "") }}
+                                -
+                                {{ record.get("etime", "") }}
+                            </td>
+                            <td>{{ record.get("sessionNo", "") }}</td>
+                            <td>{{ record.get("presenty", "") }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            {% else %}
+
+            <p>No attendance details were returned for this subject.</p>
+
+            {% endif %}
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+
     {% endif %}
 
 </div>
@@ -1530,6 +1552,51 @@
 <!-- ================================= -->
 
 <script>
+
+
+/* =========================================
+   SUBJECT ATTENDANCE DETAILS
+   ========================================= */
+
+function showSubjectAttendance(index) {
+
+    const container =
+        document.getElementById("subject-attendance-details");
+
+    if (!container) {
+        return;
+    }
+
+    const panels =
+        container.querySelectorAll("[data-subject-detail]");
+
+    let selectedPanel = null;
+
+    panels.forEach(function(panel) {
+
+        const selected =
+            panel.dataset.subjectDetail === String(index);
+
+        panel.style.display = selected ? "block" : "none";
+
+        if (selected) {
+            selectedPanel = panel;
+        }
+
+    });
+
+    if (!selectedPanel) {
+        container.style.display = "none";
+        return;
+    }
+
+    container.style.display = "block";
+
+    container.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
+}
 
 
 /* =========================================
@@ -1765,65 +1832,152 @@ document
 
 
 /* =========================================
-   LOGIN LOADING
+   LOGIN METHOD
+   ========================================= */
+
+function setLoginMethod(method) {
+
+    const manualFields = document.getElementById("manual-login-fields");
+    const generateFields = document.getElementById("generate-login-fields");
+    const manualUsername = document.getElementById("manual-username");
+    const generatedUsername = document.getElementById("generated-username-input");
+    const manualUsernameInput = document.getElementById("manual-username-input");
+    const manualButton = document.getElementById("manual-login-button");
+    const generateButton = document.getElementById("generate-login-button");
+
+    if (method === "generate") {
+        manualFields.style.setProperty("display", "none", "important");
+        generateFields.style.setProperty("display", "block", "important");
+        manualUsername.disabled = true;
+        manualUsername.required = false;
+        manualUsernameInput.disabled = true;
+        manualUsernameInput.required = false;
+        generatedUsername.disabled = false;
+        generatedUsername.required = true;
+        manualButton.classList.remove("active");
+        generateButton.classList.add("active");
+        updateGeneratedUsername();
+    } else {
+        manualFields.style.setProperty("display", "block", "important");
+        generateFields.style.setProperty("display", "none", "important");
+        manualUsername.disabled = false;
+        manualUsername.required = true;
+        generatedUsername.disabled = true;
+        generatedUsername.required = false;
+        manualUsernameInput.disabled = false;
+        manualUsernameInput.required = true;
+        generateButton.classList.remove("active");
+        manualButton.classList.add("active");
+        updateManualUsername();
+    }
+}
+
+
+/* =========================================
+   GENERATED USERNAME
+   ========================================= */
+
+function updateGeneratedUsername() {
+
+    const year =
+        document.getElementById("admission-year").value;
+
+    const branch =
+        document.getElementById("branch").value.trim().toLowerCase();
+
+    const studentNumber =
+        document.getElementById("student-number").value.trim();
+
+    const output =
+        document.getElementById("generated-username");
+
+    const hidden =
+        document.getElementById("generated-username-input");
+
+    if (!branch || !studentNumber) {
+
+        output.textContent = "—";
+        hidden.value = "";
+        return;
+    }
+
+    const yearCode =
+        "0" + String(Number(year) + 1).slice(-2) + "1";
+
+    const username =
+        `${yearCode}${branch}${studentNumber}@niet.co.in`;
+
+    output.textContent = username;
+    hidden.value = username;
+}
+
+
+/* =========================================
+   MANUAL USERNAME
+   ========================================= */
+
+function updateManualUsername() {
+
+    const manualUsername =
+        document.getElementById("manual-username");
+
+    const hidden =
+        document.getElementById("manual-username-input");
+
+    if (!manualUsername || !hidden) {
+        return;
+    }
+
+    let value =
+        manualUsername.value.trim();
+
+    if (!value) {
+        hidden.value = "";
+        return;
+    }
+
+    if (value.toLowerCase().endsWith("@niet.co.in")) {
+        value = value.slice(
+            0,
+            -"@niet.co.in".length
+        );
+    }
+
+    hidden.value =
+        `${value}@niet.co.in`;
+}
+
+
+/* =========================================
+   LOADING
    ========================================= */
 
 function showLoading() {
 
     const loginSection =
-        document.getElementById(
-            "login-section"
-        );
-
-    if (loginSection) {
-
-        loginSection.style.display =
-            "none";
-
-    }
+        document.getElementById("login-section");
 
     const loadingScreen =
-        document.getElementById(
-            "loading-screen"
-        );
+        document.getElementById("loading-screen");
 
-    if (loadingScreen) {
+    const video =
+        document.getElementById("loading-video");
 
-        loadingScreen.style.display =
-            "block";
-
-        const video =
-            document.getElementById(
-                "loading-video"
-            );
-
-        if (video) {
-
-            video.currentTime = 5;
-
-            video.muted = false;
-
-            video.volume = 1.0;
-
-            video.play().catch(
-                function(error) {
-
-                    console.log(
-                        "Video playback:",
-                        error
-                    );
-
-                }
-            );
-
-        }
-
+    if (loginSection) {
+        loginSection.style.display = "none";
     }
 
+    if (loadingScreen) {
+        loadingScreen.style.display = "flex";
+    }
+
+    if (video) {
+        video.play().catch(function() {});
+    }
 }
 
-</script>
 
+</script>
 
 </body>
 
