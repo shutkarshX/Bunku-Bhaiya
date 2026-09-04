@@ -246,6 +246,33 @@
 
             </div>
 
+            {% set unmarked_classes = 0 %}
+            {% if attendance.subjects %}
+                {% set unmarked_classes = attendance.subjects[0].get(
+                    "_bunkmaster_unmarked_classes",
+                    0
+                ) %}
+            {% endif %}
+
+            {% if unmarked_classes > 0 %}
+            <div class="stat-card overall">
+
+                <span>After Unmarked Classes</span>
+
+                <strong>
+                    {{
+                        (
+                            (attendance.total_attended + unmarked_classes)
+                            /
+                            (attendance.total_classes + unmarked_classes)
+                            * 100
+                        ) | round(2)
+                    }}%
+                </strong>
+
+            </div>
+            {% endif %}
+
         </div>
 
     </div>
