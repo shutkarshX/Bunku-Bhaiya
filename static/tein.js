@@ -3,11 +3,14 @@
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const coarsePointer = window.matchMedia("(pointer: coarse)");
+    const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
 
     const audio = {
         ctx: null,
-        enabled: true,
-        last: 0
+        master: null,
+        enabled: localStorage.getItem("tein-sound") !== "off",
+        last: 0,
+        unlocked: false
     };
 
     function loadVisualOverhaul() {
@@ -24,30 +27,86 @@
         const Ctx = window.AudioContext || window.webkitAudioContext;
         if (!Ctx) return;
         audio.ctx = new Ctx();
+        audio.master = audio.ctx.createGain();
+        audio.master.gain.value = 0.7;
+        audio.master.connect(audio.ctx.destination);
+    }
+
+    function unlockAudio() {
+        if (!audio.enabled) return;
+        initAudio();
+        if (!audio.ctx) return;
+        if (audio.ctx.state === "suspended") audio.ctx.resume();
+        audio.unlocked = true;
+    }
+
+    function tone(frequency, duration, volume, type = "sine", when = 0) {
+        if (!audio.enabled || !audio.ctx || !audio.master) return;
+        const ctx = audio.ctx;
+        const now = ctx.currentTime + when;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(frequency, now);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(volume, now + 0.006);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+        osc.connect(gain).connect(audio.master);
+        osc.start(now);
+        osc.stop(now + duration + 0.015);
     }
 
     function tick(kind = "soft") {
-        if (!audio.enabled || reduceMotion.matches) return;
+        if (!audio.enabled) return;
         const now = performance.now();
-        if (now - audio.last < 90) return;
+        if (now - audio.last < 55) return;
         audio.last = now;
-        initAudio();
-        if (!audio.ctx) return;
-        const ctx = audio.ctx;
-        if (ctx.state === "suspended") ctx.resume();
+        unlockAudio();
+        if (!audio.unlocked) return;
 
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        const base = kind === "success" ? 520 : kind === "error" ? 150 : 300;
-        osc.type = kind === "success" ? "sine" : "triangle";
-        osc.frequency.setValueAtTime(base, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(base * 1.18, ctx.currentTime + .08);
-        gain.gain.setValueAtTime(.0001, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(.035, ctx.currentTime + .008);
-        gain.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime + .11);
-        osc.connect(gain).connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + .12);
+        if (kind === "success") {
+            tone(520, .08, .045, "sine");
+            tone(780, .12, .035, "sine", .055);
+            return;
+        }
+        if (kind === "error") {
+            tone(180, .11, .045, "triangle");
+            tone(125, .14, .032, "triangle", .055);
+            return;
+        }
+        if (kind === "hover") {
+            tone(900, .035, .012, "sine");
+            return;
+        }
+        tone(330, .055, .022, "triangle");
+        tone(495, .045, .012, "sine", .018);
+    }
+
+    function setupGlobalAudioUnlock() {
+        const unlock = () => unlockAudio();
+        window.addEventListener("pointerdown", unlock, { passive: true, once: true });
+        window.addEventListener("keydown", unlock, { passive: true, once: true });
+    }
+
+    function setupInteractiveSounds() {
+        const selector = [
+            "button",
+            "a",
+            "input",
+            "select",
+            "textarea",
+            ".subject-attendance-row",
+            ".flow-card"
+        ].join(",");
+
+        document.querySelectorAll(selector).forEach((element) => {
+            if (element.dataset.teinSoundBound) return;
+            element.dataset.teinSoundBound = "true";
+            element.addEventListener("pointerenter", () => {
+                if (!coarsePointer.matches) tick("hover");
+            });
+            element.addEventListener("pointerdown", () => tick("soft"));
+        });
     }
 
     function setupMagneticButtons() {
@@ -64,7 +123,6 @@
             button.addEventListener("pointerleave", () => {
                 button.style.transform = "";
             });
-            button.addEventListener("pointerdown", () => tick("soft"));
         });
     }
 
@@ -124,38 +182,69 @@
         });
     }
 
-    function setupSoundToggle() {
-        const toggle = document.createElement("button");
-        toggle.type = "button";
-        toggle.className = "tein-sound-toggle";
-        toggle.setAttribute("aria-label", "Toggle interface sounds");
-        toggle.innerHTML = '<span class="tein-sound-dot"></span><span>Sound</span>';
-        toggle.addEventListener("click", () => {
-            audio.enabled = !audio.enabled;
-            toggle.classList.toggle("is-off", !audio.enabled);
-            if (audio.enabled) tick("success");
-        });
-        document.body.appendChild(toggle);
+    function applyTheme(mode) {
+        if (mode === "system") {
+            delete document.documentElement.dataset.theme;
+        } else {
+            document.documentElement.dataset.theme = mode;
+        }
+        localStorage.setItem("tein-theme", mode);
     }
 
     function setupThemeToggle() {
         const toggle = document.createElement("button");
         toggle.type = "button";
         toggle.className = "tein-theme-toggle";
-        toggle.setAttribute("aria-label", "Toggle light and dark theme");
-        toggle.innerHTML = '<span>Theme</span><span class="tein-theme-indicator"></span>';
-        const stored = localStorage.getItem("tein-theme");
-        if (stored) document.documentElement.dataset.theme = stored;
-        const sync = () => toggle.classList.toggle("is-dark", document.documentElement.dataset.theme === "dark");
+        toggle.setAttribute("aria-label", "Cycle TEIN theme: system, light, dark");
+
+        const modes = ["system", "light", "dark"];
+        let mode = localStorage.getItem("tein-theme") || "system";
+        if (!modes.includes(mode)) mode = "system";
+        applyTheme(mode);
+
+        const render = () => {
+            const isDark = mode === "dark" || (mode === "system" && systemTheme.matches);
+            toggle.dataset.mode = mode;
+            toggle.innerHTML = `<span class="tein-theme-glyph" aria-hidden="true"></span><span class="tein-theme-label">${mode === "system" ? "Auto" : isDark ? "Dark" : "Light"}</span>`;
+        };
+
         toggle.addEventListener("click", () => {
-            const current = document.documentElement.dataset.theme;
-            const next = current === "dark" ? "light" : "dark";
-            document.documentElement.dataset.theme = next;
-            localStorage.setItem("tein-theme", next);
-            sync();
+            const nextIndex = (modes.indexOf(mode) + 1) % modes.length;
+            mode = modes[nextIndex];
+            applyTheme(mode);
+            render();
             tick("soft");
         });
-        sync();
+
+        const onSystemChange = () => {
+            if (mode === "system") render();
+        };
+        if (systemTheme.addEventListener) systemTheme.addEventListener("change", onSystemChange);
+        else if (systemTheme.addListener) systemTheme.addListener(onSystemChange);
+
+        render();
+        document.body.appendChild(toggle);
+    }
+
+    function setupSoundToggle() {
+        const toggle = document.createElement("button");
+        toggle.type = "button";
+        toggle.className = "tein-sound-toggle";
+        toggle.setAttribute("aria-label", "Toggle interface sounds");
+        const render = () => {
+            toggle.classList.toggle("is-off", !audio.enabled);
+            toggle.innerHTML = `<span class="tein-sound-glyph" aria-hidden="true"></span><span>${audio.enabled ? "Sound" : "Muted"}</span>`;
+        };
+        toggle.addEventListener("click", () => {
+            audio.enabled = !audio.enabled;
+            localStorage.setItem("tein-sound", audio.enabled ? "on" : "off");
+            if (audio.enabled) {
+                unlockAudio();
+                tick("success");
+            }
+            render();
+        });
+        render();
         document.body.appendChild(toggle);
     }
 
@@ -167,6 +256,7 @@
 
     document.addEventListener("DOMContentLoaded", () => {
         loadVisualOverhaul();
+        setupGlobalAudioUnlock();
         setupMagneticButtons();
         setupCardTilt();
         setupSubjectRows();
@@ -174,6 +264,7 @@
         setupForms();
         setupSoundToggle();
         setupThemeToggle();
+        setupInteractiveSounds();
     });
 
     window.TEIN = { tick };
