@@ -32,8 +32,10 @@
 .tein-subjects-view .bunk-results{display:none!important}
 .tein-subjects-view .summary:not(.tein-subject-heading){display:none}
 .tein-subjects-view .table-container{display:block}
-.tein-subjects-view #subject-attendance-details{display:block!important}
 .tein-app-nav .tein-nav-count{display:inline-block;margin-left:5px;min-width:17px;padding:3px 5px;border-radius:99px;background:var(--surface-2);font-size:9px;letter-spacing:0}
 .tein-completed-note{margin:0 0 14px;padding:12px 15px;border-left:2px solid var(--line-strong);color:var(--muted);font-size:12px}
 @media(max-width:650px){.tein-app-nav{top:8px;margin-bottom:13px;border-radius:14px}.tein-app-nav button{padding:11px 5px;font-size:9px;letter-spacing:.09em}.tein-focus{grid-template-columns:1fr;gap:13px;padding:17px}.tein-focus-action{width:100%}.tein-checkpoints{grid-template-columns:1fr;gap:6px}.tein-checkpoint{min-height:46px}.tein-view-title{align-items:start;flex-direction:column;margin-bottom:12px}.tein-subjects-view .table-container{margin-left:-2px;margin-right:-2px}.tein-app-view{animation-duration:.36s}}
 @media(prefers-reduced-motion:reduce){.tein-app-view,.tein-checkpoint,.tein-app-nav button{animation:none;transition:none}}
+/* The subject detail panel must keep its original hidden-until-selected behavior. */
+.tein-subjects-view #subject-attendance-details{display:none}
+.tein-subjects-view #subject-attendance-details[style*="display: block"]{display:block}
