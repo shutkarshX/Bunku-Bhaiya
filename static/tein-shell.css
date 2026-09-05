@@ -1,0 +1,49 @@
+/* TEIN app shell: structure first, decoration second. */
+.tein-app-nav{display:flex;align-items:center;gap:5px;margin:0 0 16px;padding:5px;border:1px solid var(--line-strong);border-radius:15px;background:color-mix(in srgb,var(--surface-solid) 90%,transparent);position:sticky;top:10px;z-index:80;box-shadow:0 10px 30px color-mix(in srgb,var(--text) 6%,transparent);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.tein-app-nav button{appearance:none;border:0;background:transparent;color:var(--muted);padding:11px 15px;border-radius:10px;font:800 10px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:background .28s ease,color .22s ease,transform .28s cubic-bezier(.16,1,.3,1)}
+.tein-app-nav button:hover{color:var(--text);transform:translateY(-1px)}
+.tein-app-nav button.is-active{color:var(--text);background:var(--accent-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent-2) 22%,transparent)}
+.tein-app-view{display:none}
+.tein-app-view.is-active{display:block;animation:tein-view-in .42s cubic-bezier(.16,1,.3,1) both}
+@keyframes tein-view-in{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+.tein-home-hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:end;margin:0 0 18px;padding:24px 26px;border:1px solid var(--line-strong);border-radius:24px;background:linear-gradient(108deg,var(--surface-solid),color-mix(in srgb,var(--accent-soft) 35%,var(--surface-solid)));overflow:hidden;position:relative}
+.tein-home-hero::after{content:"";position:absolute;right:-70px;bottom:-100px;width:280px;height:280px;border-radius:50%;border:1px solid color-mix(in srgb,var(--accent-2) 28%,transparent);box-shadow:0 0 0 18px color-mix(in srgb,var(--accent-2) 3%,transparent),0 0 0 38px color-mix(in srgb,var(--accent-2) 2%,transparent);pointer-events:none}
+.tein-eyebrow{display:block;margin-bottom:8px;color:var(--muted);font:800 10px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.16em;text-transform:uppercase}
+.tein-home-hero h2{margin:0 0 7px;font-size:clamp(28px,4.7vw,58px);line-height:.96;letter-spacing:-.06em;max-width:650px}
+.tein-home-hero p{margin:0;color:var(--muted);font-size:13px;max-width:560px}
+.tein-home-hero .stat-card.overall{position:relative;min-width:280px;min-height:170px;margin:0;border:0;background:var(--text);color:var(--bg);box-shadow:none}
+.tein-home-hero .stat-card.overall span{color:color-mix(in srgb,var(--bg) 58%,transparent)}
+.tein-home-hero .stat-card.overall strong{font-size:clamp(64px,8vw,104px);letter-spacing:-.09em}
+.tein-home-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 18px}
+.tein-mini-stat{padding:17px 18px;border:1px solid var(--line);border-radius:17px;background:var(--surface-2)}
+.tein-mini-stat span{display:block;color:var(--muted);font:800 9px/1.2 ui-sans-serif,system-ui,sans-serif;letter-spacing:.13em;text-transform:uppercase;margin-bottom:9px}
+.tein-mini-stat strong{font-size:28px;letter-spacing:-.045em}
+.tein-home-next{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:16px;margin:0 0 18px;padding:17px 19px;border-left:3px solid var(--accent-2);border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0 18px 18px 0;background:var(--surface-2)}
+.tein-home-next strong{font-size:17px}
+.tein-home-next p{margin:4px 0 0;color:var(--muted);font-size:12px}
+.tein-home-next .attendance-button{white-space:nowrap}
+.tein-checkpoints{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:0 0 18px}
+.tein-checkpoint{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;min-width:0;padding:11px 13px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2);color:var(--muted);transition:transform .28s cubic-bezier(.16,1,.3,1),border-color .25s ease,background .25s ease}
+.tein-checkpoint:hover{transform:translateY(-2px);border-color:var(--line-strong)}
+.tein-checkpoint-mark{width:19px;height:19px;display:grid;place-items:center;border:1px solid currentColor;border-radius:50%;font:800 9px/1 ui-sans-serif,system-ui,sans-serif}
+.tein-checkpoint.is-complete{opacity:.52}
+.tein-checkpoint.is-active{color:var(--text);background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent-2) 40%,var(--line-strong))}
+.tein-checkpoint.is-active .tein-checkpoint-mark{border-color:var(--accent-2);background:var(--accent-2);color:var(--bg)}
+.tein-checkpoint-copy{min-width:0}
+.tein-checkpoint-copy strong{display:block;color:inherit;font-size:11px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tein-checkpoint-copy small{display:block;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tein-checkpoint-arrow{font:800 14px/1 ui-sans-serif,system-ui,sans-serif}
+.tein-history{margin:0 0 18px;padding:16px 18px;border:1px solid var(--line);border-radius:18px;background:var(--surface-2)}
+.tein-history h3{margin:0 0 9px;font-size:12px;text-transform:uppercase;letter-spacing:.13em;color:var(--muted)}
+.tein-history-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:12px}
+.tein-history-row:first-of-type{border-top:0}
+.tein-history-row strong{font-size:12px}
+.tein-history-row span{color:var(--muted)}
+.tein-subject-heading{padding:0 3px!important;margin:0 0 12px!important;border:0!important;background:transparent!important;box-shadow:none!important}
+.tein-plan-title{margin:0 0 14px;padding:0 4px}.tein-plan-title h2{margin:0 0 4px;font-size:clamp(26px,4vw,42px);letter-spacing:-.055em}.tein-plan-title p{margin:0;color:var(--muted);font-size:12px}
+.tein-plan-view .summary:first-child{display:none}
+.tein-plan-view .bunk-results{margin-top:0}
+.tein-home-view .legacy-dashboard-summary,.tein-home-view .legacy-sessionals,.tein-home-view .legacy-subjects{display:none!important}
+@media(max-width:760px){.tein-app-nav{top:7px}.tein-app-nav button{flex:1;padding:10px 4px;font-size:8px;letter-spacing:.07em}.tein-home-hero{grid-template-columns:1fr;gap:12px;padding:18px}.tein-home-hero .stat-card.overall{min-width:0;min-height:150px}.tein-home-stats{gap:6px}.tein-mini-stat{padding:14px 13px}.tein-mini-stat strong{font-size:23px}.tein-home-next{grid-template-columns:1fr}.tein-home-next .attendance-button{width:100%}.tein-checkpoints{grid-template-columns:1fr;gap:5px}.tein-checkpoint{min-height:45px}.tein-checkpoint-arrow{display:none}}
+@media(max-width:430px){.tein-home-hero h2{font-size:30px}.tein-home-hero .stat-card.overall strong{font-size:68px}.tein-home-stats{grid-template-columns:1fr 1fr}.tein-mini-stat:last-child{grid-column:1/-1}}
+@media(prefers-reduced-motion:reduce){.tein-app-view,.tein-checkpoint,.tein-app-nav button{animation:none;transition:none}}
