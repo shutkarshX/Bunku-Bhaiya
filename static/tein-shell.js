@@ -14,18 +14,6 @@
         const numberEl = document.getElementById("student-number");
         if (!manualFields || !generateFields) return;
 
-        const setMethod = (method) => {
-            const manual = method === "manual";
-            manualFields.style.setProperty("display", manual ? "block" : "none", "important");
-            generateFields.style.setProperty("display", manual ? "none" : "block", "important");
-            if (manualButton) manualButton.classList.toggle("is-selected", manual);
-            if (generateButton) generateButton.classList.toggle("is-selected", !manual);
-            if (manualInput) manualInput.required = manual;
-            if (manualHidden) manualHidden.disabled = !manual;
-            if (generatedInput) generatedInput.disabled = manual;
-            if (!manual) updateGeneratedUsername();
-        };
-
         const updateGeneratedUsername = () => {
             if (!yearEl || !branchEl || !numberEl) return;
             const year = yearEl.value;
@@ -37,6 +25,18 @@
             const display = document.getElementById("generated-username");
             if (display) display.textContent = username;
             if (generatedInput) generatedInput.value = valid ? username : "";
+        };
+
+        const setMethod = (method) => {
+            const manual = method === "manual";
+            manualFields.style.setProperty("display", manual ? "block" : "none", "important");
+            generateFields.style.setProperty("display", manual ? "none" : "block", "important");
+            if (manualButton) manualButton.classList.toggle("is-selected", manual);
+            if (generateButton) generateButton.classList.toggle("is-selected", !manual);
+            if (manualInput) manualInput.required = manual;
+            if (manualHidden) manualHidden.disabled = !manual;
+            if (generatedInput) generatedInput.disabled = manual;
+            if (!manual) updateGeneratedUsername();
         };
 
         window.setLoginMethod = setMethod;
@@ -51,64 +51,27 @@
         if (yearEl) yearEl.addEventListener("change", updateGeneratedUsername);
         if (branchEl) branchEl.addEventListener("input", updateGeneratedUsername);
         if (numberEl) numberEl.addEventListener("input", updateGeneratedUsername);
-
-        // Generated NIET email is the default login method.
         setMethod("generate");
     }
 
     function setupCalculatorInteractions() {
-        const update = (form) => {
-            if (!form) return;
-            const days = Math.max(0, parseInt(form.querySelector('input[name^="leave_"][name$="_days"]')?.value || "0", 10) || 0);
-            const classes = Math.max(0, parseInt(form.querySelector('input[name^="leave_"][name$="_classes"]')?.value || "0", 10) || 0);
-            const teaching = Math.max(1, parseInt(form.dataset.teachingDays || "0", 10) || 0);
-            const maximum = Math.max(0, parseInt(form.dataset.maximumClasses || "0", 10) || 0);
-            const totalLeave = classes + (teaching ? days * Math.ceil(maximum / teaching) : 0);
-            const preview = form.querySelector(".leave-preview strong");
-            if (preview) preview.textContent = `${Math.max(0, totalLeave)} class(es)`;
-        };
         document.querySelectorAll('form[action^="/sessional-"]').forEach((form) => {
             if (form.dataset.teinCalcBound) return;
             form.dataset.teinCalcBound = "true";
-            form.querySelectorAll("input").forEach((input) => input.addEventListener("input", () => update(form)));
-            update(form);
-        });
-    }
-
-    function setupSubjectRows() {
-        document.querySelectorAll(".subject-attendance-row").forEach((row) => {
-            if (row.dataset.teinSubjectBound) return;
-            row.dataset.teinSubjectBound = "true";
-            row.setAttribute("role", "button");
-            row.setAttribute("tabindex", "0");
-            const activate = () => {
-                document.querySelectorAll(".subject-attendance-row.is-selected").forEach((other) => {
-                    if (other !== row) other.classList.remove("is-selected");
-                });
-                row.classList.toggle("is-selected");
-                const targetId = row.dataset.target || row.getAttribute("aria-controls");
-                if (targetId) {
-                    const target = document.getElementById(targetId);
-                    if (target) target.hidden = !row.classList.contains("is-selected");
-                }
+            const refresh = () => {
+                if (typeof window.updateLeavePreview === "function") window.updateLeavePreview(form);
             };
-            row.addEventListener("click", activate);
-            row.addEventListener("keydown", (event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    activate();
-                }
-            });
+            form.querySelectorAll("input").forEach((input) => input.addEventListener("input", refresh));
+            refresh();
         });
     }
 
     function setupShell() {
         const nav = document.querySelector(".tein-app-nav");
         if (!nav) return;
-
-        const buttons = [...nav.querySelectorAll("button[data-view]")];
-        const views = [...document.querySelectorAll(".tein-app-view[data-view]")];
-        if (!buttons.length || !views.length) return;
+        const initialButtons = [...nav.querySelectorAll("button[data-view]")];
+        const initialViews = [...document.querySelectorAll(".tein-app-view[data-view]")];
+        if (!initialButtons.length || !initialViews.length) return;
 
         let moreButton = nav.querySelector('button[data-view="more"]');
         let moreView = document.querySelector('.tein-app-view[data-view="more"]');
@@ -199,7 +162,6 @@
     document.addEventListener("DOMContentLoaded", () => {
         setupLogin();
         setupCalculatorInteractions();
-        setupSubjectRows();
         setupShell();
     });
 })();
