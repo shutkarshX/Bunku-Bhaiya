@@ -349,3 +349,67 @@
 
     window.TEIN = { tick };
 })();
+
+/* Legacy dashboard handlers kept global because dashboard.html uses inline events. */
+window.setLoginMethod = function (method) {
+    const manualFields = document.getElementById("manual-login-fields");
+    const generateFields = document.getElementById("generate-login-fields");
+    const manualButton = document.getElementById("manual-login-button");
+    const generateButton = document.getElementById("generate-login-button");
+    const manualInput = document.getElementById("manual-username");
+    const generatedInput = document.getElementById("generated-username-input");
+    const manualHidden = document.getElementById("manual-username-input");
+    if (!manualFields || !generateFields) return;
+    const manual = method === "manual";
+    manualFields.style.display = manual ? "block" : "none";
+    generateFields.style.display = manual ? "none" : "block";
+    if (manualButton) manualButton.classList.toggle("is-selected", manual);
+    if (generateButton) generateButton.classList.toggle("is-selected", !manual);
+    if (manualInput) manualInput.required = manual;
+    if (manualHidden) manualHidden.disabled = !manual;
+    if (generatedInput) generatedInput.disabled = manual;
+    if (!manual) window.updateGeneratedUsername();
+};
+
+window.updateManualUsername = function () {
+    const input = document.getElementById("manual-username");
+    const hidden = document.getElementById("manual-username-input");
+    if (!input || !hidden) return;
+    let value = input.value.trim();
+    if (!value) {
+        hidden.value = "";
+        return;
+    }
+    if (!value.includes("@")) value += "@niet.co.in";
+    hidden.value = value;
+};
+
+window.updateGeneratedUsername = function () {
+    const yearEl = document.getElementById("admission-year");
+    const branchEl = document.getElementById("branch");
+    const numberEl = document.getElementById("student-number");
+    const display = document.getElementById("generated-username");
+    const hidden = document.getElementById("generated-username-input");
+    if (!yearEl || !branchEl || !numberEl || !display || !hidden) return;
+    const year = yearEl.value;
+    const branch = branchEl.value.trim().toLowerCase();
+    const number = numberEl.value.trim();
+    const valid = year && branch && /^\d{3}$/.test(number);
+    const username = valid ? `${year}${branch}${number}@niet.co.in` : "—";
+    display.textContent = username;
+    hidden.value = valid ? username : "";
+};
+
+window.showLoading = function () {
+    const loginSection = document.getElementById("login-section");
+    const loadingScreen = document.getElementById("loading-screen");
+    const video = document.getElementById("loading-video");
+    if (loginSection) loginSection.style.display = "none";
+    if (loadingScreen) {
+        loadingScreen.style.display = "flex";
+        if (video) {
+            const play = video.play();
+            if (play && typeof play.catch === "function") play.catch(() => {});
+        }
+    }
+};
