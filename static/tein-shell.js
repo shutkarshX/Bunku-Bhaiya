@@ -54,6 +54,142 @@
         setMethod("generate");
     }
 
+    function setupLoginScene() {
+        const loginSection = document.getElementById("login-section");
+        const form = loginSection ? loginSection.querySelector('form[action="/get-attendance"]') : null;
+        if (!loginSection || !form || document.querySelector(".tein-login-scene")) return;
+
+        const style = document.createElement("link");
+        style.rel = "stylesheet";
+        style.href = "/static/tein-login.css";
+        document.head.appendChild(style);
+
+        const sourceVideo = document.getElementById("loading-video");
+        const source = sourceVideo && (sourceVideo.currentSrc || sourceVideo.querySelector("source")?.src)
+            ? (sourceVideo.currentSrc || sourceVideo.querySelector("source").src)
+            : "/static/loading.mp4";
+
+        const scene = document.createElement("div");
+        scene.className = "tein-login-scene";
+        scene.setAttribute("aria-label", "TEIN login");
+
+        const bg = document.createElement("video");
+        bg.className = "tein-login-bg";
+        bg.autoplay = true;
+        bg.muted = true;
+        bg.loop = true;
+        bg.playsInline = true;
+        bg.setAttribute("aria-hidden", "true");
+        bg.src = source;
+
+        const character = document.createElement("video");
+        character.className = "tein-login-character";
+        character.autoplay = true;
+        character.muted = true;
+        character.loop = true;
+        character.playsInline = true;
+        character.setAttribute("aria-hidden", "true");
+        character.src = source;
+
+        const veil = document.createElement("div");
+        veil.className = "tein-login-veil";
+        const noise = document.createElement("div");
+        noise.className = "tein-login-noise";
+        const glow = document.createElement("div");
+        glow.className = "tein-login-glow";
+        const status = document.createElement("div");
+        status.className = "tein-login-status";
+        status.textContent = "Connecting to the NIET portal";
+
+        const content = document.createElement("div");
+        content.className = "tein-login-content";
+        loginSection.className = "tein-login-card";
+        const brand = document.createElement("div");
+        brand.className = "tein-login-brand";
+        brand.textContent = "TEIN / ATTENDANCE";
+        loginSection.insertBefore(brand, loginSection.firstChild);
+        const tagline = document.createElement("div");
+        tagline.className = "tein-login-tagline";
+        tagline.textContent = "Discipline today. Freedom tomorrow.";
+        loginSection.appendChild(tagline);
+        const submit = form.querySelector('button[type="submit"]');
+        if (submit) submit.classList.add("tein-login-submit");
+
+        content.appendChild(loginSection);
+        scene.append(bg, veil, character, glow, noise, content, status);
+        document.body.appendChild(scene);
+        document.documentElement.style.overflow = "hidden";
+        document.body.style.overflow = "hidden";
+
+        const play = (video) => {
+            video.play().catch(() => {});
+        };
+        bg.addEventListener("loadeddata", () => play(bg), { once: true });
+        character.addEventListener("loadeddata", () => play(character), { once: true });
+        play(bg);
+        play(character);
+
+        let started = false;
+        let responsePromise = null;
+        const setStatus = (text) => {
+            status.textContent = text;
+            status.classList.add("is-visible");
+        };
+
+        const restoreOnError = (message) => {
+            scene.classList.remove("is-loading", "is-dashing", "is-restoring");
+            scene.style.pointerEvents = "auto";
+            started = false;
+            setStatus(message);
+            window.setTimeout(() => status.classList.remove("is-visible"), 2600);
+        };
+
+        const startSequence = () => {
+            if (started) return;
+            started = true;
+            setStatus("Connecting to the NIET portal");
+            scene.classList.add("is-loading");
+            scene.style.pointerEvents = "none";
+
+            responsePromise = fetch(form.action, {
+                method: "POST",
+                body: new FormData(form),
+                credentials: "same-origin",
+                headers: { "X-Requested-With": "TEIN" }
+            }).then(async (response) => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.text();
+            });
+
+            window.setTimeout(() => {
+                setStatus("Focus awakened");
+                scene.classList.add("is-dashing");
+            }, 620);
+
+            const minimumSequence = new Promise((resolve) => window.setTimeout(resolve, 1850));
+            Promise.all([responsePromise, minimumSequence]).then(([html]) => {
+                setStatus("Attendance retrieved");
+                scene.classList.remove("is-dashing");
+                scene.classList.add("is-restoring");
+                window.setTimeout(() => {
+                    document.open();
+                    document.write(html);
+                    document.close();
+                }, 620);
+            }).catch(() => {
+                restoreOnError("Could not reach the portal — try again");
+            });
+        };
+
+        // The existing inline form handler calls showLoading(). Override that hook so
+        // the real portal POST begins immediately while this cinematic transition plays.
+        window.showLoading = startSequence;
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            startSequence();
+        });
+    }
+
     function setupCalculatorInteractions() {
         document.querySelectorAll('form[action^="/sessional-"]').forEach((form) => {
             if (form.dataset.teinCalcBound) return;
@@ -70,8 +206,6 @@
         const nav = document.querySelector(".tein-app-nav");
         if (!nav) return;
 
-        // setupAppShell creates the three buttons before this file runs, but those
-        // buttons historically did not carry data-view. Wire them deterministically.
         const navButtons = [...nav.querySelectorAll("button")];
         const viewNames = ["home", "plan", "subjects"];
         navButtons.slice(0, 3).forEach((button, index) => {
@@ -171,6 +305,7 @@
 
     document.addEventListener("DOMContentLoaded", () => {
         setupLogin();
+        setupLoginScene();
         setupCalculatorInteractions();
         setupShell();
     });
