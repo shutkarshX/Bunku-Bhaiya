@@ -22,6 +22,15 @@
         document.head.appendChild(link);
     }
 
+    function loadDynamicLayer() {
+        if (document.querySelector('link[data-tein-dynamic]')) return;
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = "/static/tein-dynamic.css";
+        link.dataset.teinDynamic = "true";
+        document.head.appendChild(link);
+    }
+
     function initAudio() {
         if (audio.ctx || !audio.enabled) return;
         const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -36,7 +45,10 @@
         if (!audio.enabled) return;
         initAudio();
         if (!audio.ctx) return;
-        if (audio.ctx.state === "suspended") audio.ctx.resume();
+        if (audio.ctx.state === "suspended") {
+            const result = audio.ctx.resume();
+            if (result && typeof result.catch === "function") result.catch(() => {});
+        }
         audio.unlocked = true;
     }
 
@@ -58,11 +70,12 @@
 
     function tick(kind = "soft") {
         if (!audio.enabled) return;
+        unlockAudio();
+        if (!audio.unlocked) return;
+
         const now = performance.now();
         if (now - audio.last < 55) return;
         audio.last = now;
-        unlockAudio();
-        if (!audio.unlocked) return;
 
         if (kind === "success") {
             tone(520, .08, .045, "sine");
@@ -182,12 +195,28 @@
         });
     }
 
+    function setupAttendanceInstrument() {
+        const overall = document.querySelector(".stat-card.overall strong");
+        if (!overall) return;
+        const match = overall.textContent.match(/(\d+(?:\.\d+)?)/);
+        const percentage = match ? Math.max(0, Math.min(100, Number(match[1]))) : 0;
+        document.documentElement.style.setProperty("--tein-attendance-pct", `${percentage}%`);
+
+        const style = document.createElement("style");
+        style.dataset.teinInstrument = "true";
+        style.textContent = `
+            .stat-card.overall::after {
+                background: conic-gradient(from 215deg, var(--accent-2) 0 var(--tein-attendance-pct), color-mix(in srgb, var(--bg) 16%, transparent) var(--tein-attendance-pct) 100%);
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
     function applyTheme(mode) {
-        if (mode === "system") {
-            delete document.documentElement.dataset.theme;
-        } else {
-            document.documentElement.dataset.theme = mode;
-        }
+        document.documentElement.classList.add("tein-theme-transition");
+        window.setTimeout(() => document.documentElement.classList.remove("tein-theme-transition"), 420);
+        if (mode === "system") delete document.documentElement.dataset.theme;
+        else document.documentElement.dataset.theme = mode;
         localStorage.setItem("tein-theme", mode);
     }
 
@@ -256,11 +285,13 @@
 
     document.addEventListener("DOMContentLoaded", () => {
         loadVisualOverhaul();
+        loadDynamicLayer();
         setupGlobalAudioUnlock();
         setupMagneticButtons();
         setupCardTilt();
         setupSubjectRows();
         animateNumbers();
+        setupAttendanceInstrument();
         setupForms();
         setupSoundToggle();
         setupThemeToggle();
