@@ -69,9 +69,19 @@
     function setupShell() {
         const nav = document.querySelector(".tein-app-nav");
         if (!nav) return;
-        const initialButtons = [...nav.querySelectorAll("button[data-view]")];
+
+        // setupAppShell creates the three buttons before this file runs, but those
+        // buttons historically did not carry data-view. Wire them deterministically.
+        const navButtons = [...nav.querySelectorAll("button")];
+        const viewNames = ["home", "plan", "subjects"];
+        navButtons.slice(0, 3).forEach((button, index) => {
+            if (!button.dataset.view) button.dataset.view = viewNames[index];
+            if (!button.getAttribute("aria-selected")) button.setAttribute("aria-selected", "false");
+        });
+
         const initialViews = [...document.querySelectorAll(".tein-app-view[data-view]")];
-        if (!initialButtons.length || !initialViews.length) return;
+        const requiredViews = viewNames.every((name) => initialViews.some((view) => view.dataset.view === name));
+        if (!navButtons.length || !requiredViews) return;
 
         let moreButton = nav.querySelector('button[data-view="more"]');
         let moreView = document.querySelector('.tein-app-view[data-view="more"]');
@@ -155,7 +165,7 @@
         const requested = window.location.hash.replace(/^#/, "");
         const initial = allButtons.some((button) => button.dataset.view === requested)
             ? requested
-            : (allButtons.find((button) => button.dataset.view === "home")?.dataset.view || allButtons[0].dataset.view);
+            : "home";
         activate(initial, false);
     }
 
