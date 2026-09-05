@@ -73,21 +73,13 @@
         scene.className = "tein-login-scene";
         scene.setAttribute("aria-label", "TEIN login");
 
-        const bg = document.createElement("video");
-        bg.className = "tein-login-bg";
-        bg.autoplay = true;
-        bg.muted = true;
-        bg.loop = true;
-        bg.playsInline = true;
-        bg.setAttribute("aria-hidden", "true");
-        bg.src = source;
-
+        // Keep the anime clip as a character layer only. The source footage is never
+        // presented as a page-sized video player/background.
         const character = document.createElement("video");
         character.className = "tein-login-character";
-        character.autoplay = true;
         character.muted = true;
-        character.loop = true;
         character.playsInline = true;
+        character.preload = "auto";
         character.setAttribute("aria-hidden", "true");
         character.src = source;
 
@@ -116,18 +108,24 @@
         if (submit) submit.classList.add("tein-login-submit");
 
         content.appendChild(loginSection);
-        scene.append(bg, veil, character, glow, noise, content, status);
+        scene.append(veil, character, glow, noise, content, status);
         document.body.appendChild(scene);
         document.documentElement.style.overflow = "hidden";
         document.body.style.overflow = "hidden";
 
-        const play = (video) => {
-            video.play().catch(() => {});
+        const CLIP_START = 2.35;
+        const CLIP_END = 4.75;
+        let clipReady = false;
+
+        const primeClip = () => {
+            if (clipReady || !Number.isFinite(character.duration)) return;
+            clipReady = true;
+            character.currentTime = CLIP_START;
+            character.pause();
         };
-        bg.addEventListener("loadeddata", () => play(bg), { once: true });
-        character.addEventListener("loadeddata", () => play(character), { once: true });
-        play(bg);
-        play(character);
+        character.addEventListener("loadedmetadata", primeClip, { once: true });
+        character.addEventListener("loadeddata", primeClip, { once: true });
+        primeClip();
 
         let started = false;
         let responsePromise = null;
@@ -140,8 +138,18 @@
             scene.classList.remove("is-loading", "is-dashing", "is-restoring");
             scene.style.pointerEvents = "auto";
             started = false;
+            character.pause();
             setStatus(message);
             window.setTimeout(() => status.classList.remove("is-visible"), 2600);
+        };
+
+        const playCharacterBurst = () => {
+            try {
+                character.currentTime = CLIP_START;
+                const p = character.play();
+                if (p) p.catch(() => {});
+            } catch (_) {}
+            window.setTimeout(() => character.pause(), (CLIP_END - CLIP_START) * 1000 + 80);
         };
 
         const startSequence = () => {
@@ -151,6 +159,8 @@
             scene.classList.add("is-loading");
             scene.style.pointerEvents = "none";
 
+            // Start the real portal request immediately. The animation is only the
+            // perceived-loading layer; backend scraping remains untouched.
             responsePromise = fetch(form.action, {
                 method: "POST",
                 body: new FormData(form),
@@ -164,9 +174,10 @@
             window.setTimeout(() => {
                 setStatus("Focus awakened");
                 scene.classList.add("is-dashing");
-            }, 620);
+                playCharacterBurst();
+            }, 180);
 
-            const minimumSequence = new Promise((resolve) => window.setTimeout(resolve, 1850));
+            const minimumSequence = new Promise((resolve) => window.setTimeout(resolve, 2050));
             Promise.all([responsePromise, minimumSequence]).then(([html]) => {
                 setStatus("Attendance retrieved");
                 scene.classList.remove("is-dashing");
