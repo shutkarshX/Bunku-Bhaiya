@@ -13,6 +13,15 @@
         unlocked: false
     };
 
+    function bootstrapTheme() {
+        const stored = localStorage.getItem("tein-theme");
+        if (stored === "light" || stored === "dark") {
+            document.documentElement.dataset.theme = stored;
+        } else {
+            delete document.documentElement.dataset.theme;
+        }
+    }
+
     function loadVisualOverhaul() {
         if (document.querySelector('link[data-tein-overhaul]')) return;
         const link = document.createElement("link");
@@ -283,9 +292,12 @@
         });
     }
 
+    /* Bootstrap before DOMContentLoaded so the system theme is not a late decision. */
+    bootstrapTheme();
+    loadVisualOverhaul();
+    loadDynamicLayer();
+
     document.addEventListener("DOMContentLoaded", () => {
-        loadVisualOverhaul();
-        loadDynamicLayer();
         setupGlobalAudioUnlock();
         setupMagneticButtons();
         setupCardTilt();
