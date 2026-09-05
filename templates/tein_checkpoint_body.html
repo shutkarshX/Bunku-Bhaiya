@@ -1,0 +1,71 @@
+{% if first.status == "safe" %}
+<div class="summary">
+    <h3>Attendance is Safe</h3>
+    <p>You are currently above the 75% attendance requirement.</p>
+</div>
+{% elif first.status == "recovery" %}
+<div class="summary">
+    <h3>Attendance Recovery Needed</h3>
+    <p>Your attendance is currently below 75%.</p>
+    <p>You need to attend approximately <strong>{{ first.classes_needed_for_75 }}</strong> consecutive classes to reach 75%.</p>
+</div>
+{% else %}
+<div class="summary">
+    <h3>75% Not Reachable</h3>
+    <p>Even if you attend every remaining class before this checkpoint, 75% cannot be reached.</p>
+    <p>Maximum possible attendance: <strong>{{ first.maximum_possible_percentage }}%</strong></p>
+</div>
+{% endif %}
+
+<div class="attendance-flow">
+    <div class="flow-card">
+        <span>Starting Attendance</span>
+        <strong>{{ first.starting_attended }} / {{ first.starting_total }}</strong>
+        <small>{{ first.starting_percentage }}%</small>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-card">
+        <span>Future Classes</span>
+        <strong>{{ first.future_classes }}</strong>
+        <small>{{ first.teaching_days }} teaching day(s)</small>
+    </div>
+</div>
+
+<div class="safe-leave-box">
+    <span>Maximum Safe Leave</span>
+    <strong>{{ first.maximum_leave_display }}</strong>
+    <p>This is the maximum you can miss while staying at or above 75%.</p>
+</div>
+
+<hr>
+
+<h3>How much leave will you take?</h3>
+<p>Enter the leave you actually plan to take.</p>
+
+<form action="/sessional-1" method="POST"
+      data-maximum-classes="{{ first.maximum_leave_classes }}"
+      data-attended="{{ first.starting_attended }}"
+      data-total="{{ first.starting_total }}"
+      data-future="{{ first.future_classes }}"
+      onsubmit="normalizeLeaveInputs(this)">
+    <div class="leave-inputs">
+        <div>
+            <label for="leave_1_days">Days</label>
+            <input type="number" id="leave_1_days" name="leave_1_days" min="0" value="0" required>
+        </div>
+        <div>
+            <label for="leave_1_classes">Classes</label>
+            <input type="number" id="leave_1_classes" name="leave_1_classes" min="0" value="0" required>
+        </div>
+    </div>
+
+    <p class="leave-preview">Your leave: <strong id="leave_1_preview">0 class(es)</strong></p>
+
+    <div class="projection-box">
+        <span>At the checkpoint</span>
+        <strong id="projection_1">{{ first.starting_attended }} / {{ first.starting_total + first.future_classes }} — projected attendance</strong>
+        <p>This projected attendance will become your starting attendance for the Second Sessional.</p>
+    </div>
+
+    <button type="submit" class="attendance-button">Continue to Second Sessional</button>
+</form>
