@@ -1,0 +1,268 @@
+/* TEIN dynamic interaction layer
+   Presentation only. No portal/calculator logic.
+*/
+
+/* Theme is correct before JavaScript boots: system theme is the default. */
+:root {
+    color-scheme: light;
+    --bg: #eef0f3;
+    --surface: rgba(255,255,255,.88);
+    --surface-solid: #ffffff;
+    --surface-2: #f7f8fa;
+    --text: #101218;
+    --muted: #6b7280;
+    --line: rgba(16,18,24,.095);
+    --line-strong: rgba(16,18,24,.16);
+    --accent-2: #6657f5;
+    --accent-soft: rgba(102,87,245,.11);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --bg: #07080b;
+        --surface: rgba(16,18,23,.84);
+        --surface-solid: #111318;
+        --surface-2: #0d0f14;
+        --text: #f5f6f8;
+        --muted: #969eaa;
+        --line: rgba(255,255,255,.095);
+        --line-strong: rgba(255,255,255,.18);
+        --accent-2: #9184ff;
+        --accent-soft: rgba(145,132,255,.14);
+    }
+}
+
+html[data-theme="light"] {
+    color-scheme: light;
+}
+
+html[data-theme="dark"] {
+    color-scheme: dark;
+}
+
+/* A more alive page: the accent behaves like a quiet signal, not a gradient blob. */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    opacity: .42;
+    background:
+        linear-gradient(115deg, transparent 0 48%, color-mix(in srgb, var(--accent-2) 5%, transparent) 48.05% 48.1%, transparent 48.15%),
+        linear-gradient(180deg, transparent 0 72%, color-mix(in srgb, var(--accent-2) 3%, transparent) 72.05% 72.1%, transparent 72.15%);
+    animation: tein-signal 14s ease-in-out infinite alternate;
+}
+
+@keyframes tein-signal {
+    from { transform: translate3d(-1%, -1%, 0) scale(1); opacity: .28; }
+    to { transform: translate3d(1%, 1%, 0) scale(1.025); opacity: .5; }
+}
+
+/* Header line responds to the page instead of sitting dead. */
+header::after {
+    animation: tein-line-grow 1.15s cubic-bezier(.16,1,.3,1) .2s both;
+}
+
+@keyframes tein-line-grow {
+    from { transform: scaleX(0); opacity: 0; }
+    to { transform: scaleX(1); opacity: 1; }
+}
+
+/* Attendance instrument: percentage becomes the visual anchor. */
+.stat-card.overall {
+    position: relative;
+    transition: transform .5s cubic-bezier(.16,1,.3,1), box-shadow .5s ease;
+}
+
+.stat-card.overall strong {
+    transform-origin: left center;
+    animation: tein-number-arrive .8s cubic-bezier(.16,1,.3,1) .15s both;
+}
+
+@keyframes tein-number-arrive {
+    from { opacity: 0; transform: translateX(-18px) scale(.92); }
+    to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+/* Stretch/morph language for controls. */
+.attendance-button,
+.login-methods .attendance-button,
+.tein-theme-toggle,
+.tein-sound-toggle {
+    transform-origin: center;
+    will-change: transform;
+}
+
+.attendance-button:active,
+.login-methods .attendance-button:active,
+.tein-theme-toggle:active,
+.tein-sound-toggle:active {
+    transform: scaleX(.96) scaleY(.94);
+    transition-duration: .08s;
+}
+
+/* Subject rows reveal a directional rail on hover/focus. */
+.subject-attendance-row {
+    overflow: hidden;
+}
+
+.subject-attendance-row::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 0;
+    height: 2px;
+    background: var(--accent-2);
+    transition: width .45s cubic-bezier(.16,1,.3,1);
+}
+
+.subject-attendance-row:hover::after,
+.subject-attendance-row:focus-visible::after,
+.subject-attendance-row.is-selected::after {
+    width: 100%;
+}
+
+/* Floating controls feel like actual hardware, with no emoji/icon dependency. */
+.tein-theme-glyph,
+.tein-sound-glyph {
+    position: relative;
+    display: inline-block;
+    flex: 0 0 auto;
+}
+
+.tein-theme-glyph {
+    width: 15px;
+    height: 15px;
+    border: 1.5px solid currentColor;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.tein-theme-glyph::after {
+    content: "";
+    position: absolute;
+    inset: -1.5px 48% -1.5px -1.5px;
+    background: currentColor;
+}
+
+.tein-theme-toggle[data-mode="system"] .tein-theme-glyph {
+    border-style: dashed;
+}
+
+.tein-theme-toggle[data-mode="dark"] .tein-theme-glyph::after {
+    inset: -1.5px 48% -1.5px -1.5px;
+    opacity: .9;
+}
+
+.tein-sound-glyph {
+    width: 15px;
+    height: 13px;
+    border-left: 2px solid currentColor;
+}
+
+.tein-sound-glyph::before {
+    content: "";
+    position: absolute;
+    left: 1px;
+    top: 3px;
+    width: 5px;
+    height: 7px;
+    background: currentColor;
+    clip-path: polygon(0 30%, 45% 30%, 100% 0, 100% 100%, 45% 70%, 0 70%);
+}
+
+.tein-sound-glyph::after {
+    content: "))";
+    position: absolute;
+    left: 8px;
+    top: -3px;
+    font: 700 9px/1 ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -3px;
+}
+
+.tein-sound-toggle.is-off .tein-sound-glyph::after {
+    content: "";
+    width: 12px;
+    height: 1.5px;
+    background: currentColor;
+    transform: rotate(-45deg);
+    left: 3px;
+    top: 6px;
+}
+
+/* Calculator cards enter as a connected sequence. */
+.bunk-results > * {
+    animation: tein-sequence-in .65s cubic-bezier(.16,1,.3,1) both;
+}
+
+.bunk-results > *:nth-child(1) { animation-delay: .05s; }
+.bunk-results > *:nth-child(2) { animation-delay: .11s; }
+.bunk-results > *:nth-child(3) { animation-delay: .17s; }
+.bunk-results > *:nth-child(4) { animation-delay: .23s; }
+
+@keyframes tein-sequence-in {
+    from { opacity: 0; transform: translateY(20px) scale(.985); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Make the flow line feel physical. */
+.flow-arrow::before {
+    transform-origin: left center;
+    animation: tein-flow-line .8s cubic-bezier(.16,1,.3,1) .35s both;
+}
+
+.flow-arrow::after {
+    animation: tein-flow-pulse 1.8s ease-in-out 1.1s infinite;
+}
+
+@keyframes tein-flow-line {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+}
+
+@keyframes tein-flow-pulse {
+    0%, 100% { opacity: .45; transform: translateX(19px) rotate(45deg) scale(1); }
+    50% { opacity: 1; transform: translateX(22px) rotate(45deg) scale(1.25); }
+}
+
+/* Theme transition: short enough to feel intentional, not sluggish. */
+html.tein-theme-transition,
+html.tein-theme-transition body,
+html.tein-theme-transition .summary,
+html.tein-theme-transition .stat-card,
+html.tein-theme-transition .bunk-card,
+html.tein-theme-transition .table-container,
+html.tein-theme-transition header {
+    transition: background-color .38s ease, color .38s ease, border-color .38s ease, box-shadow .38s ease;
+}
+
+@media (max-width: 650px) {
+    body::before { opacity: .22; }
+    .tein-theme-toggle,
+    .tein-sound-toggle {
+        bottom: max(12px, env(safe-area-inset-bottom));
+        min-height: 42px;
+    }
+    .tein-theme-toggle { right: 12px; }
+    .tein-sound-toggle { right: 94px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body::before,
+    header::after,
+    .stat-card.overall strong,
+    .bunk-results > *,
+    .flow-arrow::before,
+    .flow-arrow::after {
+        animation: none !important;
+    }
+    .attendance-button:active,
+    .login-methods .attendance-button:active,
+    .tein-theme-toggle:active,
+    .tein-sound-toggle:active {
+        transform: none;
+    }
+}
