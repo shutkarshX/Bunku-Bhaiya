@@ -1,0 +1,39 @@
+/* TEIN app shell — turns the dashboard into a small responsive app. */
+.tein-app-nav{display:flex;align-items:center;gap:6px;margin:0 0 18px;padding:6px;border:1px solid var(--line-strong);border-radius:16px;background:color-mix(in srgb,var(--surface-solid) 88%,transparent);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);position:sticky;top:12px;z-index:70;box-shadow:0 12px 35px color-mix(in srgb,var(--text) 7%,transparent)}
+.tein-app-nav button{appearance:none;border:0;background:transparent;color:var(--muted);font:750 11px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;padding:12px 15px;border-radius:11px;cursor:pointer;transition:color .25s ease,background .3s ease,transform .3s cubic-bezier(.16,1,.3,1);flex:1}
+.tein-app-nav button:hover{color:var(--text);transform:translateY(-1px)}
+.tein-app-nav button.is-active{color:var(--text);background:var(--accent-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent-2) 20%,transparent)}
+.tein-app-view{display:none;animation:tein-view-in .48s cubic-bezier(.16,1,.3,1) both}
+.tein-app-view.is-active{display:block}
+@keyframes tein-view-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.tein-focus{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center;margin:0 0 18px;padding:20px 22px;border:1px solid var(--line-strong);border-radius:20px;background:linear-gradient(100deg,var(--surface-2),color-mix(in srgb,var(--accent-soft) 45%,var(--surface-2)));overflow:hidden}
+.tein-focus-kicker{display:block;margin-bottom:7px;font:750 10px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.tein-focus h2{margin:0 0 5px;font-size:clamp(22px,3vw,32px);letter-spacing:-.045em}
+.tein-focus p{margin:0;color:var(--muted);font-size:13px}
+.tein-focus-action{white-space:nowrap;min-width:130px}
+.tein-checkpoints{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 18px}
+.tein-checkpoint{display:flex;align-items:center;gap:10px;min-height:52px;padding:10px 13px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2);color:var(--muted);font-size:12px;transition:transform .35s cubic-bezier(.16,1,.3,1),border-color .3s ease,background .3s ease}
+.tein-checkpoint:hover{transform:translateY(-2px);border-color:var(--line-strong)}
+.tein-checkpoint-mark{width:20px;height:20px;display:grid;place-items:center;border:1px solid currentColor;border-radius:50%;font:800 10px/1 ui-sans-serif,system-ui,sans-serif;flex:0 0 auto}
+.tein-checkpoint.is-complete{opacity:.55}
+.tein-checkpoint.is-active{color:var(--text);border-color:color-mix(in srgb,var(--accent-2) 42%,var(--line-strong));background:var(--accent-soft)}
+.tein-checkpoint.is-active .tein-checkpoint-mark{border-color:var(--accent-2);background:var(--accent-2);color:var(--bg)}
+.tein-checkpoint-copy strong{display:block;color:inherit;font-size:12px;margin-bottom:3px}
+.tein-checkpoint-copy small{font-size:10px;color:var(--muted)}
+.tein-view-title{display:flex;align-items:end;justify-content:space-between;gap:15px;margin:6px 0 16px;padding:0 4px}
+.tein-view-title h2{margin:0;font-size:clamp(24px,4vw,38px);letter-spacing:-.055em}
+.tein-view-title p{margin:0;color:var(--muted);font-size:12px}
+.tein-plan-view .summary:first-child{display:none}
+.tein-plan-view .bunk-results{margin-top:0}
+.tein-subjects-view .summary{margin-bottom:14px}
+.tein-home-view .tein-view-title{display:none}
+.tein-home-view .bunk-results,.tein-home-view #subject-attendance-details,.tein-home-view .table-container{display:none!important}
+.tein-plan-view .table-container,.tein-plan-view #subject-attendance-details{display:none!important}
+.tein-subjects-view .bunk-results{display:none!important}
+.tein-subjects-view .summary:not(.tein-subject-heading){display:none}
+.tein-subjects-view .table-container{display:block}
+.tein-subjects-view #subject-attendance-details{display:block!important}
+.tein-app-nav .tein-nav-count{display:inline-block;margin-left:5px;min-width:17px;padding:3px 5px;border-radius:99px;background:var(--surface-2);font-size:9px;letter-spacing:0}
+.tein-completed-note{margin:0 0 14px;padding:12px 15px;border-left:2px solid var(--line-strong);color:var(--muted);font-size:12px}
+@media(max-width:650px){.tein-app-nav{top:8px;margin-bottom:13px;border-radius:14px}.tein-app-nav button{padding:11px 5px;font-size:9px;letter-spacing:.09em}.tein-focus{grid-template-columns:1fr;gap:13px;padding:17px}.tein-focus-action{width:100%}.tein-checkpoints{grid-template-columns:1fr;gap:6px}.tein-checkpoint{min-height:46px}.tein-view-title{align-items:start;flex-direction:column;margin-bottom:12px}.tein-subjects-view .table-container{margin-left:-2px;margin-right:-2px}.tein-app-view{animation-duration:.36s}}
+@media(prefers-reduced-motion:reduce){.tein-app-view,.tein-checkpoint,.tein-app-nav button{animation:none;transition:none}}
