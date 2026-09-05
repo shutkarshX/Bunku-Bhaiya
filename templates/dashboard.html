@@ -7,10 +7,12 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>BunkMaster - Attendance</title>
+    <title>TEIN — Attendance</title>
 
     <link rel="stylesheet"
           href="{{ url_for('static', filename='style.css') }}">
+
+    <script defer src="{{ url_for('static', filename='tein.js') }}"></script>
 
 </head>
 
@@ -26,7 +28,7 @@
 
     <header>
 
-        <h1>BunkMaster</h1>
+        <h1>TEIN</h1>
 
         <p>Attendance Dashboard</p>
 
@@ -41,10 +43,10 @@
 
     <div class="summary">
 
-        <h2>⚠️ College Portal Unavailable</h2>
+        <h2>College Portal Unavailable</h2>
 
         <p>
-            BunkMaster could not reach the NIET
+            TEIN could not reach the NIET
             attendance portal right now.
         </p>
 
@@ -76,7 +78,7 @@
 
     <div class="summary">
 
-        <h2>❌ Login Failed</h2>
+        <h2>Login Failed</h2>
 
         <p>
             The NIET portal is reachable, but
@@ -133,7 +135,7 @@
                     id="manual-login-button"
                     onclick="setLoginMethod('manual')">
 
-                    ✍️ Enter Email Manually
+                    Enter Email Manually
 
                 </button>
 
@@ -143,7 +145,7 @@
                     id="generate-login-button"
                     onclick="setLoginMethod('generate')">
 
-                    ⚡ Generate NIET Email
+                    Generate NIET Email
 
                 </button>
 
@@ -330,7 +332,7 @@
             <h2>Getting your attendance...</h2>
 
             <p>
-                BunkMaster is checking the college portal.
+                TEIN is checking the college portal.
             </p>
         </div>
 
@@ -449,7 +451,7 @@
 
             <div class="summary">
 
-                <h3>🟢 Attendance is Safe</h3>
+                <h3>Attendance is Safe</h3>
 
                 <p>
                     You are currently above the
@@ -462,7 +464,7 @@
 
             <div class="summary">
 
-                <h3>🟡 Attendance Recovery Needed</h3>
+                <h3>Attendance Recovery Needed</h3>
 
                 <p>
                     Your attendance is currently
@@ -483,7 +485,7 @@
 
             <div class="summary">
 
-                <h3>🔴 75% Not Reachable</h3>
+                <h3>75% Not Reachable</h3>
 
                 <p>
                     Even if you attend every remaining
@@ -729,12 +731,12 @@
             </h3>
 
             <p>
-                <strong>✅ Completed</strong>
+                <strong>Completed</strong>
             </p>
 
             <p>
                 The First Sessional has already passed.
-                BunkMaster does not know your exact
+                TEIN does not know your exact
                 attendance at that checkpoint because
                 you did not make a plan for it.
             </p>
@@ -810,7 +812,7 @@
 
             <div class="summary">
 
-                <h3>🟢 Attendance is Safe</h3>
+                <h3>Attendance is Safe</h3>
 
                 <p>
                     You are currently above the
@@ -823,7 +825,7 @@
 
             <div class="summary">
 
-                <h3>🟡 Attendance Recovery Needed</h3>
+                <h3>Attendance Recovery Needed</h3>
 
                 <p>
                     Your attendance is currently
@@ -844,7 +846,7 @@
 
             <div class="summary">
 
-                <h3>🔴 75% Not Reachable</h3>
+                <h3>75% Not Reachable</h3>
 
                 <p>
                     Even if you attend every remaining
@@ -1080,7 +1082,7 @@
 
             <div class="summary">
 
-                <h3>🟢 Attendance is Safe</h3>
+                <h3>Attendance is Safe</h3>
 
                 <p>
                     You are currently above the
@@ -1093,7 +1095,7 @@
 
             <div class="summary">
 
-                <h3>🟡 Attendance Recovery Needed</h3>
+                <h3>Attendance Recovery Needed</h3>
 
                 <p>
                     Your attendance is currently
@@ -1114,7 +1116,7 @@
 
             <div class="summary">
 
-                <h3>🔴 75% Not Reachable</h3>
+                <h3>75% Not Reachable</h3>
 
                 <p>
                     Even if you attend every remaining
@@ -1340,7 +1342,7 @@
 
             <div class="summary">
 
-                <h3>✅ Completed</h3>
+                <h3>Completed</h3>
 
                 <p>
                     This checkpoint has already passed.
