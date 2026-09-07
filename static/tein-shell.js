@@ -59,14 +59,6 @@
     setMethod("generate");
   }
 
-  function loadStyle(href) {
-    if (document.querySelector(`link[href="${href}"]`)) return;
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = href;
-    document.head.appendChild(link);
-  }
-
   function makeSpiderRig() {
     const rig = document.createElement("div");
     rig.className = "tein-spider-rig";
@@ -80,8 +72,15 @@
     const form = loginSection?.querySelector('form[action="/get-attendance"]');
     if (!loginSection || !form || document.querySelector(".tein-login-scene")) return;
 
+    const loadStyle = (href) => {
+      if (document.querySelector(`link[href="${href}"]`)) return;
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = href;
+      document.head.appendChild(link);
+    };
     loadStyle("/static/tein-login.css");
-    loadStyle("/static/tein-login-zenitsu.css");
+    loadStyle("/static/tein-login-spider.css");
 
     const scene = document.createElement("div");
     scene.className = "tein-login-scene";
