@@ -29,6 +29,7 @@
         <p>The NIET portal is reachable, but your login was not successful.</p>
         <p>Please check your college username and password and try again.</p>
         <form action="/" method="GET"><button type="submit" class="attendance-button">Try Again</button></form>
+    </div>
     {% elif not attendance.subjects %}
     <div class="summary" id="login-section">
         <h2>Get Your Attendance</h2>
@@ -86,140 +87,54 @@
     <main>
         <section class="tein-app-view tein-home-view is-active" data-view="home" aria-label="Home">
             <div class="tein-home-hero">
-                <div>
-                    <span class="tein-eyebrow">Current attendance</span>
-                    <h2>Know your margin before you bunk.</h2>
-                    <p>Live attendance from the college portal, with the next checkpoint kept in focus.</p>
-                </div>
-                <div class="stat-card overall">
-                    <span>Attendance</span>
-                    <strong>{{ attendance.overall_percentage }}%</strong>
-                </div>
+                <div><span class="tein-eyebrow">Current attendance</span><h2>Know your margin before you bunk.</h2><p>Live attendance from the college portal, with the next checkpoint kept in focus.</p></div>
+                <div class="stat-card overall"><span>Attendance</span><strong>{{ attendance.overall_percentage }}%</strong></div>
             </div>
-
-            <div class="tein-home-stats">
-                <div class="tein-mini-stat"><span>Total classes</span><strong>{{ attendance.total_classes }}</strong></div>
-                <div class="tein-mini-stat"><span>Attended</span><strong>{{ attendance.total_attended }}</strong></div>
-                <div class="tein-mini-stat"><span>Absent</span><strong>{{ attendance.total_absent }}</strong></div>
-            </div>
-
-            {% if active_index >= 0 %}
-            <div class="tein-home-next">
-                <div>
-                    <span class="tein-eyebrow">Next checkpoint</span>
-                    <strong>{{ active_name }}</strong>
-                    <p>{{ active_date }}</p>
-                </div>
-                <button type="button" class="attendance-button tein-open-plan">Open Plan</button>
-            </div>
-            {% else %}
-            <div class="tein-completed-note">All sessional checkpoints are completed. Your current portal attendance remains the live reference.</div>
-            {% endif %}
-
-            <div class="tein-checkpoints" aria-label="Sessional checkpoints">
-                {% for checkpoint in checkpoints %}
-                <div class="tein-checkpoint {% if checkpoint.state == 'completed' %}is-complete{% endif %} {% if loop.index0 == active_index %}is-active{% endif %}">
-                    <span class="tein-checkpoint-mark">{% if checkpoint.state == 'completed' %}✓{% else %}{{ loop.index }}{% endif %}</span>
-                    <div class="tein-checkpoint-copy"><strong>{{ checkpoint.name }}</strong><small>{{ checkpoint.date }}{% if checkpoint.state == 'completed' %} · Completed{% elif loop.index0 == active_index %} · Active{% else %} · Upcoming{% endif %}</small></div>
-                    {% if loop.index0 == active_index %}<span class="tein-checkpoint-arrow">→</span>{% endif %}
-                </div>
-                {% endfor %}
-            </div>
-
-            <div class="tein-history">
-                <h3>Checkpoint history</h3>
-                {% for checkpoint in checkpoints if checkpoint.state == 'completed' %}
-                <div class="tein-history-row"><strong>{{ checkpoint.name }}</strong><span>Completed · {{ checkpoint.date }}</span></div>
-                {% endfor %}
-                {% if not (checkpoints|selectattr('state','equalto','completed')|list) %}
-                <div class="tein-history-row"><span>No completed checkpoints yet.</span></div>
-                {% endif %}
-            </div>
+            <div class="tein-home-stats"><div class="tein-mini-stat"><span>Total classes</span><strong>{{ attendance.total_classes }}</strong></div><div class="tein-mini-stat"><span>Attended</span><strong>{{ attendance.total_attended }}</strong></div><div class="tein-mini-stat"><span>Absent</span><strong>{{ attendance.total_absent }}</strong></div></div>
+            {% if active_index >= 0 %}<div class="tein-home-next"><div><span class="tein-eyebrow">Next checkpoint</span><strong>{{ active_name }}</strong><p>{{ active_date }}</p></div><button type="button" class="attendance-button tein-open-plan">Open Plan</button></div>{% else %}<div class="tein-completed-note">All sessional checkpoints are completed. Your current portal attendance remains the live reference.</div>{% endif %}
+            <div class="tein-checkpoints" aria-label="Sessional checkpoints">{% for checkpoint in checkpoints %}<div class="tein-checkpoint {% if checkpoint.state == 'completed' %}is-complete{% endif %} {% if loop.index0 == active_index %}is-active{% endif %}"><span class="tein-checkpoint-mark">{% if checkpoint.state == 'completed' %}✓{% else %}{{ loop.index }}{% endif %}</span><div class="tein-checkpoint-copy"><strong>{{ checkpoint.name }}</strong><small>{{ checkpoint.date }}{% if checkpoint.state == 'completed' %} · Completed{% elif loop.index0 == active_index %} · Active{% else %} · Upcoming{% endif %}</small></div>{% if loop.index0 == active_index %}<span class="tein-checkpoint-arrow">→</span>{% endif %}</div>{% endfor %}</div>
+            <div class="tein-history"><h3>Checkpoint history</h3>{% for checkpoint in checkpoints if checkpoint.state == 'completed' %}<div class="tein-history-row"><strong>{{ checkpoint.name }}</strong><span>Completed · {{ checkpoint.date }}</span></div>{% endfor %}{% if not (checkpoints|selectattr('state','equalto','completed')|list) %}<div class="tein-history-row"><span>No completed checkpoints yet.</span></div>{% endif %}</div>
         </section>
 
         <section class="tein-app-view tein-plan-view" data-view="plan" aria-label="Attendance plan" hidden>
             <div class="tein-plan-title"><h2>Attendance Plan</h2><p>Only the active checkpoint needs your attention. Older checkpoints stay in history.</p></div>
-
-            {% if calculator_step == 1 and phase_1 %}
-            {% set first = phase_1.checkpoints[0] %}
-            <div class="summary"><h2>Bunk Calculator</h2><p>Plan your leave one checkpoint at a time. Your projected attendance after each checkpoint automatically becomes the starting attendance for the next one.</p><p><strong>Step 1 of 3</strong> — First Sessional</p></div>
-            <div class="bunk-results"><div class="bunk-card"><h3>First Sessional</h3><p>Checkpoint: <strong>{{ first.date }}</strong></p>{% include 'tein_checkpoint_body.html' ignore missing %}</div></div>
-            {% elif calculator_step == 2 and phase_1 %}
-            {% set second = phase_1.checkpoints[1] %}
-            <div class="bunk-results"><div class="bunk-card"><h3>Second Sessional</h3><p>Checkpoint: <strong>{{ second.date }}</strong></p><div class="summary"><h3>{% if second.status == 'safe' %}Attendance is Safe{% elif second.status == 'recovery' %}Attendance Recovery Needed{% else %}75% Not Reachable{% endif %}</h3><p>{% if second.status == 'safe' %}You are currently above the 75% attendance requirement.{% elif second.status == 'recovery' %}You need to attend approximately <strong>{{ second.classes_needed_for_75 }}</strong> consecutive classes to reach 75%.{% else %}Maximum possible attendance: <strong>{{ second.maximum_possible_percentage }}%</strong>{% endif %}</p></div><div class="attendance-flow"><div class="flow-card"><span>Starting Attendance</span><strong>{{ second.starting_attended }} / {{ second.starting_total }}</strong><small>{{ second.starting_percentage }}%</small></div><div class="flow-arrow">→</div><div class="flow-card"><span>Future Classes</span><strong>{{ second.future_classes }}</strong><small>{{ second.teaching_days }} teaching day(s)</small></div></div><div class="safe-leave-box"><span>Maximum Safe Leave</span><strong>{{ second.maximum_leave_display }}</strong><p>This is the maximum you can miss while staying at or above 75%.</p></div><hr><h3>How much leave will you take?</h3><form action="/sessional-2" method="POST" data-maximum-classes="{{ second.maximum_leave_classes }}" data-attended="{{ second.starting_attended }}" data-total="{{ second.starting_total }}" data-future="{{ second.future_classes }}" onsubmit="normalizeLeaveInputs(this)"><div class="leave-inputs"><div><label for="leave_2_days">Days</label><input type="number" id="leave_2_days" name="leave_2_days" min="0" value="0" required></div><div><label for="leave_2_classes">Classes</label><input type="number" id="leave_2_classes" name="leave_2_classes" min="0" value="0" required></div></div><p class="leave-preview">Your leave: <strong id="leave_2_preview">0 class(es)</strong></p><div class="projection-box"><span>At the checkpoint</span><strong id="projection_2">{{ second.starting_attended }} / {{ second.starting_total + second.future_classes }} — projected attendance</strong><p>This projected attendance will become your starting attendance for the Third Sessional.</p></div><button type="submit" class="attendance-button">Continue to Third Sessional</button></form></div></div>
-            {% elif calculator_step == 3 and phase_1 %}
-            {% set third = phase_1.checkpoints[2] %}
-            <div class="bunk-results"><div class="bunk-card"><h3>Third Sessional</h3><p>Checkpoint: <strong>{{ third.date }}</strong></p><div class="summary"><h3>{% if third.status == 'safe' %}Attendance is Safe{% elif third.status == 'recovery' %}Attendance Recovery Needed{% else %}75% Not Reachable{% endif %}</h3><p>{% if third.status == 'safe' %}You are currently above the 75% attendance requirement.{% elif third.status == 'recovery' %}You need to attend approximately <strong>{{ third.classes_needed_for_75 }}</strong> consecutive classes to reach 75%.{% else %}Maximum possible attendance: <strong>{{ third.maximum_possible_percentage }}%</strong>{% endif %}</p></div><div class="attendance-flow"><div class="flow-card"><span>Starting Attendance</span><strong>{{ third.starting_attended }} / {{ third.starting_total }}</strong><small>{{ third.starting_percentage }}%</small></div><div class="flow-arrow">→</div><div class="flow-card"><span>Future Classes</span><strong>{{ third.future_classes }}</strong><small>{{ third.teaching_days }} teaching day(s)</small></div></div><div class="safe-leave-box"><span>Maximum Safe Leave</span><strong>{{ third.maximum_leave_display }}</strong><p>This is the maximum you can miss while staying at or above 75%.</p></div><hr><h3>How much leave will you take?</h3><form action="/sessional-3" method="POST" data-maximum-classes="{{ third.maximum_leave_classes }}" data-attended="{{ third.starting_attended }}" data-total="{{ third.starting_total }}" data-future="{{ third.future_classes }}" onsubmit="normalizeLeaveInputs(this)"><div class="leave-inputs"><div><label for="leave_3_days">Days</label><input type="number" id="leave_3_days" name="leave_3_days" min="0" value="0" required></div><div><label for="leave_3_classes">Classes</label><input type="number" id="leave_3_classes" name="leave_3_classes" min="0" value="0" required></div></div><p class="leave-preview">Your leave: <strong id="leave_3_preview">0 class(es)</strong></p><div class="projection-box"><span>At the checkpoint</span><strong id="projection_3">{{ third.starting_attended }} / {{ third.starting_total + third.future_classes }} — projected attendance</strong><p>This is your projected attendance at the Third Sessional.</p></div><button type="submit" class="attendance-button">Finish Attendance Plan</button></form></div></div>
-            {% else %}
-            <div class="tein-completed-note">There is no active sessional plan right now. Completed checkpoints are kept in history instead of taking over the dashboard.</div>
-            {% endif %}
+            {% if calculator_step == 1 and phase_1 %}{% set first = phase_1.checkpoints[0] %}<div class="summary"><h2>Bunk Calculator</h2><p>Plan your leave one checkpoint at a time. Your projected attendance after each checkpoint automatically becomes the starting attendance for the next one.</p><p><strong>Step 1 of 3</strong> — First Sessional</p></div><div class="bunk-results"><div class="bunk-card"><h3>First Sessional</h3><p>Checkpoint: <strong>{{ first.date }}</strong></p>{% include 'tein_checkpoint_body.html' ignore missing %}</div></div>
+            {% elif calculator_step == 2 and phase_1 %}{% set second = phase_1.checkpoints[1] %}<div class="bunk-results"><div class="bunk-card"><h3>Second Sessional</h3><p>Checkpoint: <strong>{{ second.date }}</strong></p><div class="summary"><h3>{% if second.status == 'safe' %}Attendance is Safe{% elif second.status == 'recovery' %}Attendance Recovery Needed{% else %}75% Not Reachable{% endif %}</h3><p>{% if second.status == 'safe' %}You are currently above the 75% attendance requirement.{% elif second.status == 'recovery' %}You need to attend approximately <strong>{{ second.classes_needed_for_75 }}</strong> consecutive classes to reach 75%.{% else %}Maximum possible attendance: <strong>{{ second.maximum_possible_percentage }}%</strong>{% endif %}</p></div><div class="attendance-flow"><div class="flow-card"><span>Starting Attendance</span><strong>{{ second.starting_attended }} / {{ second.starting_total }}</strong><small>{{ second.starting_percentage }}%</small></div><div class="flow-arrow">→</div><div class="flow-card"><span>Future Classes</span><strong>{{ second.future_classes }}</strong><small>{{ second.teaching_days }} teaching day(s)</small></div></div><div class="safe-leave-box"><span>Maximum Safe Leave</span><strong>{{ second.maximum_leave_display }}</strong><p>This is the maximum you can miss while staying at or above 75%.</p></div><hr><h3>How much leave will you take?</h3><form action="/sessional-2" method="POST" data-maximum-classes="{{ second.maximum_leave_classes }}" data-attended="{{ second.starting_attended }}" data-total="{{ second.starting_total }}" data-future="{{ second.future_classes }}" onsubmit="normalizeLeaveInputs(this)"><div class="leave-inputs"><div><label for="leave_2_days">Days</label><input type="number" id="leave_2_days" name="leave_2_days" min="0" value="0" required></div><div><label for="leave_2_classes">Classes</label><input type="number" id="leave_2_classes" name="leave_2_classes" min="0" value="0" required></div></div><p class="leave-preview">Your leave: <strong id="leave_2_preview">0 class(es)</strong></p><div class="projection-box"><span>At the checkpoint</span><strong id="projection_2">{{ second.starting_attended }} / {{ second.starting_total + second.future_classes }} — projected attendance</strong><p>This projected attendance will become your starting attendance for the Third Sessional.</p></div><button type="submit" class="attendance-button">Continue to Third Sessional</button></form></div></div>
+            {% elif calculator_step == 3 and phase_1 %}{% set third = phase_1.checkpoints[2] %}<div class="bunk-results"><div class="bunk-card"><h3>Third Sessional</h3><p>Checkpoint: <strong>{{ third.date }}</strong></p><div class="summary"><h3>{% if third.status == 'safe' %}Attendance is Safe{% elif third.status == 'recovery' %}Attendance Recovery Needed{% else %}75% Not Reachable{% endif %}</h3><p>{% if third.status == 'safe' %}You are currently above the 75% attendance requirement.{% elif third.status == 'recovery' %}You need to attend approximately <strong>{{ third.classes_needed_for_75 }}</strong> consecutive classes to reach 75%.{% else %}Maximum possible attendance: <strong>{{ third.maximum_possible_percentage }}%</strong>{% endif %}</p></div><div class="attendance-flow"><div class="flow-card"><span>Starting Attendance</span><strong>{{ third.starting_attended }} / {{ third.starting_total }}</strong><small>{{ third.starting_percentage }}%</small></div><div class="flow-arrow">→</div><div class="flow-card"><span>Future Classes</span><strong>{{ third.future_classes }}</strong><small>{{ third.teaching_days }} teaching day(s)</small></div></div><div class="safe-leave-box"><span>Maximum Safe Leave</span><strong>{{ third.maximum_leave_display }}</strong><p>This is the maximum you can miss while staying at or above 75%.</p></div><hr><h3>How much leave will you take?</h3><form action="/sessional-3" method="POST" data-maximum-classes="{{ third.maximum_leave_classes }}" data-attended="{{ third.starting_attended }}" data-total="{{ third.starting_total }}" data-future="{{ third.future_classes }}" onsubmit="normalizeLeaveInputs(this)"><div class="leave-inputs"><div><label for="leave_3_days">Days</label><input type="number" id="leave_3_days" name="leave_3_days" min="0" value="0" required></div><div><label for="leave_3_classes">Classes</label><input type="number" id="leave_3_classes" name="leave_3_classes" min="0" value="0" required></div></div><p class="leave-preview">Your leave: <strong id="leave_3_preview">0 class(es)</strong></p><div class="projection-box"><span>At the checkpoint</span><strong id="projection_3">{{ third.starting_attended }} / {{ third.starting_total + third.future_classes }} — projected attendance</strong><p>This is your projected attendance at the Third Sessional.</p></div><button type="submit" class="attendance-button">Finish Attendance Plan</button></form></div></div>
+            {% else %}<div class="tein-completed-note">There is no active sessional plan right now. Completed checkpoints are kept in history instead of taking over the dashboard.</div>{% endif %}
         </section>
 
         <section class="tein-app-view tein-subjects-view" data-view="subjects" aria-label="Subjects" hidden>
             <div class="tein-view-title"><div><h2>Subjects</h2><p>{{ attendance.subjects|length }} subjects from the college portal</p></div></div>
             <div class="summary tein-subject-heading"><h2>Subject Attendance</h2><p>Click a subject to inspect its attendance history.</p></div>
-
             <div class="table-container tein-subject-table-wrap">
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Subject</th>
-                            <th>Code</th>
-                            <th>Present</th>
-                            <th>Absent</th>
-                            <th>Total</th>
-                            <th>Attendance</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Subject</th><th>Code</th><th>Present</th><th>Absent</th><th>Total</th><th>Attendance</th></tr></thead>
                     <tbody>
                     {% for subject in attendance.subjects %}
                         {% set attended = subject.get('attendedLecture', 0) | int %}
                         {% set absent = subject.get('absentLecture', 0) | int %}
                         {% set total = attended + absent %}
                         <tr class="subject-attendance-row" data-subject-index="{{ loop.index0 }}" tabindex="0" role="button" aria-label="View {{ subject.get('subjectName', 'Unknown') }} attendance details">
-                            <td>{{ subject.get('subjectName', 'Unknown') }}</td>
-                            <td>{{ subject.get('subjectCode', '-') }}</td>
-                            <td>{{ attended }}</td>
-                            <td>{{ absent }}</td>
-                            <td>{{ total }}</td>
+                            <td>{{ subject.get('subjectName', 'Unknown') }}</td><td>{{ subject.get('subjectCode', '-') }}</td><td>{{ attended }}</td><td>{{ absent }}</td><td>{{ total }}</td>
                             <td>{% if total > 0 %}{{ ((attended / total) * 100) | round(2) }}%{% else %}0%{% endif %}</td>
                         </tr>
                     {% endfor %}
                     </tbody>
                 </table>
             </div>
-
             <div id="subject-attendance-details" aria-live="polite">
                 {% for detail in attendance.subject_details %}
                 <div class="subject-detail-panel" data-subject-detail="{{ loop.index0 }}" hidden>
-                    <div class="summary">
-                        <h3>{{ detail.get('subject_name', 'Subject details') }}</h3>
-                        <p>Attendance history returned by the college portal.</p>
-                    </div>
+                    <div class="summary"><h3>{{ detail.get('subject_name', 'Subject details') }}</h3><p>Attendance history returned by the college portal.</p></div>
                     {% if detail.get('records') %}
                     <div class="table-container">
                         <table>
-                            <thead>
-                                <tr>
-                                {% for column in detail.get('columns', []) %}
-                                    <th>{{ column }}</th>
-                                {% endfor %}
-                                </tr>
-                            </thead>
-                            <tbody>
-                            {% for record in detail.get('records', []) %}
-                                <tr>
-                                {% for column in detail.get('columns', []) %}
-                                    <td>{{ record.get(column, '-') }}</td>
-                                {% endfor %}
-                                </tr>
-                            {% endfor %}
-                            </tbody>
+                            <thead><tr>{% for column in detail.get('columns', []) %}<th>{{ column }}</th>{% endfor %}</tr></thead>
+                            <tbody>{% for record in detail.get('records', []) %}<tr>{% for column in detail.get('columns', []) %}<td>{{ record.get(column, '-') }}</td>{% endfor %}</tr>{% endfor %}</tbody>
                         </table>
                     </div>
-                    {% else %}
-                    <div class="summary"><p>No attendance records were returned for this subject.</p></div>
-                    {% endif %}
+                    {% else %}<div class="summary"><p>No attendance records were returned for this subject.</p></div>{% endif %}
                 </div>
                 {% endfor %}
             </div>
@@ -229,87 +144,29 @@
 </div>
 
 <script>
-/* =========================================
-   NIET EMAIL GENERATOR
-   Format: 2024 -> 0241, 2025 -> 0251
-   ========================================= */
-function updateGeneratedUsername() {
-    const yearElement = document.getElementById("admission-year");
-    const branchElement = document.getElementById("branch");
-    const numberElement = document.getElementById("student-number");
-    const output = document.getElementById("generated-username");
-    const hiddenInput = document.getElementById("generated-username-input");
-
-    if (!yearElement || !branchElement || !numberElement || !output || !hiddenInput) return;
-
-    const year = yearElement.value.trim();
-    const branch = branchElement.value.trim().toLowerCase();
-    const studentNumber = numberElement.value.trim();
-
-    // NIET batch prefix directly corresponds to the selected admission year.
-    // 2024 -> 0241, 2025 -> 0251, 2026 -> 0261.
-    const yearPrefix = year.length === 4 ? `0${year.slice(2)}1` : "";
-
-    if (!yearPrefix || !branch || !/^\d{3}$/.test(studentNumber)) {
-        output.textContent = "—";
-        hiddenInput.value = "";
-        return;
-    }
-
-    const username = `${yearPrefix}${branch}${studentNumber}@niet.co.in`;
-    output.textContent = username;
-    hiddenInput.value = username;
+function showSubjectAttendance(index){
+    const container=document.getElementById("subject-attendance-details");
+    if(!container)return;
+    const panels=container.querySelectorAll("[data-subject-detail]");
+    let selectedPanel=null;
+    panels.forEach(function(panel){
+        const selected=panel.dataset.subjectDetail===String(index);
+        panel.hidden=!selected;
+        panel.style.display=selected?"block":"none";
+        if(selected)selectedPanel=panel;
+    });
+    if(!selectedPanel){container.style.display="none";return;}
+    container.style.display="block";
+    document.querySelectorAll(".subject-attendance-row.is-selected").forEach(function(row){row.classList.remove("is-selected")});
+    document.querySelector(`.subject-attendance-row[data-subject-index="${index}"]`)?.classList.add("is-selected");
+    selectedPanel.scrollIntoView({behavior:"smooth",block:"start"});
 }
-
-function setLoginMethod(method) {
-    const manualFields = document.getElementById("manual-login-fields");
-    const generateFields = document.getElementById("generate-login-fields");
-    const manualInput = document.getElementById("manual-username");
-    const generatedInput = document.getElementById("generated-username-input");
-    const manualHidden = document.getElementById("manual-username-input");
-    const manualButton = document.getElementById("manual-login-button");
-    const generateButton = document.getElementById("generate-login-button");
-
-    if (method === "generate") {
-        manualFields.style.setProperty("display", "none", "important");
-        generateFields.style.setProperty("display", "block", "important");
-        generatedInput.disabled = false;
-        manualHidden.disabled = true;
-        manualInput.required = false;
-        manualInput.disabled = true;
-        generateButton.classList.add("active");
-        manualButton.classList.remove("active");
-        updateGeneratedUsername();
-    } else {
-        manualFields.style.setProperty("display", "block", "important");
-        generateFields.style.setProperty("display", "none", "important");
-        generatedInput.disabled = true;
-        manualHidden.disabled = false;
-        manualInput.required = true;
-        manualInput.disabled = false;
-        generateButton.classList.remove("active");
-        manualButton.classList.add("active");
-    }
-}
-
-function updateManualUsername() {
-    const manualInput = document.getElementById("manual-username");
-    const manualHidden = document.getElementById("manual-username-input");
-    if (manualInput && manualHidden && !manualInput.disabled) {
-        manualHidden.value = manualInput.value.trim();
-    }
-}
-
-function showLoading() {
-    const login = document.getElementById("login-section");
-    const loading = document.getElementById("loading-screen");
-    if (login && loading) {
-        login.style.display = "none";
-        loading.style.display = "flex";
-        const video = document.getElementById("loading-video");
-        if (video) video.play().catch(() => {});
-    }
-}
+function formatLeave(totalClasses){totalClasses=Math.max(0,parseInt(totalClasses||"0",10)||0);const days=Math.floor(totalClasses/8),classes=totalClasses%8;if(days===0)return `${classes} class(es)`;if(classes===0)return `${days} day(s)`;return `${days} day(s) ${classes} class(es)`;}
+function getLeaveValues(form){const daysInput=form.querySelector('input[name$="_days"]'),classesInput=form.querySelector('input[name$="_classes"]');if(!daysInput||!classesInput)return {daysInput,classesInput,total:0};const days=Math.max(0,parseInt(daysInput.value||"0",10)||0),classes=Math.max(0,parseInt(classesInput.value||"0",10)||0);return {daysInput,classesInput,total:days*8+classes};}
+function updateProjection(form){const values=getLeaveValues(form);if(!values.daysInput||!values.classesInput)return;let leave=values.total;const maximum=parseInt(form.dataset.maximumClasses||"0",10)||0;if(maximum>=0)leave=Math.min(leave,maximum);const attended=parseInt(form.dataset.attended||"0",10)||0,total=parseInt(form.dataset.total||"0",10)||0,future=parseInt(form.dataset.future||"0",10)||0;const projectedAttended=attended+future-leave,projectedTotal=total+future,percentage=projectedTotal>0?(projectedAttended/projectedTotal)*100:0;const preview=form.querySelector(".leave-preview strong");if(preview)preview.textContent=formatLeave(leave);const projection=form.querySelector('[id^="projection_"]');if(projection)projection.textContent=`${projectedAttended} / ${projectedTotal} — ${percentage.toFixed(2)}%`;}
+function updateLeavePreview(form){const values=getLeaveValues(form);if(!values.daysInput||!values.classesInput)return;let total=values.total;const maximum=parseInt(form.dataset.maximumClasses||"0",10)||0;if(maximum>=0)total=Math.min(total,maximum);const normalizedDays=Math.floor(total/8),normalizedClasses=total%8;values.daysInput.value=normalizedDays;values.classesInput.value=normalizedClasses;updateProjection(form);}
+function normalizeLeaveInputs(form){updateLeavePreview(form);return true;}
+document.addEventListener("DOMContentLoaded",()=>{document.querySelectorAll(".tein-open-plan").forEach(button=>button.addEventListener("click",()=>document.querySelector('[data-view="plan"]')?.click()));});
 </script>
 </body>
 </html>
