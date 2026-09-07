@@ -85,16 +85,14 @@
   }
 
   function setupInteractiveSounds() {
-    document
-      .querySelectorAll("button,a,input,select,textarea,.subject-attendance-row,.flow-card")
-      .forEach((element) => {
-        if (element.dataset.teinSoundBound) return;
-        element.dataset.teinSoundBound = "true";
-        element.addEventListener("pointerenter", () => {
-          if (!coarsePointer.matches) tick("hover");
-        });
-        element.addEventListener("pointerdown", () => tick("soft"));
+    document.querySelectorAll("button,a,input,select,textarea,.subject-attendance-row,.flow-card").forEach((element) => {
+      if (element.dataset.teinSoundBound) return;
+      element.dataset.teinSoundBound = "true";
+      element.addEventListener("pointerenter", () => {
+        if (!coarsePointer.matches) tick("hover");
       });
+      element.addEventListener("pointerdown", () => tick("soft"));
+    });
   }
 
   function setupMagneticButtons() {
@@ -222,6 +220,15 @@
     document.body.appendChild(toggle);
   }
 
+  function loadLoginNativeBridge() {
+    if (!document.getElementById("login-section") || document.querySelector('script[data-tein-login-native]')) return;
+    const script = document.createElement("script");
+    script.src = "/static/tein-login-native.js";
+    script.defer = true;
+    script.dataset.teinLoginNative = "true";
+    document.head.appendChild(script);
+  }
+
   function boot() {
     bootstrapTheme();
     setupGlobalAudioUnlock();
@@ -232,6 +239,7 @@
     setupCardTilt();
     animateNumbers();
     setupAttendanceInstrument();
+    loadLoginNativeBridge();
   }
 
   window.TEIN = window.TEIN || {};
