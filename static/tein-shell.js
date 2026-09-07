@@ -1,6 +1,14 @@
 (() => {
   "use strict";
 
+  function loadStyle(href) {
+    if (document.querySelector(`link[href="${href}"]`)) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    document.head.appendChild(link);
+  }
+
   function setupLogin() {
     const manualFields = document.getElementById("manual-login-fields");
     const generateFields = document.getElementById("generate-login-fields");
@@ -72,13 +80,6 @@
     const form = loginSection?.querySelector('form[action="/get-attendance"]');
     if (!loginSection || !form || document.querySelector(".tein-login-scene")) return;
 
-    const loadStyle = (href) => {
-      if (document.querySelector(`link[href="${href}"]`)) return;
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = href;
-      document.head.appendChild(link);
-    };
     loadStyle("/static/tein-login.css");
     loadStyle("/static/tein-login-spider.css");
 
@@ -201,6 +202,7 @@
   function setupShell() {
     const nav = document.querySelector(".tein-app-nav");
     if (!nav) return;
+    loadStyle("/static/tein-polish.css");
 
     let moreButton = nav.querySelector('button[data-view="more"]');
     let moreView = document.querySelector('.tein-app-view[data-view="more"]');
