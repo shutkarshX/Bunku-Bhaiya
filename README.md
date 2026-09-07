@@ -1,101 +1,111 @@
-\# Bunku-Bhaiya
+# Bunku-Bhaiya
 
+A student attendance dashboard for NIET with subject history and a 75% safe-leave planner.
 
+## What it does
 
-A smart college attendance dashboard and safe-bunk calculator built for students.
+- Retrieves live attendance from the NIET college portal.
+- Calculates overall and subject-wise attendance.
+- Uses the academic calendar instead of assuming every weekday is a teaching day.
+- Plans leave around three sessional checkpoints.
+- Carries a user's **planned projection** forward only while a checkpoint is still upcoming.
+- Uses current portal attendance after a checkpoint has passed instead of inventing historical attendance.
+- Shows subject attendance history in a focused detail view.
+- Supports Auto, Light and Dark appearance modes.
+- Provides a cinematic loading/login experience while keeping the core dashboard simple.
 
+## Checkpoints
 
+| Checkpoint | Date |
+| --- | --- |
+| First Sessional | 29 August 2026 |
+| Second Sessional | 10 October 2026 |
+| Third Sessional | 16 November 2026 |
 
-\## Features
+The calculator treats **75% as safe** (`>= 75%`).
 
-
-
-\- College portal attendance retrieval
-
-\- Overall attendance calculation
-
-\- Subject-wise attendance dashboard
-
-\- Academic-calendar-based teaching-day calculation
-
-\- Safe leave calculation based on 75% attendance
-
-\- Sessional checkpoint calculations
-
-\- User choice for whether a teaching-day checkpoint should be included
-
-\- Simple web-based interface
-
-\- Loading screen while attendance is being retrieved
-
-
-
-\## How It Works
-
-
-
-1\. The student enters their college portal credentials.
-
-2\. Bunku-Bhaiya retrieves the current subject-wise attendance.
-
-3\. The application calculates the overall attendance.
-
-4\. The academic calendar determines which dates are actual teaching days.
-
-5\. The student can choose whether a teaching-day checkpoint should be included.
-
-6\. The calculator determines the maximum number of teaching days that can be missed while maintaining at least 75% attendance.
-
-7\. The projected attendance is displayed on the dashboard.
-
-
-
-\## Project Structure
-
-
+## Architecture
 
 ```text
+NIET Portal
+    ↓
+portal.py
+    ↓
+app.py session data
+    ↓
+bunk_calculator.py
+    ↓
+TEIN dashboard
+```
 
-Bunku-Bhaiya/
+### Backend
 
-│
+- `app.py` — Flask routes, session state and dashboard rendering.
+- `portal.py` — Playwright-based NIET retrieval and subject-detail capture.
+- `bunk_calculator.py` — current calculator wrapper and today's remaining-class adjustment.
+- `legacy_bunk_calculator.py` — established checkpoint/calculation engine.
+- `academic_calendar.py` — authoritative teaching dates and classes-per-day configuration.
 
-├── app.py
+### Frontend
 
-├── portal.py
+- `templates/dashboard.html` — TEIN page structure and data presentation.
+- `templates/tein_checkpoint_body.html` — First Sessional plan body.
+- `templates/_subject_attendance_details.html` — legacy subject-detail partial retained for compatibility.
+- `static/style.css` — base document styling and shared controls.
+- `static/tein-app.css` — single source for the current TEIN application visual system.
+- `static/tein.js` — theme, sound and lightweight interaction layer.
+- `static/tein-shell.js` — login flow, navigation, subject interactions and leave controls.
+- `static/tein-login.css` / `static/tein-login-spider.css` — login scene.
+- `static/loading.mp4` — loading media.
 
-├── bunk\_calculator.py
+The old duplicate TEIN overhaul/dynamic stylesheet layers have been removed so the cascade has one clear application layer.
 
-├── academic\_calendar.py
+## NIET email generator
 
-├── test\_portal.py
+The generated address follows:
 
-├── .gitignore
+```text
+2023 → 0231 + branch + student number @niet.co.in
+2024 → 0241 + branch + student number @niet.co.in
+2025 → 0251 + branch + student number @niet.co.in
+2026 → 0261 + branch + student number @niet.co.in
+```
 
-│
+## Local setup
 
-├── static/
-
-│   ├── style.css
-
-│   └── loading.mp4
-
-│
-
-└── templates/
-
-&#x20;   └── dashboard.html
-
-## Configuration
-
-BunkMaster uses a Flask session with a secret key provided through the
-`SECRET_KEY` environment variable.
-
-For local development, set the environment variable before running the app.
-
-The secret key is intentionally not stored in the repository.
+Bunk-Bhaiya requires a Flask session secret. Do not commit it.
 
 ### Windows PowerShell
 
 ```powershell
 [Environment]::SetEnvironmentVariable("SECRET_KEY","your-random-secret-here","User")
+```
+
+Then install the project's Python dependencies and Playwright browser, and run:
+
+```powershell
+python app.py
+```
+
+The application listens on port `5000` in the development configuration.
+
+## Useful checks
+
+```powershell
+python -m py_compile app.py
+python -m py_compile bunk_calculator.py
+python -m py_compile portal.py
+```
+
+Git:
+
+```powershell
+git status
+git pull origin ui-changes
+```
+
+## Security
+
+- `SECRET_KEY` stays outside the repository.
+- College credentials are submitted to the NIET portal for retrieval and are not intentionally persisted as application data.
+- Subject-detail responses are held server-side in the current Flask process rather than copied into the cookie session.
