@@ -115,6 +115,88 @@
     buttons.forEach(b=>b.addEventListener("click",()=>activate(b.dataset.view))); document.querySelectorAll(".tein-open-plan,.tein-focus-action").forEach(b=>b.addEventListener("click",()=>activate("plan"))); const initial=location.hash.slice(1); activate(views.some(v=>v.dataset.view===initial)?initial:"home",false);
   }
 
+  // Compatibility layer for dashboard features that existed on main.
+  // Keep these functions global because the legacy dashboard uses inline handlers.
+  function showSubjectAttendance(index) {
+    const container = document.getElementById("subject-attendance-details");
+    if (!container) return;
+    const panels = container.querySelectorAll("[data-subject-detail]");
+    let selectedPanel = null;
+    panels.forEach((panel) => {
+      const selected = panel.dataset.subjectDetail === String(index);
+      panel.hidden = !selected;
+      panel.style.display = selected ? "block" : "none";
+      if (selected) selectedPanel = panel;
+    });
+    if (!selectedPanel) {
+      container.style.display = "none";
+      return;
+    }
+    container.style.display = "block";
+    document.querySelectorAll(".subject-attendance-row.is-selected").forEach((row) => row.classList.remove("is-selected"));
+    document.querySelector(`.subject-attendance-row[data-subject-index="${index}"]`)?.classList.add("is-selected");
+    selectedPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function formatLeave(totalClasses) {
+    totalClasses = Math.max(0, parseInt(totalClasses || "0", 10) || 0);
+    const days = Math.floor(totalClasses / 8), classes = totalClasses % 8;
+    if (days === 0) return `${classes} class(es)`;
+    if (classes === 0) return `${days} day(s)`;
+    return `${days} day(s) ${classes} class(es)`;
+  }
+
+  function getLeaveValues(form) {
+    const daysInput = form.querySelector('input[name$="_days"]');
+    const classesInput = form.querySelector('input[name$="_classes"]');
+    if (!daysInput || !classesInput) return { daysInput, classesInput, total: 0 };
+    const days = Math.max(0, parseInt(daysInput.value || "0", 10) || 0);
+    const classes = Math.max(0, parseInt(classesInput.value || "0", 10) || 0);
+    return { daysInput, classesInput, total: days * 8 + classes };
+  }
+
+  function updateProjection(form) {
+    const values = getLeaveValues(form);
+    if (!values.daysInput || !values.classesInput) return;
+    let leave = values.total;
+    const maximum = parseInt(form.dataset.maximumClasses || "0", 10) || 0;
+    if (maximum >= 0) leave = Math.min(leave, maximum);
+    const attended = parseInt(form.dataset.attended || "0", 10) || 0;
+    const total = parseInt(form.dataset.total || "0", 10) || 0;
+    const future = parseInt(form.dataset.future || "0", 10) || 0;
+    const projectedAttended = attended + future - leave;
+    const projectedTotal = total + future;
+    const percentage = projectedTotal > 0 ? (projectedAttended / projectedTotal) * 100 : 0;
+    const preview = form.querySelector(".leave-preview strong");
+    if (preview) preview.textContent = formatLeave(leave);
+    const projection = form.querySelector('[id^="projection_"]');
+    if (projection) projection.textContent = `${projectedAttended} / ${projectedTotal} — ${percentage.toFixed(2)}%`;
+  }
+
+  function updateLeavePreview(form) {
+    const values = getLeaveValues(form);
+    if (!values.daysInput || !values.classesInput) return;
+    let total = values.total;
+    const maximum = parseInt(form.dataset.maximumClasses || "0", 10) || 0;
+    if (maximum >= 0) total = Math.min(total, maximum);
+    const normalizedDays = Math.floor(total / 8), normalizedClasses = total % 8;
+    values.daysInput.value = normalizedDays;
+    values.classesInput.value = normalizedClasses;
+    updateProjection(form);
+  }
+
+  function normalizeLeaveInputs(form) {
+    updateLeavePreview(form);
+    return true;
+  }
+
+  window.showSubjectAttendance = showSubjectAttendance;
+  window.formatLeave = formatLeave;
+  window.getLeaveValues = getLeaveValues;
+  window.updateProjection = updateProjection;
+  window.updateLeavePreview = updateLeavePreview;
+  window.normalizeLeaveInputs = normalizeLeaveInputs;
+
   function boot(){setupLogin();setupLoginScene();setupShell();}
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
