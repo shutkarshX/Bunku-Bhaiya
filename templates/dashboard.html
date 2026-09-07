@@ -157,8 +157,72 @@
 
         <section class="tein-app-view tein-subjects-view" data-view="subjects" aria-label="Subjects" hidden>
             <div class="tein-view-title"><div><h2>Subjects</h2><p>{{ attendance.subjects|length }} subjects from the college portal</p></div></div>
-            <div class="summary tein-subject-heading"><h2>Subject Attendance</h2><p>Select a subject to inspect its attendance details.</p></div>
-            <div id="subject-attendance-details"></div>
+            <div class="summary tein-subject-heading"><h2>Subject Attendance</h2><p>Click a subject to inspect its attendance history.</p></div>
+
+            <div class="table-container tein-subject-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Code</th>
+                            <th>Present</th>
+                            <th>Absent</th>
+                            <th>Total</th>
+                            <th>Attendance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for subject in attendance.subjects %}
+                        {% set attended = subject.get('attendedLecture', 0) | int %}
+                        {% set absent = subject.get('absentLecture', 0) | int %}
+                        {% set total = attended + absent %}
+                        <tr class="subject-attendance-row" data-subject-index="{{ loop.index0 }}" tabindex="0" role="button" aria-label="View {{ subject.get('subjectName', 'Unknown') }} attendance details">
+                            <td>{{ subject.get('subjectName', 'Unknown') }}</td>
+                            <td>{{ subject.get('subjectCode', '-') }}</td>
+                            <td>{{ attended }}</td>
+                            <td>{{ absent }}</td>
+                            <td>{{ total }}</td>
+                            <td>{% if total > 0 %}{{ ((attended / total) * 100) | round(2) }}%{% else %}0%{% endif %}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="subject-attendance-details" aria-live="polite">
+                {% for detail in attendance.subject_details %}
+                <div class="subject-detail-panel" data-subject-detail="{{ loop.index0 }}" hidden>
+                    <div class="summary">
+                        <h3>{{ detail.get('subject_name', 'Subject details') }}</h3>
+                        <p>Attendance history returned by the college portal.</p>
+                    </div>
+                    {% if detail.get('records') %}
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                {% for column in detail.get('columns', []) %}
+                                    <th>{{ column }}</th>
+                                {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% for record in detail.get('records', []) %}
+                                <tr>
+                                {% for column in detail.get('columns', []) %}
+                                    <td>{{ record.get(column, '-') }}</td>
+                                {% endfor %}
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="summary"><p>No attendance records were returned for this subject.</p></div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
         </section>
     </main>
     {% endif %}
