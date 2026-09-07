@@ -96,6 +96,8 @@
     function setupMagneticButtons() {
         if (coarsePointer.matches || reduceMotion.matches) return;
         document.querySelectorAll(".attendance-button").forEach((button) => {
+            if (button.dataset.teinMagneticBound) return;
+            button.dataset.teinMagneticBound = "true";
             button.addEventListener("pointermove", (event) => {
                 const r = button.getBoundingClientRect();
                 const x = (event.clientX - r.left) / r.width - .5;
@@ -111,6 +113,8 @@
     function setupCardTilt() {
         if (coarsePointer.matches || reduceMotion.matches) return;
         document.querySelectorAll(".bunk-card,.summary,.stat-card").forEach((card) => {
+            if (card.dataset.teinTiltBound) return;
+            card.dataset.teinTiltBound = "true";
             card.addEventListener("pointermove", (event) => {
                 const r = card.getBoundingClientRect();
                 const x = (event.clientX - r.left) / r.width - .5;
@@ -123,17 +127,60 @@
         });
     }
 
+    // Restored from the original dashboard behavior. The TEIN redesign kept
+    // the subject rows and detail panels but had lost the bridge between them.
+    function showSubjectAttendance(index) {
+        const container = document.getElementById("subject-attendance-details");
+        if (!container) return;
+
+        const panels = container.querySelectorAll("[data-subject-detail]");
+        let selectedPanel = null;
+
+        panels.forEach((panel) => {
+            const selected = panel.dataset.subjectDetail === String(index);
+            panel.hidden = !selected;
+            panel.style.display = selected ? "block" : "none";
+            if (selected) selectedPanel = panel;
+        });
+
+        document.querySelectorAll(".subject-attendance-row.is-selected").forEach((row) => {
+            row.classList.remove("is-selected");
+        });
+        const selectedRow = document.querySelector(`.subject-attendance-row[data-subject-index="${index}"]`);
+        selectedRow?.classList.add("is-selected");
+
+        if (!selectedPanel) {
+            container.hidden = true;
+            container.style.display = "none";
+            return;
+        }
+
+        container.hidden = false;
+        container.style.display = "block";
+        selectedPanel.scrollIntoView({
+            behavior: reduceMotion.matches ? "auto" : "smooth",
+            block: "start"
+        });
+        tick("soft");
+    }
+
+    window.showSubjectAttendance = showSubjectAttendance;
+
     function setupSubjectRows() {
         document.querySelectorAll(".subject-attendance-row").forEach((row) => {
+            if (row.dataset.teinSubjectBound) return;
+            row.dataset.teinSubjectBound = "true";
             row.setAttribute("role", "button");
             row.setAttribute("tabindex", "0");
             row.addEventListener("keydown", (event) => {
-                if (event.key === "Enter" || event.key === " ") { event.preventDefault(); row.click(); }
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    row.click();
+                }
             });
             row.addEventListener("click", () => {
-                document.querySelectorAll(".subject-attendance-row.is-selected").forEach((r) => r.classList.remove("is-selected"));
-                row.classList.add("is-selected");
-                tick("soft");
+                const index = row.dataset.subjectIndex;
+                if (index !== undefined) showSubjectAttendance(index);
             });
         });
     }
@@ -166,6 +213,7 @@
         const match = overall.textContent.match(/(\d+(?:\.\d+)?)/);
         const percentage = match ? Math.max(0, Math.min(100, Number(match[1]))) : 0;
         document.documentElement.style.setProperty("--tein-attendance-pct", `${percentage}%`);
+        if (document.querySelector("style[data-tein-instrument]")) return;
         const style = document.createElement("style");
         style.dataset.teinInstrument = "true";
         style.textContent = ".stat-card.overall::after{background:conic-gradient(from 215deg,var(--accent-2) 0 var(--tein-attendance-pct),color-mix(in srgb,var(--bg) 16%,transparent) var(--tein-attendance-pct) 100%)}";
@@ -181,6 +229,7 @@
     }
 
     function setupThemeToggle() {
+        if (document.querySelector(".tein-theme-toggle")) return;
         const toggle = document.createElement("button");
         toggle.type = "button";
         toggle.className = "tein-theme-toggle";
@@ -205,6 +254,7 @@
     }
 
     function setupSoundToggle() {
+        if (document.querySelector(".tein-sound-toggle")) return;
         const toggle = document.createElement("button");
         toggle.type = "button"; toggle.className = "tein-sound-toggle";
         toggle.setAttribute("aria-label", "Toggle interface sounds");
@@ -222,7 +272,11 @@
     }
 
     function setupForms() {
-        document.querySelectorAll('form[action^="/sessional-"]').forEach((form) => form.addEventListener("submit", () => tick("success")));
+        document.querySelectorAll('form[action^="/sessional-"]').forEach((form) => {
+            if (form.dataset.teinFormBound) return;
+            form.dataset.teinFormBound = "true";
+            form.addEventListener("submit", () => tick("success"));
+        });
     }
 
     function topLevelChildren(container) {
@@ -346,13 +400,8 @@
 
         const branch = branchInput.value.trim().toUpperCase();
         const studentNumber = studentInput.value.trim();
-
-        // NIET email format: 2024 admission -> 0241, 2025 -> 0251, 2026 -> 0261.
-        // The first two digits are the admission year's last two digits; the final
-        // digit is the fixed institute/year suffix (1). Do not increment the year.
         const yearCode = `0${String(year).slice(-2)}1`;
         const username = `${yearCode}${branch}${studentNumber}@niet.co.in`;
-
         const complete = /^0\d{3}[A-Z0-9]+\d{3}@niet\.co\.in$/.test(username);
         output.textContent = branch && studentNumber.length === 3 ? username : "—";
         hidden.value = username;
@@ -415,9 +464,9 @@
         const maximum = Number(form.dataset.maximumClasses || 0);
         const d = Math.max(0, Number(days?.value || 0));
         const c = Math.max(0, Number(classes?.value || 0));
-        const total = Math.min(maximum, d + c);
-        if (days) days.value = Math.floor(total);
-        if (classes) classes.value = 0;
+        const total = Math.min(maximum, d * 8 + c);
+        if (days) days.value = Math.floor(total / 8);
+        if (classes) classes.value = total % 8;
         return true;
     }
 
@@ -433,7 +482,6 @@
         bootstrapTheme();
         loadStylesheet("/static/tein-dynamic.css", "teinDynamic");
         loadStylesheet("/static/tein-overhaul.css", "teinOverhaul");
-        loadStylesheet("/static/tein-shell.css", "teinShell");
         loadStylesheet("/static/tein-shell.css", "teinShell");
         setupGlobalAudioUnlock();
         setupThemeToggle();
