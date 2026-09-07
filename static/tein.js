@@ -312,104 +312,143 @@
         children.forEach((el) => { if (!used.has(el) && el.parentElement === container) views.home.appendChild(el); });
 
         const activate = (name, updateHash = true) => {
-            Object.entries(views).forEach(([key, view]) => view.classList.toggle("is-active", key === name));
-            [home, plan, subjects].forEach((button) => button.classList.remove("is-active"));
-            ({home, plan, subjects}[name]).classList.add("is-active");
+            Object.entries(views).forEach(([key, view]) => {
+                const active = key === name;
+                view.classList.toggle("is-active", active);
+                view.hidden = !active;
+            });
+            [home, plan, subjects].forEach((button, index) => {
+                const active = ["home", "plan", "subjects"][index] === name;
+                button.classList.toggle("is-active", active);
+                button.setAttribute("aria-selected", String(active));
+            });
             if (updateHash) history.replaceState(null, "", `#${name}`);
             tick("soft");
-            window.scrollTo({ top: 0, behavior: reduceMotion.matches ? "auto" : "smooth" });
+            window.setTimeout(() => { setupInteractiveSounds(); setupMagneticButtons(); setupCardTilt(); setupSubjectRows(); setupForms(); }, 0);
         };
+
         home.addEventListener("click", () => activate("home"));
         plan.addEventListener("click", () => activate("plan"));
         subjects.addEventListener("click", () => activate("subjects"));
-        focus.querySelector("button").addEventListener("click", () => activate("plan"));
-        window.addEventListener("hashchange", () => activate(location.hash.slice(1) || "home", false));
-        activate(["home", "plan", "subjects"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "home", false);
-        setupInteractiveSounds();
+        views.home.querySelectorAll(".tein-focus-action").forEach((button) => button.addEventListener("click", () => activate("plan")));
+
+        const initial = location.hash.replace("#", "");
+        activate(views[initial] ? initial : "home", false);
     }
 
-    bootstrapTheme();
-    loadStylesheet("/static/tein-overhaul.css", "teinOverhaul");
-    loadStylesheet("/static/tein-dynamic.css", "teinDynamic");
-    loadStylesheet("/static/tein-app.css", "teinApp");
+    function updateGeneratedUsername() {
+        const year = document.getElementById("admission-year")?.value;
+        const branchInput = document.getElementById("branch");
+        const studentInput = document.getElementById("student-number");
+        const output = document.getElementById("generated-username");
+        const hidden = document.getElementById("generated-username-input");
+        if (!year || !branchInput || !studentInput || !output || !hidden) return;
 
-    document.addEventListener("DOMContentLoaded", () => {
+        const branch = branchInput.value.trim().toUpperCase();
+        const studentNumber = studentInput.value.trim();
+
+        // NIET email format: 2024 admission -> 0241, 2025 -> 0251, 2026 -> 0261.
+        // The first two digits are the admission year's last two digits; the final
+        // digit is the fixed institute/year suffix (1). Do not increment the year.
+        const yearCode = `0${String(year).slice(-2)}1`;
+        const username = `${yearCode}${branch}${studentNumber}@niet.co.in`;
+
+        const complete = /^0\d{3}[A-Z0-9]+\d{3}@niet\.co\.in$/.test(username);
+        output.textContent = branch && studentNumber.length === 3 ? username : "—";
+        hidden.value = username;
+        hidden.disabled = !complete;
+    }
+
+    function updateManualUsername() {
+        const source = document.getElementById("manual-username");
+        const hidden = document.getElementById("manual-username-input");
+        if (!source || !hidden) return;
+        let value = source.value.trim();
+        if (value && !/@niet\.co\.in$/i.test(value)) value += "@niet.co.in";
+        hidden.value = value;
+        hidden.disabled = !value;
+    }
+
+    function setLoginMethod(method) {
+        const manual = document.getElementById("manual-login-fields");
+        const generated = document.getElementById("generate-login-fields");
+        const manualButton = document.getElementById("manual-login-button");
+        const generateButton = document.getElementById("generate-login-button");
+        const manualInput = document.getElementById("manual-username");
+        const year = document.getElementById("admission-year");
+        const branch = document.getElementById("branch");
+        const student = document.getElementById("student-number");
+        const generatedHidden = document.getElementById("generated-username-input");
+        const manualHidden = document.getElementById("manual-username-input");
+        if (!manual || !generated) return;
+
+        const isManual = method === "manual";
+        manual.style.setProperty("display", isManual ? "block" : "none", "important");
+        generated.style.setProperty("display", isManual ? "none" : "block", "important");
+        manualButton?.classList.toggle("is-selected", isManual);
+        generateButton?.classList.toggle("is-selected", !isManual);
+        if (manualInput) manualInput.required = isManual;
+        if (year) year.required = !isManual;
+        if (branch) branch.required = !isManual;
+        if (student) student.required = !isManual;
+        if (generatedHidden) generatedHidden.disabled = isManual;
+        if (manualHidden) manualHidden.disabled = !isManual;
+        if (!isManual) updateGeneratedUsername();
+    }
+
+    function showLoading() {
+        const login = document.getElementById("login-section");
+        const loading = document.getElementById("loading-screen");
+        const video = document.getElementById("loading-video");
+        if (login) login.style.display = "none";
+        if (loading) loading.style.display = "flex";
+        if (video) {
+            try { video.currentTime = 0; video.play().catch(() => {}); } catch (_) {}
+        }
+        tick("success");
+    }
+
+    function normalizeLeaveInputs(form) {
+        if (!form) return true;
+        const days = form.querySelector('input[name^="leave_"][name$="_days"]');
+        const classes = form.querySelector('input[name^="leave_"][name$="_classes"]');
+        const maximum = Number(form.dataset.maximumClasses || 0);
+        const d = Math.max(0, Number(days?.value || 0));
+        const c = Math.max(0, Number(classes?.value || 0));
+        const total = Math.min(maximum, d + c);
+        if (days) days.value = Math.floor(total);
+        if (classes) classes.value = 0;
+        return true;
+    }
+
+    window.setLoginMethod = setLoginMethod;
+    window.updateManualUsername = updateManualUsername;
+    window.updateGeneratedUsername = updateGeneratedUsername;
+    window.showLoading = showLoading;
+    window.normalizeLeaveInputs = normalizeLeaveInputs;
+    window.TEIN = window.TEIN || {};
+    window.TEIN.tick = tick;
+
+    function boot() {
+        bootstrapTheme();
+        loadStylesheet("/static/tein-dynamic.css", "teinDynamic");
+        loadStylesheet("/static/tein-overhaul.css", "teinOverhaul");
+        loadStylesheet("/static/tein-shell.css", "teinShell");
+        loadStylesheet("/static/tein-shell.css", "teinShell");
         setupGlobalAudioUnlock();
+        setupThemeToggle();
+        setupSoundToggle();
+        setupAppShell();
+        setupInteractiveSounds();
         setupMagneticButtons();
         setupCardTilt();
         setupSubjectRows();
+        setupForms();
         animateNumbers();
         setupAttendanceInstrument();
-        setupForms();
-        setupSoundToggle();
-        setupThemeToggle();
-        setupAppShell();
-        setupInteractiveSounds();
-    });
+        updateGeneratedUsername();
+    }
 
-    window.TEIN = { tick };
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+    else boot();
 })();
-
-/* Legacy dashboard handlers kept global because dashboard.html uses inline events. */
-window.setLoginMethod = function (method) {
-    const manualFields = document.getElementById("manual-login-fields");
-    const generateFields = document.getElementById("generate-login-fields");
-    const manualButton = document.getElementById("manual-login-button");
-    const generateButton = document.getElementById("generate-login-button");
-    const manualInput = document.getElementById("manual-username");
-    const generatedInput = document.getElementById("generated-username-input");
-    const manualHidden = document.getElementById("manual-username-input");
-    if (!manualFields || !generateFields) return;
-    const manual = method === "manual";
-    manualFields.style.display = manual ? "block" : "none";
-    generateFields.style.display = manual ? "none" : "block";
-    if (manualButton) manualButton.classList.toggle("is-selected", manual);
-    if (generateButton) generateButton.classList.toggle("is-selected", !manual);
-    if (manualInput) manualInput.required = manual;
-    if (manualHidden) manualHidden.disabled = !manual;
-    if (generatedInput) generatedInput.disabled = manual;
-    if (!manual) window.updateGeneratedUsername();
-};
-
-window.updateManualUsername = function () {
-    const input = document.getElementById("manual-username");
-    const hidden = document.getElementById("manual-username-input");
-    if (!input || !hidden) return;
-    let value = input.value.trim();
-    if (!value) {
-        hidden.value = "";
-        return;
-    }
-    if (!value.includes("@")) value += "@niet.co.in";
-    hidden.value = value;
-};
-
-window.updateGeneratedUsername = function () {
-    const yearEl = document.getElementById("admission-year");
-    const branchEl = document.getElementById("branch");
-    const numberEl = document.getElementById("student-number");
-    const display = document.getElementById("generated-username");
-    const hidden = document.getElementById("generated-username-input");
-    if (!yearEl || !branchEl || !numberEl || !display || !hidden) return;
-    const year = yearEl.value;
-    const branch = branchEl.value.trim().toLowerCase();
-    const number = numberEl.value.trim();
-    const valid = year && branch && /^\d{3}$/.test(number);
-    const username = valid ? `${year}${branch}${number}@niet.co.in` : "—";
-    display.textContent = username;
-    hidden.value = valid ? username : "";
-};
-
-window.showLoading = function () {
-    const loginSection = document.getElementById("login-section");
-    const loadingScreen = document.getElementById("loading-screen");
-    const video = document.getElementById("loading-video");
-    if (loginSection) loginSection.style.display = "none";
-    if (loadingScreen) {
-        loadingScreen.style.display = "flex";
-        if (video) {
-            const play = video.play();
-            if (play && typeof play.catch === "function") play.catch(() => {});
-        }
-    }
-};
