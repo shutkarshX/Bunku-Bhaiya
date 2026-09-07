@@ -50,13 +50,13 @@ def get_dashboard_step(phase_1_result):
     active_index = phase_1_result.get("active_checkpoint_index")
     if active_index is None:
         return 4
-    if active_index == 0:
-        return 1
-    if active_index == 1:
-        return 2
-    if active_index == 2:
-        return 3
-    return 1
+
+    calendar_step = active_index + 1
+    planner_step = session.get("planner_step", 0)
+    if not isinstance(planner_step, int):
+        planner_step = 0
+
+    return min(4, max(calendar_step, planner_step))
 
 
 def get_requested_leave_classes(form, step):
@@ -145,6 +145,7 @@ def get_attendance_page():
     session["attendance_data"] = attendance_data
     selected_leaves = {"2026-08-29": 0, "2026-10-10": 0, "2026-11-16": 0}
     save_user_leaves(selected_leaves)
+    session["planner_step"] = 0
     phase_1_result = run_phase_1(attendance_data, CHECKPOINT_CHOICES, selected_leaves)
     print("Website received:", len(subjects), "subjects")
     print("Portal attendance:", total_attended, "/", total_classes)
@@ -158,6 +159,7 @@ def sessional_1():
     selected_leaves = get_user_leaves()
     selected_leaves["2026-08-29"] = get_requested_leave_classes(request.form, 1)
     save_user_leaves(selected_leaves)
+    session["planner_step"] = max(2, session.get("planner_step", 0))
     return redirect("/?view=plan")
 
 
@@ -167,6 +169,7 @@ def sessional_2():
     selected_leaves = get_user_leaves()
     selected_leaves["2026-10-10"] = get_requested_leave_classes(request.form, 2)
     save_user_leaves(selected_leaves)
+    session["planner_step"] = max(3, session.get("planner_step", 0))
     return redirect("/?view=plan")
 
 
@@ -176,6 +179,7 @@ def sessional_3():
     selected_leaves = get_user_leaves()
     selected_leaves["2026-11-16"] = get_requested_leave_classes(request.form, 3)
     save_user_leaves(selected_leaves)
+    session["planner_step"] = 4
     return redirect("/?view=plan")
 
 
