@@ -4,7 +4,8 @@ from flask import (
     Flask,
     render_template,
     request,
-    session
+    session,
+    redirect
 )
 
 from portal import (
@@ -137,8 +138,7 @@ def sessional_1():
     leave_classes = get_requested_leave_classes(request.form, 1)
     selected_leaves["2026-08-29"] = leave_classes
     save_user_leaves(selected_leaves)
-    phase_1_result = run_phase_1(attendance_data, CHECKPOINT_CHOICES, selected_leaves)
-    return render_dashboard(attendance_data, phase_1_result, calculator_step=2)
+    return redirect("/#plan")
 
 @app.route("/sessional-2", methods=["POST"])
 def sessional_2():
@@ -147,8 +147,7 @@ def sessional_2():
     leave_classes = get_requested_leave_classes(request.form, 2)
     selected_leaves["2026-10-10"] = leave_classes
     save_user_leaves(selected_leaves)
-    phase_1_result = run_phase_1(attendance_data, CHECKPOINT_CHOICES, selected_leaves)
-    return render_dashboard(attendance_data, phase_1_result, calculator_step=3)
+    return redirect("/#plan")
 
 @app.route("/sessional-3", methods=["POST"])
 def sessional_3():
@@ -157,8 +156,7 @@ def sessional_3():
     leave_classes = get_requested_leave_classes(request.form, 3)
     selected_leaves["2026-11-16"] = leave_classes
     save_user_leaves(selected_leaves)
-    phase_1_result = run_phase_1(attendance_data, CHECKPOINT_CHOICES, selected_leaves)
-    return render_dashboard(attendance_data, phase_1_result, calculator_step=4)
+    return redirect("/#plan")
 
 @app.route("/reset")
 def reset_session():
