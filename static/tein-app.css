@@ -27,9 +27,35 @@
 .tein-checkpoint.is-complete{opacity:.52}.tein-checkpoint.is-active{color:var(--text);background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent-2) 40%,var(--line-strong))}.tein-checkpoint.is-active .tein-checkpoint-mark{border-color:var(--accent-2);background:var(--accent-2);color:var(--bg)}
 .tein-checkpoint-copy{min-width:0}.tein-checkpoint-copy strong{display:block;color:inherit;font-size:11px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tein-checkpoint-copy small{display:block;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tein-checkpoint-arrow{font:800 14px/1 ui-sans-serif,system-ui,sans-serif}
 .tein-history{margin:0 0 18px;padding:16px 18px;border:1px solid var(--line);border-radius:18px;background:var(--surface-2)}.tein-history h3{margin:0 0 9px;font-size:12px;text-transform:uppercase;letter-spacing:.13em;color:var(--muted)}.tein-history-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:12px}.tein-history-row:first-of-type{border-top:0}.tein-history-row strong{font-size:12px}.tein-history-row span{color:var(--muted)}
-.tein-plan-title{margin:0 0 14px;padding:0 4px}.tein-plan-title h2{margin:0 0 4px;font-size:clamp(26px,4vw,42px);letter-spacing:-.055em}.tein-plan-title p{margin:0;color:var(--muted);font-size:12px}
+.tein-plan-title{margin:0 0 18px;padding:0 4px}.tein-plan-title h2{margin:0 0 4px;font-size:clamp(26px,4vw,42px);letter-spacing:-.055em}.tein-plan-title p{margin:0;color:var(--muted);font-size:12px}
 .tein-subject-heading{padding:0 3px!important;margin:0 0 12px!important;border:0!important;background:transparent!important;box-shadow:none!important}
-@media(max-width:760px){.tein-app-nav{top:7px}.tein-app-nav button{flex:1;padding:10px 4px;font-size:8px;letter-spacing:.07em}.tein-home-hero{grid-template-columns:1fr;gap:12px;padding:18px}.tein-home-hero .stat-card.overall{min-width:0;min-height:150px}.tein-home-stats{gap:6px}.tein-mini-stat{padding:14px 13px}.tein-mini-stat strong{font-size:23px}.tein-home-next{grid-template-columns:1fr}.tein-home-next .attendance-button{width:100%}.tein-checkpoints{grid-template-columns:1fr;gap:5px}.tein-checkpoint{min-height:45px}.tein-checkpoint-arrow{display:none}}
+
+/* Premium Plan: the active checkpoint owns the page. Completed carry-forward cards are history, not actions. */
+.tein-plan-view .bunk-results{gap:0;margin-top:0}
+.tein-plan-view .bunk-results > .bunk-card.carried-forward{display:none}
+.tein-plan-view .bunk-results > .bunk-card:not(.carried-forward){border:1px solid var(--line-strong);border-radius:24px;background:var(--surface-solid);box-shadow:0 18px 55px color-mix(in srgb,var(--text) 7%,transparent);padding:26px;position:relative;overflow:hidden}
+.tein-plan-view .bunk-results > .bunk-card:not(.carried-forward)::before{content:"";position:absolute;inset:0 0 auto;height:3px;background:var(--accent-2);opacity:.9}
+.tein-plan-view .bunk-results > .bunk-card:not(.carried-forward) > h3:first-child{font-size:clamp(24px,3vw,34px);letter-spacing:-.045em;margin-bottom:4px}
+.tein-plan-view .bunk-results > .bunk-card:not(.carried-forward) > p:first-of-type{color:var(--muted);font-size:12px}
+.tein-plan-view .bunk-results > .bunk-card:not(.carried-forward) > .summary{margin:22px 0 18px;padding:18px 20px;border-radius:18px;border:1px solid var(--line);background:var(--surface-2)}
+.tein-plan-view .bunk-results > .bunk-card:not(.carried-forward) > .summary h3{margin-bottom:5px;font-size:15px;letter-spacing:-.01em}
+.tein-plan-view .bunk-results > .bunk-card:not(.carried-forward) > .summary p{margin:0;color:var(--muted);font-size:12px}
+.tein-plan-view .attendance-flow{margin:18px 0;gap:8px}
+.tein-plan-view .flow-card{border-radius:18px;border-color:var(--line);background:var(--surface-2);padding:17px}
+.tein-plan-view .flow-card span,.tein-plan-view .safe-leave-box > span{font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+.tein-plan-view .flow-card strong{font-size:24px;letter-spacing:-.04em}
+.tein-plan-view .safe-leave-box{margin:18px 0;padding:20px;border-radius:20px;border:1px solid color-mix(in srgb,var(--accent-2) 28%,var(--line));background:linear-gradient(135deg,var(--accent-soft),var(--surface-2))}
+.tein-plan-view .safe-leave-box strong{display:block;margin:5px 0;font-size:clamp(30px,4vw,44px);letter-spacing:-.055em}
+.tein-plan-view .safe-leave-box p{margin:0;color:var(--muted);font-size:11px}
+.tein-plan-view .bunk-results > .bunk-card:not(.carried-forward) hr{border:0;border-top:1px solid var(--line);margin:24px 0}
+.tein-plan-view .bunk-results > .bunk-card:not(.carried-forward) form{margin-top:10px}
+.tein-plan-view .leave-inputs{gap:8px}
+.tein-plan-view .leave-inputs > div{padding:12px;border:1px solid var(--line);border-radius:16px;background:var(--surface-2)}
+.tein-plan-view .projection-box{margin-top:14px;border-radius:18px;border:1px solid var(--line);background:var(--surface-2)}
+.tein-plan-view .projection-box strong{font-size:18px;letter-spacing:-.025em}
+.tein-plan-view .bunk-results > .bunk-card:not(.carried-forward) .attendance-button{width:100%;margin-top:8px;min-height:48px}
+
+@media(max-width:760px){.tein-app-nav{top:7px}.tein-app-nav button{flex:1;padding:10px 4px;font-size:8px;letter-spacing:.07em}.tein-home-hero{grid-template-columns:1fr;gap:12px;padding:18px}.tein-home-hero .stat-card.overall{min-width:0;min-height:150px}.tein-home-stats{gap:6px}.tein-mini-stat{padding:14px 13px}.tein-mini-stat strong{font-size:23px}.tein-home-next{grid-template-columns:1fr}.tein-home-next .attendance-button{width:100%}.tein-checkpoints{grid-template-columns:1fr;gap:5px}.tein-checkpoint{min-height:45px}.tein-checkpoint-arrow{display:none}.tein-plan-view .bunk-results > .bunk-card:not(.carried-forward){padding:20px;border-radius:20px}.tein-plan-view .attendance-flow{grid-template-columns:1fr}.tein-plan-view .flow-arrow{display:none}}
 @media(max-width:430px){.tein-home-hero h2{font-size:30px}.tein-home-hero .stat-card.overall strong{font-size:68px}.tein-home-stats{grid-template-columns:1fr 1fr}.tein-mini-stat:last-child{grid-column:1/-1}}
 @media(prefers-reduced-motion:reduce){.tein-app-view,.tein-checkpoint,.tein-app-nav button{animation:none;transition:none}}
 /* Subject detail stays collapsed until a subject is selected. */
