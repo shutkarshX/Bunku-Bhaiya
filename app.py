@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, render_template, request, session
+from flask import Flask, render_template, request, session, redirect
 
 from portal import (
     get_attendance,
@@ -158,8 +158,7 @@ def sessional_1():
     selected_leaves = get_user_leaves()
     selected_leaves["2026-08-29"] = get_requested_leave_classes(request.form, 1)
     save_user_leaves(selected_leaves)
-    phase_1_result = run_phase_1(attendance_data, CHECKPOINT_CHOICES, selected_leaves)
-    return render_dashboard(attendance_data, phase_1_result, initial_view="plan")
+    return redirect("/?view=plan")
 
 
 @app.route("/sessional-2", methods=["POST"])
@@ -168,8 +167,7 @@ def sessional_2():
     selected_leaves = get_user_leaves()
     selected_leaves["2026-10-10"] = get_requested_leave_classes(request.form, 2)
     save_user_leaves(selected_leaves)
-    phase_1_result = run_phase_1(attendance_data, CHECKPOINT_CHOICES, selected_leaves)
-    return render_dashboard(attendance_data, phase_1_result, initial_view="plan")
+    return redirect("/?view=plan")
 
 
 @app.route("/sessional-3", methods=["POST"])
@@ -178,8 +176,7 @@ def sessional_3():
     selected_leaves = get_user_leaves()
     selected_leaves["2026-11-16"] = get_requested_leave_classes(request.form, 3)
     save_user_leaves(selected_leaves)
-    phase_1_result = run_phase_1(attendance_data, CHECKPOINT_CHOICES, selected_leaves)
-    return render_dashboard(attendance_data, phase_1_result, initial_view="plan")
+    return redirect("/?view=plan")
 
 
 @app.route("/reset")
