@@ -252,7 +252,9 @@
       button.addEventListener("click", () => activate("plan"));
     });
 
-    const initial = location.hash.slice(1);
+    const hashView = location.hash.slice(1);
+    const pathView = /^\/sessional-[123]$/.test(location.pathname) ? "plan" : "home";
+    const initial = hashView || pathView;
     activate(views.some((view) => view.dataset.view === initial) ? initial : "home", false);
   }
 
