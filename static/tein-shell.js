@@ -150,50 +150,23 @@
       targetY = Math.max(-28, Math.min(28, y * 42));
     }, { passive: true });
 
+    // Do not intercept the form submission. The Flask route must receive the
+    // real browser POST so cookies/session state and redirects work normally.
     const startSequence = () => {
       if (started) return;
       started = true;
       setStatus("Connecting to the NIET portal");
       scene.classList.add("is-loading");
       scene.style.pointerEvents = "none";
-      const responsePromise = fetch(form.action, {
-        method: "POST",
-        body: new FormData(form),
-        credentials: "same-origin",
-        headers: { "X-Requested-With": "TEIN" },
-      }).then(async (response) => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return response.text();
-      });
-
       window.setTimeout(() => {
-        setStatus("Focus awakened");
+        setStatus("Retrieving attendance");
         scene.classList.add("is-dashing");
       }, 180);
-
-      Promise.all([responsePromise, new Promise((resolve) => setTimeout(resolve, 1850))])
-        .then(([html]) => {
-          setStatus("Attendance retrieved");
-          scene.classList.remove("is-dashing");
-          scene.classList.add("is-restoring");
-          setTimeout(() => {
-            document.open();
-            document.write(html);
-            document.close();
-          }, 620);
-        })
-        .catch(() => {
-          scene.classList.remove("is-loading", "is-dashing", "is-restoring");
-          scene.style.pointerEvents = "auto";
-          started = false;
-          setStatus("Could not reach the portal — try again");
-          setTimeout(() => status.classList.remove("is-visible"), 2600);
-        });
     };
 
     window.showLoading = startSequence;
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
+    form.addEventListener("submit", () => {
+      // Intentionally no preventDefault(): let the browser submit to Flask.
       startSequence();
     });
     window.addEventListener("beforeunload", () => cancelAnimationFrame(raf), { once: true });
@@ -254,9 +227,12 @@
       button.addEventListener("click", () => activate("plan"));
     });
 
+    // A server-rendered POST response must win over a stale #home hash.
+    // This is what keeps /sessional-1, /sessional-2 and /sessional-3 on Plan.
+    const serverView = nav.dataset.initialView || "home";
     const hashView = location.hash.slice(1);
-    const pathView = /^\/sessional-[123]$/.test(location.pathname) ? "plan" : "home";
-    const initial = hashView || pathView;
+    const pathView = /^\/sessional-[123]$/.test(location.pathname) ? "plan" : "";
+    const initial = pathView || serverView || hashView || "home";
     activate(views.some((view) => view.dataset.view === initial) ? initial : "home", false);
   }
 
