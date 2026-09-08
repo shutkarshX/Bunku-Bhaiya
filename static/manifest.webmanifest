@@ -1,0 +1,12 @@
+{
+  "name": "TEIN — Attendance",
+  "short_name": "TEIN",
+  "description": "NIET attendance and leave planning, built for your phone.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#08090c",
+  "theme_color": "#08090c",
+  "categories": ["education", "productivity"]
+}
