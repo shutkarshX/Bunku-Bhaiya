@@ -1,0 +1,102 @@
+/* TEIN phone-first layer. Loaded after the desktop product layer. */
+
+html,body{max-width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%;}
+button,input,select{font:inherit;}
+
+@media (max-width: 700px){
+  .container{width:100%;margin:0 auto;padding:12px 12px 32px;}
+  header{min-height:145px;margin:0 0 12px;padding:28px 22px;border-radius:24px;}
+  header h1,header h1::after{font-size:58px;height:58px;}
+  header h1{margin-bottom:12px;}
+  header p{font-size:13px;line-height:1.45;max-width:270px;}
+
+  .tein-app-nav{position:sticky;top:8px;width:100%;margin:0 0 12px;padding:4px;gap:2px;border-radius:16px;z-index:100;}
+  .tein-app-nav button{min-height:44px;padding:0 5px;border-radius:12px;font-size:8px;letter-spacing:.08em;}
+  .tein-app-nav button.is-active:after{left:28%;right:28%;bottom:3px;}
+  .tein-nav-count{min-width:18px;height:16px;margin-left:3px;padding:0 4px;font-size:7px;}
+
+  .tein-home-view,.tein-plan-view,.tein-subjects-view,.tein-more-view{width:100%;max-width:none;}
+  .tein-home-view{padding-bottom:18px;}
+  .tein-home-hero{grid-template-columns:1fr;gap:16px;min-height:0;margin-bottom:10px;padding:24px 20px;border-radius:25px;}
+  .tein-home-hero:before{width:260px;height:260px;right:-145px;top:-120px;}
+  .tein-home-hero:after{width:300px;height:300px;right:-100px;bottom:-180px;}
+  .tein-home-hero h2{max-width:330px;margin-bottom:12px;font-size:clamp(40px,12vw,56px);line-height:.9;letter-spacing:-.07em;}
+  .tein-home-hero p{font-size:12px;line-height:1.5;}
+  .tein-home-hero .stat-card.overall{min-height:158px;padding:20px;border-radius:20px;justify-content:space-between;}
+  .tein-home-hero .stat-card.overall:after{right:-58px;top:50%;width:180px;height:180px;}
+  .tein-home-hero .stat-card.overall strong{font-size:clamp(64px,18vw,88px);line-height:.82;max-width:100%;white-space:nowrap;}
+
+  .tein-home-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:10px;}
+  .tein-mini-stat{min-height:82px;padding:13px 11px;border-radius:15px;}
+  .tein-mini-stat span{margin-bottom:8px;font-size:7px;letter-spacing:.08em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tein-mini-stat strong{font-size:27px;letter-spacing:-.06em;}
+
+  .tein-home-next{grid-template-columns:minmax(0,1fr);gap:13px;margin-top:10px;padding:18px;border-radius:19px;min-height:0;}
+  .tein-home-next strong{font-size:19px;}
+  .tein-home-next p{font-size:11px;}
+  .tein-home-next .attendance-button{width:100%;min-height:46px;}
+
+  .tein-checkpoints{grid-template-columns:1fr;gap:7px;margin-top:10px;}
+  .tein-checkpoint{min-height:62px;padding:12px 13px;border-radius:15px;}
+  .tein-history{margin-top:10px;padding:16px 17px;border-radius:17px;}
+
+  .tein-plan-title{margin-bottom:12px;padding:5px 2px 0;}
+  .tein-plan-title h2{font-size:40px;}
+  .tein-plan-title p{font-size:11px;}
+  .tein-plan-view .bunk-results>.bunk-card:not(.carried-forward){padding:20px 16px;border-radius:22px;}
+  .tein-plan-view .bunk-results>.bunk-card:not(.carried-forward)>h3:first-child{font-size:28px;}
+  .tein-plan-view .bunk-results>.bunk-card:not(.carried-forward)>.summary{margin:18px 0 14px;padding:15px;border-radius:16px;}
+  .tein-plan-view .attendance-flow{grid-template-columns:1fr;gap:7px;margin:14px 0;}
+  .tein-plan-view .flow-card{padding:15px;border-radius:15px;}
+  .tein-plan-view .flow-card strong{font-size:23px;}
+  .tein-plan-view .flow-arrow{min-height:18px;font-size:18px;transform:rotate(90deg);}
+  .tein-plan-view .safe-leave-box{margin:14px 0;padding:17px;border-radius:17px;}
+  .tein-plan-view .safe-leave-box strong{font-size:36px;}
+  .tein-plan-view .leave-inputs{grid-template-columns:1fr 1fr;gap:7px;}
+  .tein-plan-view .leave-inputs>div{padding:10px;border-radius:13px;}
+  .tein-plan-view .leave-inputs input{min-height:48px;padding:11px 12px;font-size:16px;}
+  .tein-plan-view .projection-box{padding:15px;border-radius:15px;}
+  .tein-plan-view .projection-box strong{font-size:16px;line-height:1.25;}
+  .tein-plan-view .bunk-results>.bunk-card:not(.carried-forward) .attendance-button{min-height:52px;margin-top:6px;}
+
+  .tein-subject-heading{padding:4px 2px 13px;}
+  .tein-subject-heading h2{font-size:40px;}
+  .tein-subject-heading p{font-size:11px;}
+  .tein-subjects-view .table-container{border-radius:17px;}
+  .tein-subjects-view .table-container table{min-width:600px;}
+  .tein-subjects-view .table-container thead th{padding:12px 13px;}
+  .tein-subjects-view .table-container tbody td{padding:12px 13px;font-size:12px;}
+
+  .summary,.empty{padding:20px 16px;border-radius:20px;}
+  form{max-width:none;gap:10px;margin-top:16px;}
+  form input,form select{min-height:52px;font-size:16px;border-radius:13px;}
+  .attendance-button{width:100%;min-height:52px;padding:13px 18px;border-radius:14px;}
+  .login-methods{grid-template-columns:1fr 1fr;gap:7px;}
+  .email-input-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:stretch;}
+  .email-input-row input{min-width:0;border-radius:13px 0 0 13px;}
+  .email-domain{display:flex;align-items:center;padding:0 11px;background:var(--surface-2);border:1px solid var(--line-strong);border-left:0;border-radius:0 13px 13px 0;font-size:12px;white-space:nowrap;}
+
+  .loading-screen{min-height:70vh;padding:22px 10px;border-radius:22px;}
+  .loading-screen video{width:100%;max-height:42vh;border-radius:18px;}
+  .loading-copy h2{font-size:26px;}
+  .loading-copy p{font-size:12px;}
+
+  .tein-more-view{padding-bottom:20px;}
+  .tein-more-view .attendance-button{width:100%;}
+}
+
+@media (max-width: 380px){
+  .container{padding-inline:9px;}
+  header{padding:25px 18px;}
+  header h1,header h1::after{font-size:52px;height:52px;}
+  .tein-app-nav button{font-size:7px;padding-inline:2px;}
+  .tein-home-hero{padding:21px 17px;}
+  .tein-home-hero h2{font-size:39px;}
+  .tein-mini-stat{padding-inline:9px;}
+  .tein-mini-stat strong{font-size:24px;}
+  .tein-nav-count{display:none;}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .tein-app-view.is-active{animation:none;}
+}
