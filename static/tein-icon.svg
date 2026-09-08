@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#08090c"/>
+  <circle cx="392" cy="116" r="150" fill="#8b7dff" opacity=".18"/>
+  <text x="256" y="318" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="170" font-weight="800" letter-spacing="-12" fill="#f4f5f7">TEIN</text>
+</svg>
