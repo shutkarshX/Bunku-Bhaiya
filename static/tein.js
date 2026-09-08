@@ -14,10 +14,28 @@
 
   function bootstrapTheme() {
     const stored = localStorage.getItem("tein-theme");
-    if (stored === "light" || stored === "dark") {
-      document.documentElement.dataset.theme = stored;
-    } else {
-      delete document.documentElement.dataset.theme;
+    if (stored === "light" || stored === "dark") document.documentElement.dataset.theme = stored;
+    else delete document.documentElement.dataset.theme;
+  }
+
+  function loadStyle(href) {
+    if (document.querySelector(`link[href="${href}"]`)) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    document.head.appendChild(link);
+  }
+
+  function setupMobileLayer() {
+    loadStyle("/static/tein-mobile.css");
+    if (!document.querySelector('link[rel="manifest"]')) {
+      const manifest = document.createElement("link");
+      manifest.rel = "manifest";
+      manifest.href = "/static/manifest.webmanifest";
+      document.head.appendChild(manifest);
+    }
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}), { once: true });
     }
   }
 
@@ -106,9 +124,7 @@
         const y = (event.clientY - rect.top) / rect.height - 0.5;
         button.style.transform = `translate3d(${x * 10}px,${y * 7}px,0) scale(1.018)`;
       });
-      button.addEventListener("pointerleave", () => {
-        button.style.transform = "";
-      });
+      button.addEventListener("pointerleave", () => { button.style.transform = ""; });
     });
   }
 
@@ -231,6 +247,7 @@
 
   function boot() {
     bootstrapTheme();
+    setupMobileLayer();
     setupGlobalAudioUnlock();
     setupThemeToggle();
     setupSoundToggle();
