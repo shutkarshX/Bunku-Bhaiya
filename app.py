@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, render_template, request, session, redirect
+from flask import Flask, render_template, request, session, redirect, send_from_directory
 
 from portal import (
     get_attendance,
@@ -88,6 +88,11 @@ def render_dashboard(attendance_data, phase_1=None, portal_error=None, calculato
         portal_error=portal_error,
         initial_view=initial_view,
     )
+
+
+@app.route("/sw.js")
+def service_worker():
+    return send_from_directory("static", "tein-sw.js", mimetype="application/javascript")
 
 
 @app.route("/")
