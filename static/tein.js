@@ -236,15 +236,6 @@
     document.body.appendChild(toggle);
   }
 
-  function loadLoginNativeBridge() {
-    if (!document.getElementById("login-section") || document.querySelector('script[data-tein-login-native]')) return;
-    const script = document.createElement("script");
-    script.src = "/static/tein-login-native.js";
-    script.defer = true;
-    script.dataset.teinLoginNative = "true";
-    document.head.appendChild(script);
-  }
-
   function boot() {
     bootstrapTheme();
     setupMobileLayer();
@@ -256,7 +247,6 @@
     setupCardTilt();
     animateNumbers();
     setupAttendanceInstrument();
-    loadLoginNativeBridge();
   }
 
   window.TEIN = window.TEIN || {};
