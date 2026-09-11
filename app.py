@@ -1,4 +1,5 @@
 import os
+from datetime import date
 
 from flask import Flask, render_template, request, session, redirect, send_from_directory, jsonify
 
@@ -45,6 +46,35 @@ def get_user_leaves():
 def save_user_leaves(leaves):
     session["selected_leaves"] = leaves
     session.modified = True
+
+
+def get_today_override():
+    overrides = session.get("today_schedule_overrides", {})
+    if not isinstance(overrides, dict):
+        return None
+    value = overrides.get(date.today().isoformat())
+    try:
+        return max(0, int(value)) if value is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def set_today_override(remaining):
+    overrides = session.get("today_schedule_overrides", {})
+    if not isinstance(overrides, dict):
+        overrides = {}
+    today_key = date.today().isoformat()
+    overrides[today_key] = max(0, int(remaining))
+    session["today_schedule_overrides"] = overrides
+    session.modified = True
+
+
+def clear_today_override():
+    overrides = session.get("today_schedule_overrides", {})
+    if isinstance(overrides, dict):
+        overrides.pop(date.today().isoformat(), None)
+        session["today_schedule_overrides"] = overrides
+        session.modified = True
 
 
 def get_dashboard_step(phase_1_result):
@@ -122,7 +152,35 @@ def scenario():
     payload = request.get_json(silent=True) or request.form
     scope = payload.get("scope", "today")
     classes_missed = payload.get("classes_missed", 0)
-    return jsonify(calculate_scenario(attendance_data, phase_1_result, scope, classes_missed))
+    return jsonify(calculate_scenario(
+        attendance_data,
+        phase_1_result,
+        scope,
+        classes_missed,
+        today_remaining_override=get_today_override(),
+    ))
+
+
+@app.route("/today-adjust", methods=["POST"])
+def today_adjust():
+    """Set or clear today's temporary remaining-class correction."""
+    if not get_user_attendance().get("subjects"):
+        return jsonify({"error": "attendance_required"}), 400
+
+    payload = request.get_json(silent=True) or request.form
+    action = payload.get("action", "set")
+    if action == "clear":
+        clear_today_override()
+    else:
+        try:
+            remaining = int(payload.get("remaining_classes"))
+        except (TypeError, ValueError):
+            return jsonify({"error": "invalid_remaining_classes"}), 400
+        if remaining < 0 or remaining > 8:
+            return jsonify({"error": "remaining_classes_must_be_between_0_and_8"}), 400
+        set_today_override(remaining)
+
+    return jsonify({"ok": True, "remaining_classes": get_today_override()})
 
 
 @app.route("/get-attendance", methods=["POST"])
@@ -178,7 +236,6 @@ def get_attendance_page():
 
 @app.route("/sessional-1", methods=["POST"])
 def sessional_1():
-    attendance_data = get_user_attendance()
     selected_leaves = get_user_leaves()
     selected_leaves["2026-08-29"] = get_requested_leave_classes(request.form, 1)
     save_user_leaves(selected_leaves)
@@ -188,7 +245,6 @@ def sessional_1():
 
 @app.route("/sessional-2", methods=["POST"])
 def sessional_2():
-    attendance_data = get_user_attendance()
     selected_leaves = get_user_leaves()
     selected_leaves["2026-10-10"] = get_requested_leave_classes(request.form, 2)
     save_user_leaves(selected_leaves)
@@ -198,7 +254,6 @@ def sessional_2():
 
 @app.route("/sessional-3", methods=["POST"])
 def sessional_3():
-    attendance_data = get_user_attendance()
     selected_leaves = get_user_leaves()
     selected_leaves["2026-11-16"] = get_requested_leave_classes(request.form, 3)
     save_user_leaves(selected_leaves)
