@@ -45,8 +45,9 @@ def _project(attended, total, future, missed):
 def calculate_scenario(attendance_data, phase_1, scope="today", classes_missed=0, today_remaining_override=None):
     """Calculate TODAY or CHECKPOINT without changing saved attendance/planner state.
 
-    ``today_remaining_override`` is an optional date-specific manual correction.
-    It represents how many classes are actually still remaining today.
+    ``today_remaining_override`` changes only the simulation's view of what is
+    still physically happening today. Portal attendance that has not been posted
+    yet remains untouched and will be picked up on the next attendance refresh.
     """
     scope = scope if scope in {"today", "checkpoint"} else "today"
     try:
@@ -82,8 +83,8 @@ def calculate_scenario(attendance_data, phase_1, scope="today", classes_missed=0
     active = checkpoints[active_index] if isinstance(active_index, int) and 0 <= active_index < len(checkpoints) else None
     checkpoint_future = max(0, int(active.get("future_classes", 0) or 0)) if active else 0
 
-    # The checkpoint engine includes today's remaining classes. If a manual
-    # override changes today's remaining count, replace only that portion.
+    # The checkpoint engine includes the portal's estimate for today. Replace
+    # that estimate for simulation only; do not modify attendance totals.
     checkpoint_future_adjusted = max(0, checkpoint_future - portal_today_remaining + today_remaining)
 
     if scope == "today":
@@ -91,11 +92,17 @@ def calculate_scenario(attendance_data, phase_1, scope="today", classes_missed=0
         missed = min(requested, available)
         today_result = _project(attended, total, today_remaining, missed)
         checkpoint_result = _project(attended, total, checkpoint_future_adjusted, missed)
+        checkpoint_status = _status(
+            attended + max(0, today_remaining - missed),
+            total + today_remaining,
+            max(0, checkpoint_future_adjusted - today_remaining),
+        )
     else:
         available = checkpoint_future_adjusted
         missed = min(requested, available)
         today_result = None
         checkpoint_result = _project(attended, total, checkpoint_future_adjusted, missed)
+        checkpoint_status = _status(attended, total, max(0, checkpoint_future_adjusted - missed))
 
     checkpoint_safe_leave = _max_safe_leave(attended, total, checkpoint_future_adjusted)
     remaining_safe_leave = max(0, checkpoint_safe_leave - missed)
@@ -112,11 +119,7 @@ def calculate_scenario(attendance_data, phase_1, scope="today", classes_missed=0
         "checkpoint_date": active.get("date", "") if active else "",
         "today": today_result,
         "checkpoint": checkpoint_result,
-        "checkpoint_status": _status(
-            attended + (today_remaining - missed if scope == "today" else 0),
-            total + today_remaining if scope == "today" else total,
-            max(0, checkpoint_future_adjusted - (today_remaining if scope == "today" else 0)),
-        ),
+        "checkpoint_status": checkpoint_status,
         "remaining_safe_leave": remaining_safe_leave,
         "maximum_safe_leave": checkpoint_safe_leave,
     }
