@@ -18,16 +18,16 @@
           <button type="button" data-scope="checkpoint" role="tab" aria-selected="false">Checkpoint</button>
         </div>
       </div>
-      <div class="tein-scenario-context" id="tein-scenario-context">Checking today's remaining classes…</div>
-      <button type="button" class="tein-scenario-adjust" id="tein-scenario-adjust">Adjust today's schedule</button>
+      <div class="tein-scenario-context" id="tein-scenario-context">Checking today's attendance…</div>
+      <button type="button" class="tein-scenario-adjust" id="tein-scenario-adjust">Adjust today's plan</button>
       <div class="tein-scenario-adjuster" id="tein-scenario-adjuster" hidden>
-        <label for="tein-today-remaining">How many classes are actually still remaining today?</label>
+        <label for="tein-today-remaining">How many classes are actually still happening today?</label>
         <div class="tein-adjust-row">
           <input id="tein-today-remaining" type="number" min="0" max="8" inputmode="numeric">
           <button type="button" class="tein-scenario-save" id="tein-scenario-save">Save</button>
           <button type="button" class="tein-scenario-clear" id="tein-scenario-clear">Use automatic</button>
         </div>
-        <small>This changes today only. Tomorrow returns to automatic calculation.</small>
+        <small>This changes the planner simulation only. Pending portal attendance is kept and can appear after the next refresh.</small>
       </div>
       <div class="tein-scenario-control">
         <div>
@@ -62,7 +62,6 @@
     let count = 0;
     let available = 0;
     let timer = null;
-
     const $ = (selector) => card.querySelector(selector);
 
     function setScope(next) {
@@ -85,6 +84,7 @@
       $("#tein-result-primary").textContent = "…";
       $("#tein-result-secondary").textContent = "…";
       $("#tein-result-status").textContent = "…";
+
       try {
         const response = await fetch("/scenario", {
           method: "POST",
@@ -97,12 +97,11 @@
         available = Number(data.available_classes) || 0;
         count = Math.min(count, available);
         $("#tein-scenario-count").textContent = count;
-        $("#tein-scenario-available").textContent = `${available} available`;
+        $("#tein-scenario-available").textContent = `${available} available to simulate`;
 
         if (scope === "today") {
-          const source = data.today_override_active ? "manual schedule" : "automatic estimate";
-          $("#tein-scenario-context").textContent = `${data.today_remaining} classes remaining today · ${source}`;
-          $("#tein-scenario-primary-label");
+          const source = data.today_override_active ? "manual plan" : "portal estimate";
+          $("#tein-scenario-context").textContent = `${data.today_remaining} classes still happening today · ${source}`;
           $("#tein-result-primary-label").textContent = "After today";
           $("#tein-result-primary").textContent = data.today ? `${data.today.percentage}%` : "—";
           $("#tein-result-secondary-label").textContent = data.checkpoint_date ? `At ${data.checkpoint_date}` : "At checkpoint";
@@ -119,7 +118,7 @@
 
         const status = data.checkpoint_status || "";
         $("#tein-result-status").textContent = status.charAt(0).toUpperCase() + status.slice(1);
-        $("#tein-scenario-footer").textContent = `${count} class${count === 1 ? "" : "es"} simulated · your saved plan is unchanged`;
+        $("#tein-scenario-footer").textContent = `${count} class${count === 1 ? "" : "es"} simulated · saved attendance unchanged`;
       } catch (error) {
         $("#tein-scenario-context").textContent = "Scenario unavailable right now.";
         $("#tein-result-primary").textContent = "—";
