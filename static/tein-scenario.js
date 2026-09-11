@@ -19,6 +19,16 @@
         </div>
       </div>
       <div class="tein-scenario-context" id="tein-scenario-context">Checking today's remaining classes…</div>
+      <button type="button" class="tein-scenario-adjust" id="tein-scenario-adjust">Adjust today's schedule</button>
+      <div class="tein-scenario-adjuster" id="tein-scenario-adjuster" hidden>
+        <label for="tein-today-remaining">How many classes are actually still remaining today?</label>
+        <div class="tein-adjust-row">
+          <input id="tein-today-remaining" type="number" min="0" max="8" inputmode="numeric">
+          <button type="button" class="tein-scenario-save" id="tein-scenario-save">Save</button>
+          <button type="button" class="tein-scenario-clear" id="tein-scenario-clear">Use automatic</button>
+        </div>
+        <small>This changes today only. Tomorrow returns to automatic calculation.</small>
+      </div>
       <div class="tein-scenario-control">
         <div>
           <span class="tein-scenario-label" id="tein-scenario-label">Classes to miss today</span>
@@ -58,6 +68,8 @@
     function setScope(next) {
       scope = next;
       count = 0;
+      $("#tein-scenario-adjust").hidden = scope !== "today";
+      $("#tein-scenario-adjuster").hidden = true;
       card.querySelectorAll("[data-scope]").forEach((button) => {
         const active = button.dataset.scope === scope;
         button.classList.toggle("is-active", active);
@@ -73,8 +85,6 @@
       $("#tein-result-primary").textContent = "…";
       $("#tein-result-secondary").textContent = "…";
       $("#tein-result-status").textContent = "…";
-      $("#tein-scenario-footer").textContent = "";
-
       try {
         const response = await fetch("/scenario", {
           method: "POST",
@@ -90,11 +100,15 @@
         $("#tein-scenario-available").textContent = `${available} available`;
 
         if (scope === "today") {
-          $("#tein-scenario-context").textContent = `${data.today_remaining} classes remaining today · simulation only`;
+          const source = data.today_override_active ? "manual schedule" : "automatic estimate";
+          $("#tein-scenario-context").textContent = `${data.today_remaining} classes remaining today · ${source}`;
+          $("#tein-scenario-primary-label");
           $("#tein-result-primary-label").textContent = "After today";
           $("#tein-result-primary").textContent = data.today ? `${data.today.percentage}%` : "—";
           $("#tein-result-secondary-label").textContent = data.checkpoint_date ? `At ${data.checkpoint_date}` : "At checkpoint";
           $("#tein-result-secondary").textContent = data.checkpoint ? `${data.checkpoint.percentage}%` : "—";
+          const adjust = $("#tein-today-remaining");
+          if (adjust && document.activeElement !== adjust) adjust.value = data.today_remaining;
         } else {
           $("#tein-scenario-context").textContent = `${available} future classes to the next checkpoint · simulation only`;
           $("#tein-result-primary-label").textContent = "At checkpoint";
@@ -114,6 +128,36 @@
         $("#tein-scenario-footer").textContent = error.message || "Try again.";
       }
     }
+
+    $("#tein-scenario-adjust").addEventListener("click", () => {
+      $("#tein-scenario-adjuster").hidden = !$("#tein-scenario-adjuster").hidden;
+    });
+
+    $("#tein-scenario-save").addEventListener("click", async () => {
+      const remaining = Number($("#tein-today-remaining").value);
+      if (!Number.isInteger(remaining) || remaining < 0 || remaining > 8) return;
+      const response = await fetch("/today-adjust", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify({ remaining_classes: remaining }),
+      });
+      if (!response.ok) return;
+      $("#tein-scenario-adjuster").hidden = true;
+      count = 0;
+      refresh();
+    });
+
+    $("#tein-scenario-clear").addEventListener("click", async () => {
+      const response = await fetch("/today-adjust", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify({ action: "clear" }),
+      });
+      if (!response.ok) return;
+      $("#tein-scenario-adjuster").hidden = true;
+      count = 0;
+      refresh();
+    });
 
     card.querySelectorAll("[data-scope]").forEach((button) => {
       button.addEventListener("click", () => {
