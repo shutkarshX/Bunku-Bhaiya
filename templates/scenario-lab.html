@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>TEIN Scenario Lab</title>
+  <link rel="stylesheet" href="/static/tein-scenario-lab.css">
+</head>
+<body>
+  <main class="lab-shell">
+    <header>
+      <div>
+        <p class="eyebrow">DEVELOPMENT TOOL</p>
+        <h1>Scenario Lab</h1>
+        <p class="muted">Manufacture attendance situations without changing real data.</p>
+      </div>
+      <a href="/">Back to TEIN</a>
+    </header>
+
+    <section class="presets" aria-label="Scenario presets">
+      <button data-preset="normal">Normal day</button>
+      <button data-preset="auditorium">Auditorium / pending</button>
+      <button data-preset="cancelled">Cancelled classes</button>
+      <button data-preset="late">Late posting</button>
+      <button data-preset="bunk">Bunk remaining</button>
+      <button data-preset="custom">Custom</button>
+    </section>
+
+    <section class="grid">
+      <form id="lab-form" class="card">
+        <h2>Scenario inputs</h2>
+        <label>Current attended <input name="attended" type="number" min="0" value="40"></label>
+        <label>Current total <input name="total" type="number" min="0" value="50"></label>
+        <label>Today's scheduled classes <input name="scheduled_today" type="number" min="0" max="8" value="8"></label>
+        <label>Today's attendance already posted <input name="posted_today" type="number" min="0" max="8" value="5"></label>
+        <label>Classes actually still happening <input name="actual_remaining_today" type="number" min="0" max="8" value="3"></label>
+        <label>Classes you miss from those <input name="missed_today" type="number" min="0" max="8" value="0"></label>
+        <label>Checkpoint future classes <input name="checkpoint_future" type="number" min="0" value="20"></label>
+        <button class="run" type="submit">Run scenario</button>
+      </form>
+
+      <section class="card results" aria-live="polite">
+        <div class="result-head"><h2>Result</h2><span id="badge">Simulation only</span></div>
+        <div id="results"></div>
+      </section>
+    </section>
+
+    <p class="warning">Nothing here is written to attendance, portal data, or planner session state.</p>
+  </main>
+  <script src="/static/tein-scenario-lab.js" defer></script>
+</body>
+</html>
