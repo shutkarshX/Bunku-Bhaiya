@@ -79,7 +79,7 @@ def render_dashboard(attendance_data, phase_1=None, portal_error=None, calculato
     subjects = attendance.get("subjects") or []
     token = subjects[0].get("_bunkmaster_subject_details_token") if subjects else None
     attendance["subject_details"] = get_subject_details(token)
-    return render_template(
+    rendered = render_template(
         "dashboard.html",
         attendance=attendance,
         phase_1=phase_1,
@@ -87,6 +87,10 @@ def render_dashboard(attendance_data, phase_1=None, portal_error=None, calculato
         portal_error=portal_error,
         initial_view=initial_view,
     )
+    if phase_1 and attendance.get("subjects"):
+        assets = '<link rel="stylesheet" href="/static/tein-scenario.css"><script defer src="/static/tein-scenario.js"></script>'
+        rendered = rendered.replace("</head>", f"{assets}</head>", 1)
+    return rendered
 
 
 @app.route("/sw.js")
