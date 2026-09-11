@@ -1,0 +1,29 @@
+{
+  "date": "2026-09-11",
+  "description": "Development fixture for the Sep 11 auditorium/pending-attendance edge case.",
+  "attendance": {
+    "subjects": [
+      {
+        "_bunkmaster_remaining_today": 3,
+        "_bunkmaster_unmarked_classes": 0
+      }
+    ],
+    "total_attended": 40,
+    "total_classes": 50
+  },
+  "phase": {
+    "active_checkpoint_index": 0,
+    "checkpoints": [
+      {
+        "name": "Second Sessional",
+        "date": "10 October 2026",
+        "future_classes": 20
+      }
+    ]
+  },
+  "known_day_facts": {
+    "scheduled_classes": 8,
+    "portal_remaining_classes": 3,
+    "auditorium_classes_are_pending_attendance": true
+  }
+}
