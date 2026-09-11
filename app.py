@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, render_template, request, session, redirect, send_from_directory
+from flask import Flask, render_template, request, session, redirect, send_from_directory, jsonify
 
 from portal import (
     get_attendance,
@@ -14,6 +14,7 @@ from bunk_calculator import (
     classes_to_leave_display,
     days_and_classes_to_classes,
 )
+from scenario_planner import calculate_scenario
 
 app = Flask(__name__)
 SECRET_KEY = os.environ.get("SECRET_KEY")
@@ -50,12 +51,10 @@ def get_dashboard_step(phase_1_result):
     active_index = phase_1_result.get("active_checkpoint_index")
     if active_index is None:
         return 4
-
     calendar_step = active_index + 1
     planner_step = session.get("planner_step", 0)
     if not isinstance(planner_step, int):
         planner_step = 0
-
     return min(4, max(calendar_step, planner_step))
 
 
@@ -105,6 +104,21 @@ def dashboard():
     requested_view = request.args.get("view", "home")
     initial_view = requested_view if requested_view in {"home", "plan", "subjects", "more"} else "home"
     return render_dashboard(attendance_data, phase_1_result, initial_view=initial_view)
+
+
+@app.route("/scenario", methods=["POST"])
+def scenario():
+    """Return a non-persistent Today/Checkpoint attendance simulation."""
+    attendance_data = get_user_attendance()
+    if not attendance_data.get("subjects"):
+        return jsonify({"error": "attendance_required"}), 400
+
+    selected_leaves = get_user_leaves()
+    phase_1_result = run_phase_1(attendance_data, CHECKPOINT_CHOICES, selected_leaves)
+    payload = request.get_json(silent=True) or request.form
+    scope = payload.get("scope", "today")
+    classes_missed = payload.get("classes_missed", 0)
+    return jsonify(calculate_scenario(attendance_data, phase_1_result, scope, classes_missed))
 
 
 @app.route("/get-attendance", methods=["POST"])
