@@ -1,6 +1,6 @@
 {
   "date": "2026-09-11",
-  "description": "Development fixture for the Sep 11 auditorium/pending-attendance edge case.",
+  "description": "Development fixture reproducing the known Sep 11 auditorium/pending-attendance shape. The aggregate attendance totals are neutral test values because the exact portal snapshot is not stored in the repository.",
   "attendance": {
     "subjects": [
       {
