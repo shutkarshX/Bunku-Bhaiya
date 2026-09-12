@@ -30,10 +30,33 @@ def _get_remaining_today(attendance_data):
 
 
 def _get_unmarked_classes(attendance_data):
-    return _get_metadata(
-        attendance_data,
-        "_bunkmaster_unmarked_classes"
-    )
+    """Sum each subject's classes that are to be marked present.
+
+    The portal exposes this per subject as totalUnFreezedAttendance.
+    These classes have already happened and are expected to become
+    present, so they are added to the effective current attendance.
+    """
+    subjects = attendance_data.get("subjects", [])
+
+    total_unmarked = 0
+
+    for subject in subjects:
+        try:
+            total_unmarked += int(
+                subject.get("totalUnFreezedAttendance") or 0
+            )
+        except (TypeError, ValueError):
+            pass
+
+    # Backwards-compatible fallback for older saved attendance sessions
+    # where the raw subject field may not be available.
+    if total_unmarked == 0:
+        total_unmarked = _get_metadata(
+            attendance_data,
+            "_bunkmaster_unmarked_classes"
+        )
+
+    return max(0, total_unmarked)
 
 
 def _restore_current_attendance(checkpoint, attended, total):
@@ -68,18 +91,37 @@ def run_phase_1(
     remaining_today = _get_remaining_today(attendance_data)
     unmarked_classes = _get_unmarked_classes(attendance_data)
 
+    # Portal totals are already calculated from:
+    #   total_attended = sum(subject.attendedLecture)
+    #   total_absent   = sum(subject.absentLecture)
+    #   total_classes  = total_attended + total_absent
+    #
+    # Unmarked/freeze classes are intentionally kept separate from those
+    # portal totals until the effective-attendance calculation below.
+    portal_attended = attendance_data.get("total_attended", 0)
+    portal_total = attendance_data.get("total_classes", 0)
+    portal_percentage = calculate_percentage(
+        portal_attended,
+        portal_total
+    )
+
     # Unmarked classes have already happened and are attended classes.
     # Therefore they belong in the current starting attendance, not future_classes.
     effective_attended = (
-        attendance_data.get("total_attended", 0)
+        portal_attended
         + unmarked_classes
     )
     effective_total = (
-        attendance_data.get("total_classes", 0)
+        portal_total
         + unmarked_classes
     )
+    effective_percentage = calculate_percentage(
+        effective_attended,
+        effective_total
+    )
 
-    # Today's remaining classes have not happened yet, so they remain future classes.
+    # Keep the raw portal totals intact for display/data consumers while the
+    # legacy calculator receives the effective starting attendance.
     effective_attendance = dict(attendance_data)
     effective_attendance["total_attended"] = effective_attended
     effective_attendance["total_classes"] = effective_total
@@ -88,6 +130,21 @@ def run_phase_1(
         effective_attendance,
         checkpoint_choices,
         requested_leaves
+    )
+
+    # Make both attendance layers explicit in the result.
+    result["portal_attended"] = portal_attended
+    result["portal_total"] = portal_total
+    result["portal_percentage"] = round(
+        portal_percentage,
+        2
+    )
+    result["unmarked_classes"] = unmarked_classes
+    result["current_attended"] = effective_attended
+    result["current_total"] = effective_total
+    result["current_percentage"] = round(
+        effective_percentage,
+        2
     )
 
     checkpoints = result.get("checkpoints", [])
@@ -99,15 +156,6 @@ def run_phase_1(
     active_index = result.get("active_checkpoint_index")
 
     if active_index is None:
-        result["current_attended"] = effective_attended
-        result["current_total"] = effective_total
-        result["current_percentage"] = round(
-            calculate_percentage(
-                effective_attended,
-                effective_total
-            ),
-            2
-        )
         return result
 
     if not 0 <= active_index < len(checkpoints):
