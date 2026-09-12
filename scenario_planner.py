@@ -42,12 +42,21 @@ def _project(attended, total, future, missed):
     }
 
 
-def calculate_scenario(attendance_data, phase_1, scope="today", classes_missed=0, today_remaining_override=None):
-    """Calculate TODAY or CHECKPOINT without changing saved attendance/planner state.
+def calculate_scenario(
+    attendance_data,
+    phase_1,
+    scope="today",
+    classes_missed=0,
+    today_remaining_override=None,
+    event_mode=False,
+    event_attended=0,
+):
+    """Calculate a non-persistent Today/Checkpoint scenario.
 
-    ``today_remaining_override`` changes only the simulation's view of what is
-    still physically happening today. Portal attendance that has not been posted
-    yet remains untouched and will be picked up on the next attendance refresh.
+    Normal mode treats portal-unposted classes as classes the user can choose
+    to miss. Event mode treats some of those unposted classes as already
+    attended, then lets the user choose how many of the remainder to miss.
+    Neither mode changes saved attendance or portal data.
     """
     scope = scope if scope in {"today", "checkpoint"} else "today"
     try:
@@ -65,27 +74,36 @@ def calculate_scenario(attendance_data, phase_1, scope="today", classes_missed=0
 
     unmarked = metadata("_bunkmaster_unmarked_classes")
     portal_today_remaining = metadata("_bunkmaster_remaining_today")
+
+    try:
+        attended_event = max(0, int(event_attended)) if event_mode else 0
+    except (TypeError, ValueError):
+        attended_event = 0
+    attended_event = min(attended_event, portal_today_remaining)
+
     if today_remaining_override is None:
-        today_remaining = portal_today_remaining
-        override_active = False
+        today_remaining = portal_today_remaining - attended_event
     else:
         try:
             today_remaining = max(0, int(today_remaining_override))
         except (TypeError, ValueError):
-            today_remaining = portal_today_remaining
-        override_active = True
+            today_remaining = portal_today_remaining - attended_event
+    today_remaining = min(today_remaining, portal_today_remaining - attended_event)
 
-    attended = max(0, int(attendance_data.get("total_attended", 0))) + unmarked
-    total = max(0, int(attendance_data.get("total_classes", 0))) + unmarked
+    attended = max(0, int(attendance_data.get("total_attended", 0))) + unmarked + attended_event
+    total = max(0, int(attendance_data.get("total_classes", 0))) + unmarked + attended_event
 
     checkpoints = (phase_1 or {}).get("checkpoints") or []
     active_index = (phase_1 or {}).get("active_checkpoint_index")
     active = checkpoints[active_index] if isinstance(active_index, int) and 0 <= active_index < len(checkpoints) else None
     checkpoint_future = max(0, int(active.get("future_classes", 0) or 0)) if active else 0
 
-    # The checkpoint engine includes the portal's estimate for today. Replace
-    # that estimate for simulation only; do not modify attendance totals.
-    checkpoint_future_adjusted = max(0, checkpoint_future - portal_today_remaining + today_remaining)
+    # Replace the portal's unposted-today estimate with the event attendance
+    # already accounted for and the classes that are still actually happening.
+    checkpoint_future_adjusted = max(
+        0,
+        checkpoint_future - portal_today_remaining + attended_event + today_remaining,
+    )
 
     if scope == "today":
         available = today_remaining
@@ -114,7 +132,9 @@ def calculate_scenario(attendance_data, phase_1, scope="today", classes_missed=0
         "current_percentage": _pct(attended, total),
         "portal_today_remaining": portal_today_remaining,
         "today_remaining": today_remaining,
-        "today_override_active": override_active,
+        "event_mode": bool(event_mode),
+        "event_attended": attended_event,
+        "today_override_active": today_remaining_override is not None,
         "checkpoint_name": active.get("name") if active else "Semester overview",
         "checkpoint_date": active.get("date", "") if active else "",
         "today": today_result,
