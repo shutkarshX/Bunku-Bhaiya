@@ -1,0 +1,225 @@
+name: Apply Version-D Attendance UI
+
+on:
+  push:
+    branches:
+      - version-D
+
+permissions:
+  contents: write
+
+jobs:
+  update-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Version-D
+        uses: actions/checkout@v4
+        with:
+          ref: version-D
+          fetch-depth: 0
+
+      - name: Update dashboard
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("templates/dashboard.html")
+          text = path.read_text(encoding="utf-8")
+
+          start_marker = '''    <!-- ================================= -->
+    <!-- CURRENT ATTENDANCE -->
+    <!-- ================================= -->'''
+          end_marker = '''    <!-- ================================= -->
+    <!-- STEP 1 -->'''
+
+          start = text.index(start_marker)
+          end = text.index(end_marker, start)
+
+          replacement = '''    <!-- ================================= -->
+    <!-- CURRENT ATTENDANCE -->
+    <!-- ================================= -->
+
+    <div class="summary">
+
+        <h2>Attendance Summary</h2>
+
+        <p>
+            Your attendance is shown in two forms:
+            actual values from the college portal and
+            effective values after adding classes already
+            held but still waiting to be marked present.
+        </p>
+
+        {% if phase_1 %}
+
+        <div class="stats">
+
+            <div class="stat-card">
+
+                <span>Actual / Portal Classes</span>
+
+                <strong>
+                    {{ phase_1.portal_total }}
+                </strong>
+
+                <small>
+                    {{ phase_1.portal_attended }} present ·
+                    {{ phase_1.portal_total - phase_1.portal_attended }} absent
+                </small>
+
+            </div>
+
+            <div class="stat-card overall">
+
+                <span>Actual / Portal Attendance</span>
+
+                <strong>
+                    {{ phase_1.portal_percentage }}%
+                </strong>
+
+                <small>
+                    {{ phase_1.portal_attended }} /
+                    {{ phase_1.portal_total }}
+                </small>
+
+            </div>
+
+            <div class="stat-card">
+
+                <span>Freeze / To Be Marked Present</span>
+
+                <strong>
+                    {{ phase_1.unmarked_classes }}
+                </strong>
+
+                <small>
+                    Already held, not yet in portal totals
+                </small>
+
+            </div>
+
+            <div class="stat-card overall">
+
+                <span>Effective Classes</span>
+
+                <strong>
+                    {{ phase_1.current_total }}
+                </strong>
+
+                <small>
+                    Portal classes + freeze classes
+                </small>
+
+            </div>
+
+            <div class="stat-card overall">
+
+                <span>Effective Attendance</span>
+
+                <strong>
+                    {{ phase_1.current_percentage }}%
+                </strong>
+
+                <small>
+                    {{ phase_1.current_attended }} /
+                    {{ phase_1.current_total }}
+                </small>
+
+            </div>
+
+        </div>
+
+        <p>
+            <small>
+                Effective attendance counts freeze / unmarked
+                classes as present. Future classes remain
+                separate and are not included here.
+            </small>
+        </p>
+
+        {% else %}
+
+        <div class="stats">
+
+            <div class="stat-card">
+
+                <span>Actual / Portal Classes</span>
+
+                <strong>
+                    {{ attendance.total_classes }}
+                </strong>
+
+            </div>
+
+            <div class="stat-card overall">
+
+                <span>Actual / Portal Attendance</span>
+
+                <strong>
+                    {{ attendance.overall_percentage }}%
+                </strong>
+
+                <small>
+                    {{ attendance.total_attended }} /
+                    {{ attendance.total_classes }}
+                </small>
+
+            </div>
+
+            <div class="stat-card">
+
+                <span>Absent</span>
+
+                <strong>
+                    {{ attendance.total_absent }}
+                </strong>
+
+            </div>
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+
+'''
+
+          path.write_text(text[:start] + replacement + text[end:], encoding="utf-8")
+          PY
+
+      - name: Document UI change
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("BUNKU_WORKING_CONTEXT.md")
+          text = path.read_text(encoding="utf-8")
+          marker = "## 2026-09-13 — Version-D attendance summary UI"
+
+          if marker not in text:
+              entry = '''
+
+## 2026-09-13 — Version-D attendance summary UI
+
+- Branch: `version-D`
+- File changed: `templates/dashboard.html`
+- Purpose: expose actual/portal attendance and effective attendance in the dashboard.
+- UI now shows actual/portal classes, actual/portal attendance, freeze/to-be-marked-present classes, effective classes, and effective attendance.
+- Effective classes = portal classes + freeze classes.
+- Effective present = portal present + freeze classes.
+- Freeze classes are already held and are treated as present; future classes remain separate.
+- No change to the backend calculation formulas or subject attendance source fields.
+- `main` remains untouched.
+'''
+              path.write_text(text.rstrip() + entry, encoding="utf-8")
+          PY
+
+      - name: Commit dashboard and remove one-time workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add templates/dashboard.html BUNKU_WORKING_CONTEXT.md
+          git rm .github/workflows/version-d-ui-update.yml
+          git commit -m "Show actual and effective attendance in Version-D"
+          git push origin version-D
