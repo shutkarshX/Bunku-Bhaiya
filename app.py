@@ -243,5 +243,33 @@ def sessional_1():
     selected_leaves = get_user_leaves()
     selected_leaves["2026-08-29"] = get_requested_leave_classes(request.form, 1)
     save_user_leaves(selected_leaves)
-    session["planner_step"] = max(session.get("planner_step", 0), 1)
+    session["planner_step"] = max(2, session.get("planner_step", 0))
     return redirect("/?view=plan")
+
+
+@app.route("/sessional-2", methods=["POST"])
+def sessional_2():
+    selected_leaves = get_user_leaves()
+    selected_leaves["2026-10-10"] = get_requested_leave_classes(request.form, 2)
+    save_user_leaves(selected_leaves)
+    session["planner_step"] = max(3, session.get("planner_step", 0))
+    return redirect("/?view=plan")
+
+
+@app.route("/sessional-3", methods=["POST"])
+def sessional_3():
+    selected_leaves = get_user_leaves()
+    selected_leaves["2026-11-16"] = get_requested_leave_classes(request.form, 3)
+    save_user_leaves(selected_leaves)
+    session["planner_step"] = 4
+    return redirect("/?view=plan")
+
+
+@app.route("/reset")
+def reset_session():
+    session.clear()
+    return render_dashboard(empty_attendance())
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
