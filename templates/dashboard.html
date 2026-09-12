@@ -346,65 +346,98 @@
 
     <!-- ================================= -->
     <!-- CURRENT ATTENDANCE -->
-    <!-- ================================= -->
 
     <div class="summary">
 
         <h2>Attendance Summary</h2>
 
         <p>
-            Your current attendance retrieved from
-            the college portal.
+            Your actual portal attendance and effective attendance
+            are shown separately.
         </p>
+
+        {% if phase_1 %}
 
         <div class="stats">
 
             <div class="stat-card">
-
-                <span>Total Classes</span>
-
-                <strong>
-                    {{ attendance.total_classes }}
-                </strong>
-
-            </div>
-
-            <div class="stat-card">
-
-                <span>Attended</span>
-
-                <strong>
-                    {{ attendance.total_attended }}
-                </strong>
-
-            </div>
-
-            <div class="stat-card">
-
-                <span>Absent</span>
-
-                <strong>
-                    {{ attendance.total_absent }}
-                </strong>
-
+                <span>Actual / Portal Classes</span>
+                <strong>{{ phase_1.portal_total }}</strong>
+                <small>
+                    {{ phase_1.portal_attended }} present /
+                    {{ phase_1.portal_total - phase_1.portal_attended }} absent
+                </small>
             </div>
 
             <div class="stat-card overall">
+                <span>Actual / Portal Attendance</span>
+                <strong>{{ phase_1.portal_percentage }}%</strong>
+                <small>
+                    {{ phase_1.portal_attended }} /
+                    {{ phase_1.portal_total }}
+                </small>
+            </div>
 
-                <span>Current Attendance</span>
+            <div class="stat-card">
+                <span>Freeze / To Be Marked Present</span>
+                <strong>{{ phase_1.unmarked_classes }}</strong>
+                <small>Already held, not yet in portal totals</small>
+            </div>
 
-                <strong>
-                    {{ attendance.overall_percentage }}%
-                </strong>
+            <div class="stat-card">
+                <span>Effective Classes</span>
+                <strong>{{ phase_1.current_total }}</strong>
+                <small>Portal classes + freeze classes</small>
+            </div>
 
+            <div class="stat-card overall">
+                <span>Effective Attendance</span>
+                <strong>{{ phase_1.current_percentage }}%</strong>
+                <small>
+                    {{ phase_1.current_attended }} /
+                    {{ phase_1.current_total }}
+                </small>
             </div>
 
         </div>
 
+        <p>
+            <small>
+                Freeze / unmarked classes are counted as present.
+                Future classes are separate and are not included.
+            </small>
+        </p>
+
+        {% else %}
+
+        <div class="stats">
+
+            <div class="stat-card">
+                <span>Actual / Portal Classes</span>
+                <strong>{{ attendance.total_classes }}</strong>
+            </div>
+
+            <div class="stat-card overall">
+                <span>Actual / Portal Attendance</span>
+                <strong>{{ attendance.overall_percentage }}%</strong>
+                <small>
+                    {{ attendance.total_attended }} /
+                    {{ attendance.total_classes }}
+                </small>
+            </div>
+
+            <div class="stat-card">
+                <span>Absent</span>
+                <strong>{{ attendance.total_absent }}</strong>
+            </div>
+
+        </div>
+
+        {% endif %}
+
     </div>
 
 
-    <!-- ================================= -->
     <!-- STEP 1 -->
     <!-- ================================= -->
 
