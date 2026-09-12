@@ -1,0 +1,217 @@
+name: Apply Version-D UI Update
+
+on:
+  push:
+    branches:
+      - version-D
+
+permissions:
+  contents: write
+
+jobs:
+  update-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout version-D
+        uses: actions/checkout@v4
+        with:
+          ref: version-D
+          fetch-depth: 0
+
+      - name: Update attendance summary UI
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          path = Path("templates/dashboard.html")
+          text = path.read_text(encoding="utf-8")
+
+          pattern = re.compile(
+              r'''    <!-- ================================= -->\n    <!-- CURRENT ATTENDANCE -->\n    <!-- ================================= -->\n\n    <div class="summary">.*?    </div>\n\n\n    <!-- ================================= -->\n    <!-- STEP 1 -->''',
+              re.DOTALL,
+          )
+
+          replacement = '''    <!-- ================================= -->
+    <!-- CURRENT ATTENDANCE -->
+    <!-- ================================= -->
+
+    <div class="summary">
+
+        <h2>Attendance Summary</h2>
+
+        <p>
+            Your attendance is shown in two forms:
+            the raw values from the college portal and
+            the effective values after adding classes
+            already held but still waiting to be marked.
+        </p>
+
+        {% if phase_1 %}
+
+        <div class="stats">
+
+            <div class="stat-card">
+
+                <span>Actual / Portal Classes</span>
+
+                <strong>
+                    {{ phase_1.portal_total }}
+                </strong>
+
+                <small>
+                    {{ phase_1.portal_attended }} present ·
+                    {{ phase_1.portal_total - phase_1.portal_attended }} absent
+                </small>
+
+            </div>
+
+            <div class="stat-card overall">
+
+                <span>Actual / Portal Attendance</span>
+
+                <strong>
+                    {{ phase_1.portal_percentage }}%
+                </strong>
+
+                <small>
+                    {{ phase_1.portal_attended }} /
+                    {{ phase_1.portal_total }}
+                </small>
+
+            </div>
+
+            <div class="stat-card">
+
+                <span>Freeze / To Be Marked Present</span>
+
+                <strong>
+                    {{ phase_1.unmarked_classes }}
+                </strong>
+
+                <small>
+                    Already held, not yet in portal totals
+                </small>
+
+            </div>
+
+            <div class="stat-card overall">
+
+                <span>Effective Classes</span>
+
+                <strong>
+                    {{ phase_1.current_total }}
+                </strong>
+
+                <small>
+                    Portal classes + freeze classes
+                </small>
+
+            </div>
+
+            <div class="stat-card overall">
+
+                <span>Effective Attendance</span>
+
+                <strong>
+                    {{ phase_1.current_percentage }}%
+                </strong>
+
+                <small>
+                    {{ phase_1.current_attended }} /
+                    {{ phase_1.current_total }}
+                </small>
+
+            </div>
+
+        </div>
+
+        <p>
+            <small>
+                Effective attendance treats freeze / unmarked
+                classes as present. Future classes are kept
+                separate and are not included here.
+            </small>
+        </p>
+
+        {% else %}
+
+        <div class="stats">
+
+            <div class="stat-card">
+
+                <span>Actual / Portal Classes</span>
+
+                <strong>
+                    {{ attendance.total_classes }}
+                </strong>
+
+            </div>
+
+            <div class="stat-card overall">
+
+                <span>Actual / Portal Attendance</span>
+
+                <strong>
+                    {{ attendance.overall_percentage }}%
+                </strong>
+
+                <small>
+                    {{ attendance.total_attended }} /
+                    {{ attendance.total_classes }}
+                </small>
+
+            </div>
+
+            <div class="stat-card">
+
+                <span>Absent</span>
+
+                <strong>
+                    {{ attendance.total_absent }}
+                </strong>
+
+            </div>
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- ================================= -->
+    <!-- STEP 1 -->'''
+
+          updated, count = pattern.subn(replacement, text, count=1)
+          if count != 1:
+              raise SystemExit(f"Expected exactly one attendance summary block, found {count}")
+
+          path.write_text(updated, encoding="utf-8")
+
+      - name: Document Version-D UI change
+        shell: python
+        run: |
+          from pathlib import Path
+          from datetime import datetime, timezone
+
+          path = Path("BUNKU_WORKING_CONTEXT.md")
+          if not path.exists():
+              raise SystemExit("BUNKU_WORKING_CONTEXT.md not found")
+
+          entry = '''\n\n## 2026-09-13 — Version-D attendance summary UI\n\n- Branch: `version-D`\n- File changed: `templates/dashboard.html`\n- Purpose: expose the attendance values already calculated by `bunk_calculator.py` instead of leaving actual/effective attendance backend-only.\n- UI now shows:\n  - Actual / portal classes (`portal_total`)\n  - Actual / portal attendance (`portal_attended / portal_total`, `portal_percentage`)\n  - Freeze / to-be-marked-present classes (`unmarked_classes`)\n  - Effective classes (`current_total`)\n  - Effective attendance (`current_attended / current_total`, `current_percentage`)\n- Freeze classes are treated as already held and present.\n- Future classes remain separate and are not included in effective current attendance.\n- No change to the calculation formulas or subject attendance source fields.\n- `main` remains untouched.\n'''
+
+          text = path.read_text(encoding="utf-8")
+          marker = "## 2026-09-13 — Version-D attendance summary UI"
+          if marker not in text:
+              path.write_text(text.rstrip() + entry, encoding="utf-8")
+
+      - name: Commit and push final Version-D change
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add templates/dashboard.html BUNKU_WORKING_CONTEXT.md .github/workflows/version-d-ui-update.yml
+          git rm .github/workflows/version-d-ui-update.yml
+          git commit -m "Show actual and effective attendance in Version-D" || exit 0
+          git push origin version-D
