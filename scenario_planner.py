@@ -42,6 +42,13 @@ def _project(attended, total, future, missed):
     }
 
 
+def _int_value(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def calculate_scenario(
     attendance_data,
     phase_1,
@@ -50,60 +57,78 @@ def calculate_scenario(
     today_remaining_override=None,
     event_mode=False,
     event_attended=0,
+    planner_period_classes=None,
+    planned_attended=0,
+    planned_bunked=None,
 ):
-    """Calculate a non-persistent Today/Checkpoint scenario.
-
-    Normal mode treats portal-unposted classes as classes the user can choose
-    to miss. Event mode treats some of those unposted classes as already
-    attended, then lets the user choose how many of the remainder to miss.
-    Neither mode changes saved attendance or portal data.
-    """
+    """Calculate a non-persistent attendance scenario or date-range plan."""
     scope = scope if scope in {"today", "checkpoint"} else "today"
-    try:
-        requested = max(0, int(classes_missed))
-    except (TypeError, ValueError):
-        requested = 0
-
+    requested = max(0, _int_value(classes_missed))
     subjects = attendance_data.get("subjects") or []
 
     def metadata(key):
-        try:
-            return max(0, int(subjects[0].get(key, 0) or 0)) if subjects else 0
-        except (TypeError, ValueError):
-            return 0
+        return max(0, _int_value(subjects[0].get(key, 0))) if subjects else 0
 
     unmarked = metadata("_bunkmaster_unmarked_classes")
     portal_today_remaining = metadata("_bunkmaster_remaining_today")
 
-    try:
-        attended_event = max(0, int(event_attended)) if event_mode else 0
-    except (TypeError, ValueError):
-        attended_event = 0
+    attended_event = max(0, _int_value(event_attended)) if event_mode else 0
     attended_event = min(attended_event, portal_today_remaining)
 
     if today_remaining_override is None:
         today_remaining = portal_today_remaining - attended_event
     else:
-        try:
-            today_remaining = max(0, int(today_remaining_override))
-        except (TypeError, ValueError):
-            today_remaining = portal_today_remaining - attended_event
+        today_remaining = max(0, _int_value(today_remaining_override, portal_today_remaining - attended_event))
     today_remaining = min(today_remaining, portal_today_remaining - attended_event)
 
-    attended = max(0, int(attendance_data.get("total_attended", 0))) + unmarked + attended_event
-    total = max(0, int(attendance_data.get("total_classes", 0))) + unmarked + attended_event
+    base_attended = max(0, _int_value(attendance_data.get("total_attended"))) + unmarked
+    base_total = max(0, _int_value(attendance_data.get("total_classes"))) + unmarked
+    attended = base_attended + attended_event
+    total = base_total + attended_event
 
     checkpoints = (phase_1 or {}).get("checkpoints") or []
     active_index = (phase_1 or {}).get("active_checkpoint_index")
     active = checkpoints[active_index] if isinstance(active_index, int) and 0 <= active_index < len(checkpoints) else None
-    checkpoint_future = max(0, int(active.get("future_classes", 0) or 0)) if active else 0
+    checkpoint_future = max(0, _int_value(active.get("future_classes"))) if active else 0
+    checkpoint_future_adjusted = max(0, checkpoint_future - portal_today_remaining + attended_event + today_remaining)
 
-    # Replace the portal's unposted-today estimate with the event attendance
-    # already accounted for and the classes that are still actually happening.
-    checkpoint_future_adjusted = max(
-        0,
-        checkpoint_future - portal_today_remaining + attended_event + today_remaining,
-    )
+    # Date-range planner mode. The frontend supplies the number of scheduled
+    # classes in the selected range and how many the student plans to attend.
+    if planner_period_classes is not None:
+        period_classes = max(0, _int_value(planner_period_classes))
+        planned_attend = max(0, _int_value(planned_attended))
+        planned_bunk = planned_attend if planned_bunked is None else max(0, _int_value(planned_bunked))
+        available_after_event = max(0, period_classes - attended_event)
+        planned_attend = min(planned_attend, available_after_event)
+        planned_bunk = min(planned_bunk, max(0, available_after_event - planned_attend))
+
+        projected_attended = attended + planned_attend
+        projected_total = total + planned_attend + planned_bunk
+        planner_pct = _pct(projected_attended, projected_total)
+        current_pct = _pct(attended, total)
+        return {
+            "scope": "planner",
+            "available_classes": available_after_event,
+            "classes_missed": planned_bunk,
+            "current_percentage": current_pct,
+            "current_attended": attended,
+            "current_total": total,
+            "portal_today_remaining": portal_today_remaining,
+            "today_remaining": today_remaining,
+            "event_mode": bool(event_mode),
+            "event_attended": attended_event,
+            "today_override_active": today_remaining_override is not None,
+            "planner_period_classes": period_classes,
+            "planned_attended": planned_attend,
+            "planned_bunked": planned_bunk,
+            "planner_projected_attended": projected_attended,
+            "planner_projected_total": projected_total,
+            "planner_percentage": planner_pct,
+            "planner_change": round(planner_pct - current_pct, 2),
+            "planner_status": "safe" if planner_pct >= TARGET else "below_target",
+            "checkpoint_name": active.get("name") if active else "Semester overview",
+            "checkpoint_date": active.get("date", "") if active else "",
+        }
 
     if scope == "today":
         available = today_remaining
@@ -130,6 +155,8 @@ def calculate_scenario(
         "available_classes": available,
         "classes_missed": missed,
         "current_percentage": _pct(attended, total),
+        "current_attended": attended,
+        "current_total": total,
         "portal_today_remaining": portal_today_remaining,
         "today_remaining": today_remaining,
         "event_mode": bool(event_mode),
