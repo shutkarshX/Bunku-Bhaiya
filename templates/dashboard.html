@@ -352,7 +352,7 @@
         <h2>Attendance Summary</h2>
 
         <p>
-            Your actual portal attendance and effective attendance
+            Your portal, site, and effective attendance
             are shown separately.
         </p>
 
@@ -379,23 +379,32 @@
             </div>
 
             <div class="stat-card">
-                <span>Freeze / To Be Marked Present</span>
+                <span>Freeze / Unmarked Classes</span>
                 <strong>{{ phase_1.unmarked_classes }}</strong>
                 <small>Already held, not yet in portal totals</small>
             </div>
 
             <div class="stat-card">
-                <span>Current Classes</span>
-                <strong>{{ phase_1.current_total }}</strong>
+                <span>Site Classes</span>
+                <strong>{{ phase_1.site_total }}</strong>
                 <small>Portal classes + unmarked/freeze classes</small>
             </div>
 
             <div class="stat-card overall">
-                <span>Current Attendance</span>
-                <strong>{{ phase_1.current_percentage }}%</strong>
+                <span>Site Attendance</span>
+                <strong>{{ phase_1.site_percentage }}%</strong>
                 <small>
-                    {{ phase_1.current_attended }} /
-                    {{ phase_1.current_total }}
+                    {{ phase_1.site_attended }} /
+                    {{ phase_1.site_total }}
+                </small>
+            </div>
+
+            <div class="stat-card overall">
+                <span>Effective Attendance</span>
+                <strong>{{ phase_1.effective_percentage }}%</strong>
+                <small>
+                    {{ phase_1.effective_attended }} /
+                    {{ phase_1.effective_total }}
                 </small>
             </div>
 
@@ -403,7 +412,8 @@
 
         <p>
             <small>
-                Freeze / unmarked classes are NOT counted as present yet. They increase the current attendance denominator only.
+                Site Attendance counts unmarked/freeze classes in the denominator.
+                Effective Attendance treats those unmarked/freeze classes as present.
                 Future classes are separate and are not included.
             </small>
         </p>
