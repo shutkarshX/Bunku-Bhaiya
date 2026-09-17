@@ -1,5 +1,6 @@
 from legacy_bunk_calculator import *
 from legacy_bunk_calculator import run_phase_1 as _legacy_run_phase_1
+from attendance_state import build_attendance_state, apply_effective_state
 
 
 # =========================================
@@ -25,19 +26,7 @@ def _get_remaining_today(attendance_data):
 
 def _get_unmarked_classes(attendance_data):
     """Return classes already held but not yet included in portal totals."""
-    subjects = attendance_data.get("subjects", [])
-    total_unmarked = 0
-    for subject in subjects:
-        try:
-            total_unmarked += int(subject.get("totalUnFreezedAttendance") or 0)
-        except (TypeError, ValueError):
-            pass
-    if total_unmarked == 0:
-        total_unmarked = _get_metadata(
-            attendance_data,
-            "_bunkmaster_unmarked_classes"
-        )
-    return max(0, total_unmarked)
+    return build_attendance_state(attendance_data)["unmarked"]
 
 
 def _restore_effective_attendance(checkpoint, attended, total):
@@ -56,47 +45,31 @@ def run_phase_1(
     checkpoint_choices=None,
     requested_leaves=None
 ):
-    """Run planning from the current effective attendance state.
+    """Run checkpoint planning from normalized effective attendance.
 
-    P = portal present
-    A = portal absent
-    U = already-held unmarked/frozen classes
-
-    Site attendance      = P / (P + A + U)
-    Effective attendance = (P + U) / (P + A + U)
-
-    The legacy calculator receives the effective state so its existing
-    attendance-planning mathematics remains unchanged.
+    P = portal present, A = portal absent, U = already-held unmarked/frozen.
+    The normalized state is kept separate so future What-If features can use
+    the same clean attendance model without re-reading portal field names.
     """
     remaining_today = _get_remaining_today(attendance_data)
-    unmarked_classes = _get_unmarked_classes(attendance_data)
+    state = build_attendance_state(attendance_data)
 
-    # Raw values reported by the college portal.
-    portal_attended = attendance_data.get("total_attended", 0)
-    portal_total = attendance_data.get("total_classes", 0)
-    portal_percentage = calculate_percentage(portal_attended, portal_total)
+    portal_attended = state["portal"]["present"]
+    portal_total = state["portal"]["total"]
+    portal_percentage = state["portal"]["percentage"]
 
-    # Site attendance counts unmarked/freeze classes in the denominator,
-    # while keeping the portal's present count as the numerator.
-    site_attended = portal_attended
-    site_total = portal_total + unmarked_classes
-    site_percentage = calculate_percentage(site_attended, site_total)
+    site_attended = state["site"]["present"]
+    site_total = state["site"]["total"]
+    site_percentage = state["site"]["percentage"]
 
-    # Effective attendance treats already-held unmarked/freeze classes as
-    # present for planning purposes.
-    effective_attended = portal_attended + unmarked_classes
-    effective_total = site_total
-    effective_percentage = calculate_percentage(
-        effective_attended,
-        effective_total
-    )
+    effective_attended = state["effective"]["present"]
+    effective_total = state["effective"]["total"]
+    effective_percentage = state["effective"]["percentage"]
 
     # The legacy calculator receives the corrected effective attendance.
-    # Its implicit absent count is therefore:
+    # Its implicit absent count remains exactly A:
     # (P + A + U) - (P + U) = A.
-    effective_attendance = dict(attendance_data)
-    effective_attendance["total_attended"] = effective_attended
-    effective_attendance["total_classes"] = effective_total
+    effective_attendance = apply_effective_state(attendance_data, state)
 
     result = _legacy_run_phase_1(
         effective_attendance,
@@ -104,10 +77,11 @@ def run_phase_1(
         requested_leaves
     )
 
+    result["attendance_state"] = state
     result["portal_attended"] = portal_attended
     result["portal_total"] = portal_total
     result["portal_percentage"] = round(portal_percentage, 2)
-    result["unmarked_classes"] = unmarked_classes
+    result["unmarked_classes"] = state["unmarked"]
 
     result["site_attended"] = site_attended
     result["site_total"] = site_total
@@ -132,9 +106,8 @@ def run_phase_1(
 
     active = checkpoints[active_index]
 
-    # Today's remaining classes are future classes, so they do not change
-    # portal/site/effective attendance yet. They are added only to the
-    # active checkpoint plan.
+    # Today's remaining classes are future classes. They do not change
+    # portal/site/effective attendance yet; they only affect the active plan.
     adjusted_future_classes = (
         active.get("future_classes", 0) + remaining_today
     )
@@ -163,7 +136,6 @@ def run_phase_1(
     result["effective_total"] = effective_total
     result["effective_percentage"] = round(effective_percentage, 2)
 
-    # Keep compatibility aliases synchronized with the effective state.
     result["current_attended"] = effective_attended
     result["current_total"] = effective_total
     result["current_percentage"] = round(effective_percentage, 2)
