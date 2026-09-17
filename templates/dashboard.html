@@ -352,51 +352,27 @@
         <h2>Attendance Summary</h2>
 
         <p>
-            Your portal, site, and effective attendance
-            are shown separately.
+            Your college site attendance and
+            BunkMaster effective attendance are shown.
         </p>
 
         {% if phase_1 %}
 
         <div class="stats">
 
-            <div class="stat-card">
-                <span>Actual / Portal Classes</span>
-                <strong>{{ phase_1.portal_total }}</strong>
-                <small>
-                    {{ phase_1.portal_attended }} present /
-                    {{ phase_1.portal_total - phase_1.portal_attended }} absent
-                </small>
-            </div>
-
             <div class="stat-card overall">
-                <span>Actual / Portal Attendance</span>
-                <strong>{{ phase_1.portal_percentage }}%</strong>
+                <span>College Site Attendance</span>
+                <strong>{{ phase_1.site_percentage }}%</strong>
                 <small>
-                    {{ phase_1.portal_attended }} /
-                    {{ phase_1.portal_total }}
+                    {{ phase_1.site_attended }} /
+                    {{ phase_1.site_total }}
                 </small>
             </div>
 
             <div class="stat-card">
                 <span>Freeze / Unmarked Classes</span>
                 <strong>{{ phase_1.unmarked_classes }}</strong>
-                <small>Already held, not yet in portal totals</small>
-            </div>
-
-            <div class="stat-card">
-                <span>Site Classes</span>
-                <strong>{{ phase_1.site_total }}</strong>
-                <small>Portal classes + unmarked/freeze classes</small>
-            </div>
-
-            <div class="stat-card overall">
-                <span>Site Attendance</span>
-                <strong>{{ phase_1.site_percentage }}%</strong>
-                <small>
-                    {{ phase_1.site_attended }} /
-                    {{ phase_1.site_total }}
-                </small>
+                <small>Already held, not yet posted</small>
             </div>
 
             <div class="stat-card overall">
