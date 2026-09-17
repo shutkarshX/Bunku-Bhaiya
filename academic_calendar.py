@@ -9,8 +9,9 @@ CHECKPOINTS = (
     "2026-11-16",
 )
 
+# Existing semester teaching-day calendar remains authoritative here.
 TEACHING_DAYS = {
-    # Existing semester teaching-day calendar remains the source of truth.
+    # Populated by the existing academic calendar data.
 }
 
 
