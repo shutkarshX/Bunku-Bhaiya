@@ -295,8 +295,8 @@ def get_attendance(username, password):
                 )
 
             # Use the authenticated portal session to inspect every subject.
-            # These are the same 13 calls already needed for today's count;
-            # their raw responses are retained for the dashboard details.
+            # These calls are also the source for the dashboard's subject
+            # attendance details.
             (
                 today_logged,
                 remaining_today,
@@ -311,21 +311,8 @@ def get_attendance(username, password):
             details_token = uuid.uuid4().hex
             _SUBJECT_DETAILS_CACHE[details_token] = subject_details
 
-            # Problem 2 is already available from the aggregate endpoint.
-            # Keep it informational; these classes have occurred and must NOT
-            # be added to future_classes.
-            unmarked_classes = 0
-            for subject in attendance_data:
-                try:
-                    unmarked_classes += int(
-                        subject.get("totalUnFreezedAttendance") or 0
-                    )
-                except (TypeError, ValueError):
-                    pass
-
-            # Preserve the new values inside the existing subject-list shape.
-            # This keeps app.py backwards compatible while allowing the
-            # calculator/session to carry today's state across requests.
+            # Preserve today's portal state inside the existing subject-list
+            # shape so the calculator/session can carry it across requests.
             attendance_data[0][
                 "_bunkmaster_today_logged"
             ] = today_logged
@@ -335,16 +322,11 @@ def get_attendance(username, password):
             ] = remaining_today
 
             attendance_data[0][
-                "_bunkmaster_unmarked_classes"
-            ] = unmarked_classes
-
-            attendance_data[0][
                 "_bunkmaster_subject_details_token"
             ] = details_token
 
             print("Today's logged classes:", today_logged)
             print("Today's remaining classes:", remaining_today)
-            print("Unmarked classes:", unmarked_classes)
             print(
                 f"[TIME] TOTAL: {time.perf_counter() - total_start:.2f}s"
             )
