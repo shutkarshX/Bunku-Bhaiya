@@ -185,7 +185,17 @@ def _completed_checkpoint(checkpoint_name, checkpoint_date, actual_attended, act
     }
 
 
-def _future_checkpoint(checkpoint_name, checkpoint_date, index, active_index, current_date, actual_attended, actual_total, requested_leaves):
+def _future_checkpoint(
+    checkpoint_name,
+    checkpoint_date,
+    index,
+    active_index,
+    current_date,
+    actual_attended,
+    actual_total,
+    requested_leaves,
+    remaining_today,
+):
     checkpoint_key = checkpoint_date.strftime("%Y-%m-%d")
     if index == active_index:
         calculation_start = current_date + timedelta(days=1)
@@ -195,6 +205,13 @@ def _future_checkpoint(checkpoint_name, checkpoint_date, index, active_index, cu
     calculation_end = checkpoint_date if checkpoint_is_teaching_day else checkpoint_date - timedelta(days=1)
     teaching_days = count_teaching_days(calculation_start, calculation_end)
     future_classes = teaching_days * CLASSES_PER_DAY
+
+    # Today's remaining classes have not happened yet, but they belong to the
+    # active checkpoint's planning window and must be included before any
+    # leave/safety calculations are made.
+    if index == active_index:
+        future_classes += remaining_today
+
     starting_percentage = calculate_percentage(actual_attended, actual_total)
     status = determine_status(actual_attended, actual_total, future_classes)
     classes_needed = classes_needed_to_reach_target(actual_attended, actual_total)
@@ -323,23 +340,11 @@ def run_phase_1(attendance_data, checkpoint_choices=None, requested_leaves=None)
             actual_attended,
             actual_total,
             requested_leaves,
+            remaining_today,
         )
         results.append(result)
         actual_attended = result["final_attended"]
         actual_total = result["final_total"]
-
-    if active_index is not None and 0 <= active_index < len(results):
-        active = results[active_index]
-        adjusted_future_classes = active.get("future_classes", 0) + remaining_today
-        active["future_classes"] = adjusted_future_classes
-        active["status"] = determine_status(effective_attended, effective_total, adjusted_future_classes)
-        active["maximum_possible_percentage"] = round(
-            calculate_percentage(
-                effective_attended + adjusted_future_classes,
-                effective_total + adjusted_future_classes,
-            ),
-            2,
-        )
 
     return {
         "current_attended": effective_attended,
