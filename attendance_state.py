@@ -82,15 +82,3 @@ def build_attendance_state(attendance_data):
             "percentage": round(_percentage(effective_present, site_total), 2),
         },
     }
-
-
-def apply_effective_state(attendance_data, state=None):
-    """Return a calculator-compatible copy using the normalized state."""
-    if state is None:
-        state = build_attendance_state(attendance_data)
-
-    effective_attendance = dict(attendance_data or {})
-    effective_attendance["total_attended"] = state["effective"]["present"]
-    effective_attendance["total_classes"] = state["effective"]["total"]
-    effective_attendance["overall_percentage"] = state["effective"]["percentage"]
-    return effective_attendance
