@@ -13,6 +13,7 @@ from bunk_calculator import (
     classes_to_leave_display,
     days_and_classes_to_classes,
 )
+from academic_calendar import CHECKPOINTS
 from attendance_state import build_attendance_state
 
 
@@ -28,11 +29,8 @@ app.secret_key = SECRET_KEY
 
 app.jinja_env.globals["classes_to_leave_display"] = classes_to_leave_display
 
-CHECKPOINT_CHOICES = {
-    "2026-08-29": True,
-    "2026-10-10": True,
-    "2026-11-16": True,
-}
+CHECKPOINT_CHOICES = {checkpoint: True for checkpoint in CHECKPOINTS}
+DEFAULT_SELECTED_LEAVES = {checkpoint: 0 for checkpoint in CHECKPOINTS}
 
 
 def empty_attendance():
@@ -50,10 +48,7 @@ def get_user_attendance():
 
 
 def get_user_leaves():
-    return session.get(
-        "selected_leaves",
-        {"2026-08-29": 0, "2026-10-10": 0, "2026-11-16": 0},
-    )
+    return session.get("selected_leaves", dict(DEFAULT_SELECTED_LEAVES))
 
 
 def save_user_leaves(leaves):
@@ -65,13 +60,7 @@ def get_dashboard_step(phase_1_result):
     active_index = phase_1_result.get("active_checkpoint_index")
     if active_index is None:
         return 4
-    if active_index == 0:
-        return 1
-    if active_index == 1:
-        return 2
-    if active_index == 2:
-        return 3
-    return 1
+    return active_index + 1
 
 
 def get_requested_leave_classes(form, step):
@@ -79,21 +68,14 @@ def get_requested_leave_classes(form, step):
         days = int(form.get(f"leave_{step}_days", 0))
     except (TypeError, ValueError):
         days = 0
-
     try:
         classes = int(form.get(f"leave_{step}_classes", 0))
     except (TypeError, ValueError):
         classes = 0
-
     return days_and_classes_to_classes(days, classes)
 
 
-def render_dashboard(
-    attendance_data,
-    phase_1=None,
-    portal_error=None,
-    calculator_step=None,
-):
+def render_dashboard(attendance_data, phase_1=None, portal_error=None, calculator_step=None):
     if phase_1 is None:
         calculator_step = 0
     elif calculator_step is None:
@@ -150,9 +132,6 @@ def get_attendance_page():
         print("No attendance data was returned.")
         return render_dashboard(empty_attendance(), portal_error="unavailable")
 
-    # Attendance aggregation and all P/A/U percentages have one owner:
-    # attendance_state.py. app.py only stores the normalized source values
-    # needed by the session and calculator.
     state = build_attendance_state({"subjects": subjects})
     attendance_data = {
         "subjects": subjects,
@@ -163,7 +142,7 @@ def get_attendance_page():
     }
 
     session["attendance_data"] = attendance_data
-    selected_leaves = {"2026-08-29": 0, "2026-10-10": 0, "2026-11-16": 0}
+    selected_leaves = dict(DEFAULT_SELECTED_LEAVES)
     save_user_leaves(selected_leaves)
 
     print("Website received:", len(subjects), "subjects")
@@ -189,7 +168,7 @@ def get_attendance_page():
 def sessional_1():
     attendance_data = get_user_attendance()
     selected_leaves = get_user_leaves()
-    selected_leaves["2026-08-29"] = get_requested_leave_classes(request.form, 1)
+    selected_leaves[CHECKPOINTS[0]] = get_requested_leave_classes(request.form, 1)
     save_user_leaves(selected_leaves)
     phase_1_result = run_phase_1(attendance_data, CHECKPOINT_CHOICES, selected_leaves)
     return render_dashboard(attendance_data, phase_1_result, calculator_step=2)
@@ -199,7 +178,7 @@ def sessional_1():
 def sessional_2():
     attendance_data = get_user_attendance()
     selected_leaves = get_user_leaves()
-    selected_leaves["2026-10-10"] = get_requested_leave_classes(request.form, 2)
+    selected_leaves[CHECKPOINTS[1]] = get_requested_leave_classes(request.form, 2)
     save_user_leaves(selected_leaves)
     phase_1_result = run_phase_1(attendance_data, CHECKPOINT_CHOICES, selected_leaves)
     return render_dashboard(attendance_data, phase_1_result, calculator_step=3)
@@ -209,7 +188,7 @@ def sessional_2():
 def sessional_3():
     attendance_data = get_user_attendance()
     selected_leaves = get_user_leaves()
-    selected_leaves["2026-11-16"] = get_requested_leave_classes(request.form, 3)
+    selected_leaves[CHECKPOINTS[2]] = get_requested_leave_classes(request.form, 3)
     save_user_leaves(selected_leaves)
     phase_1_result = run_phase_1(attendance_data, CHECKPOINT_CHOICES, selected_leaves)
     return render_dashboard(attendance_data, phase_1_result, calculator_step=4)
@@ -219,7 +198,3 @@ def sessional_3():
 def reset_session():
     session.clear()
     return render_dashboard(empty_attendance())
-
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
