@@ -29,7 +29,6 @@ app.secret_key = SECRET_KEY
 
 app.jinja_env.globals["classes_to_leave_display"] = classes_to_leave_display
 
-CHECKPOINT_CHOICES = {checkpoint: True for checkpoint in CHECKPOINTS}
 DEFAULT_SELECTED_LEAVES = {checkpoint: 0 for checkpoint in CHECKPOINTS}
 
 
@@ -103,7 +102,6 @@ def dashboard():
 
     phase_1_result = run_phase_1(
         attendance_data,
-        CHECKPOINT_CHOICES,
         get_user_leaves(),
     )
     return render_dashboard(attendance_data, phase_1_result)
@@ -153,7 +151,6 @@ def get_attendance_page():
 
     phase_1_result = run_phase_1(
         attendance_data,
-        CHECKPOINT_CHOICES,
         selected_leaves,
     )
 
@@ -170,7 +167,7 @@ def sessional_1():
     selected_leaves = get_user_leaves()
     selected_leaves[CHECKPOINTS[0]] = get_requested_leave_classes(request.form, 1)
     save_user_leaves(selected_leaves)
-    phase_1_result = run_phase_1(attendance_data, CHECKPOINT_CHOICES, selected_leaves)
+    phase_1_result = run_phase_1(attendance_data, selected_leaves)
     return render_dashboard(attendance_data, phase_1_result, calculator_step=2)
 
 
