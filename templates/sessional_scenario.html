@@ -5,25 +5,6 @@
 
     {% set first = phase_1.checkpoints[0] %}
 
-    <div class="summary">
-
-        <h2>Bunk Calculator</h2>
-
-        <p>
-            Plan your leave one checkpoint at a time.
-            Your projected attendance after each
-            checkpoint automatically becomes the
-            starting attendance for the next one.
-        </p>
-
-        <p>
-            <strong>Step 1 of 3</strong>
-            — First Sessional
-        </p>
-
-    </div>
-
-
     <div class="bunk-results">
 
         <div class="bunk-card">
@@ -282,36 +263,6 @@
 
     {% set first = phase_1.checkpoints[0] %}
     {% set second = phase_1.checkpoints[1] %}
-
-    <div class="summary">
-
-        <h2>Second Sessional</h2>
-
-        {% if first.state == "completed" %}
-
-        <p>
-            The First Sessional has already passed.
-            Your current attendance from the college
-            portal will be used for this calculation.
-        </p>
-
-        {% else %}
-
-        <p>
-            Here is what your attendance will be at
-            the First Sessional based on the leave
-            you selected.
-        </p>
-
-        {% endif %}
-
-        <p>
-            <strong>Step 2 of 3</strong>
-            — Second Sessional
-        </p>
-
-    </div>
-
 
     <div class="bunk-results">
 
@@ -621,23 +572,6 @@
     {% set first = phase_1.checkpoints[0] %}
     {% set second = phase_1.checkpoints[1] %}
     {% set third = phase_1.checkpoints[2] %}
-
-    <div class="summary">
-
-        <h2>Third Sessional</h2>
-
-        <p>
-            Here is your attendance plan through
-            the final checkpoint.
-        </p>
-
-        <p>
-            <strong>Step 3 of 3</strong>
-            — Third Sessional
-        </p>
-
-    </div>
-
 
     <div class="bunk-results">
 
