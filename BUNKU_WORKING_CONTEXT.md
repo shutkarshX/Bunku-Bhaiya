@@ -2780,3 +2780,70 @@ with today's known event information applied on top when appropriate.
 ## Reversible/reverted?
 
 No.
+
+
+# 72. VERSION-D — SCENARIOS SPLIT INTO SEPARATE DESTINATIONS
+
+Date: 2026-09-18
+
+Status: **ACTIVE**
+
+## Product rule
+
+The Sessional/Checkpoint Tracker is itself a What-If scenario. It is not a separate planner subsystem.
+
+What-If scenarios are now separated into their own destinations so adding future scenarios does not create one long scrolling dashboard.
+
+## Current navigation
+
+Home | Attendance Planner | What-If: Today | What-If: Sessional | Subject Attendance
+
+## Scenario destinations
+
+Today scenario: `/what-if/today`
+
+Sessional scenario: `/sessional`
+
+The existing checkpoint calculation logic remains shared. The UI for the three sessional steps and checkpoint tracker now lives in `templates/sessional_scenario.html` and `templates/checkpoint_tracker.html`.
+
+## Attendance Planner role
+
+Attendance Planner remains the setup/loading destination for expensive planner data, today's event decision, and the single planner-level attendance requirement.
+
+After setup is complete, the user can open each scenario independently.
+
+## Scenario 1
+
+Today What-If is no longer rendered below the planner on the same page. It has its own route and page.
+
+## Sessional scenario
+
+The three sessional planning steps and running checkpoint tracker are no longer rendered at the bottom of the planner page. They are rendered on the dedicated Sessional What-If page.
+
+Session 1 → Session 2 → Session 3 stays on `/sessional`.
+
+## Architecture
+
+RIGHT NOW → Shared scenario state → Today Scenario / Sessional Scenario
+
+Future scenarios should receive their own route/template rather than being appended to the same dashboard scroll.
+
+## Files changed
+
+- `app.py`
+- `templates/dashboard.html`
+- `templates/scenario_today.html`
+- `templates/sessional_scenario.html`
+
+## Commits
+
+- `ce8153e` — Move sessional tracker into its own scenario page
+- `c93bee1` — Separate What-If and sessional scenario pages
+- `631ae03` — Route What-If scenarios to separate pages
+- `e735ee0` — Keep sessional scenario flow on its own page
+- `09cc488` — Keep Today What-If results on scenario page
+- `00bab9d` — Keep checkpoint tracker with sessional scenario
+
+## Reversible/reverted?
+
+No.
