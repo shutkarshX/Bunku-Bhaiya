@@ -1,28 +1,29 @@
-<aside class="sessional-tracker" aria-label="Sessional checkpoint tracker">
-    <h3>Sessional Checkpoints</h3>
-
-    {% for checkpoint in tracker_checkpoints %}
-    <div class="checkpoint-item {{ checkpoint.state_class }}">
-        <div class="checkpoint-marker">{{ checkpoint.icon }}</div>
-
-        <div class="checkpoint-copy">
-            <strong>{{ checkpoint.checkpoint }}</strong>
-            <span>{{ checkpoint.label }}</span>
-
-            {% if checkpoint.show_projection %}
-            <div class="checkpoint-projection">
-                <span>Your checkpoint attendance</span>
-                <strong>{{ checkpoint.projected_percentage }}%</strong>
-                <small>
-                    {{ checkpoint.projected_attended }}
-                    /
-                    {{ checkpoint.projected_total }}
-                    classes
-                </small>
-                <em>This becomes the starting attendance for the next sessional.</em>
-            </div>
-            {% endif %}
-        </div>
+<aside class="sessional-tracker" aria-label="Sessional checkpoint progress">
+    <div class="sessional-tracker-heading">
+        <span>YOUR PROGRESS</span>
+        <strong>Sessional Checkpoints</strong>
     </div>
-    {% endfor %}
+
+    <div class="checkpoint-list">
+        {% for checkpoint in tracker_checkpoints %}
+        <div class="checkpoint-item {{ checkpoint.state_class }}">
+            <div class="checkpoint-marker">
+                {% if checkpoint.state_class == "passed" %}✓{% elif checkpoint.state_class == "current" %}●{% else %}{{ loop.index }}{% endif %}
+            </div>
+
+            <div class="checkpoint-copy">
+                <strong>{{ checkpoint.checkpoint }}</strong>
+                <span>
+                    {% if checkpoint.state_class == "passed" %}
+                        Passed
+                    {% elif checkpoint.state_class == "current" %}
+                        You are here
+                    {% else %}
+                        Upcoming
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 </aside>
