@@ -1,7 +1,7 @@
 import os
 from datetime import date
 
-from flask import Flask, render_template, request, session
+from flask import Flask, redirect, render_template, request, session
 
 from portal import (
     get_attendance,
@@ -250,7 +250,7 @@ def load_planner():
 
         session.modified = True
 
-    return planner_page()
+    return redirect("/planner")
 
 
 def handle_checkpoint_submission(checkpoint_index):
