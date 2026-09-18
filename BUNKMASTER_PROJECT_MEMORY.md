@@ -1134,3 +1134,1080 @@ is the intended long-term structure.
 **2026-09-18**
 
 Continue from this file rather than reconstructing the project's decisions from scratch.
+
+
+---
+
+# 35. Detailed continuity log — why we changed the architecture
+
+This section exists so a future conversation can understand not only **what** the code does, but **why** we arrived here.
+
+## 35.1 Original planner idea
+
+The first planner implementation treated the Attendance Planner as a separate destination.
+
+Conceptually it was:
+
+```text
+Home
+  ↓
+Attendance Planner
+  ↓
+load today's detailed portal data
+  ↓
+event question
+  ↓
+target attendance
+  ↓
+sessional checkpoint calculations
+```
+
+This worked technically, but it mixed several different ideas:
+
+- today's What-If;
+- event adjustment;
+- checkpoint planning;
+- target selection;
+- planner setup.
+
+The user later clarified that these are not separate products.
+
+The actual product concept is **What-If**.
+
+Therefore planner setup should be an internal step of whichever What-If scenario needs it.
+
+---
+
+## 35.2 Why the old Planner Setup navigation was rejected
+
+The UI previously exposed something equivalent to:
+
+```text
+Home | Planner Setup | What-If: Today | What-If: Sessional | Subject Attendance
+```
+
+This was rejected because the user does not want users thinking:
+
+> "First I go to Planner Setup, then I go somewhere else to run a scenario."
+
+The intended mental model is:
+
+```text
+Home | What-If | Subject Attendance
+             ↓
+       choose a scenario
+             ↓
+       scenario handles
+       its own setup
+```
+
+So **Planner Setup is implementation detail, not a product-level navigation item**.
+
+The planner route may remain temporarily for backwards compatibility, but it must not be presented as a normal feature.
+
+---
+
+## 35.3 Why What-If became one page
+
+There was an intermediate design where Today and Sessional were separate What-If pages/tabs.
+
+That was also corrected.
+
+The desired structure is:
+
+```text
+What-If
+│
+├── [ Today ]
+├── [ Sessional Checkpoints ]
+├── [ future scenario ]
+└── [ future scenario ]
+```
+
+Clicking a button changes the selected scenario on the same canonical page:
+
+```text
+/what-if?scenario=today
+/what-if?scenario=sessional
+```
+
+The page should show only the selected scenario's body.
+
+This makes adding a future scenario predictable:
+
+1. Add one scenario button.
+2. Add one conditional scenario block.
+3. Reuse the shared scenario engine/state.
+4. Do not add another top-level navigation page.
+
+---
+
+## 35.4 Why scenario buttons are actual UI controls, not plain links
+
+The first version of the unified page rendered the scenario choices as ordinary HTML links.
+
+That produced the browser-default appearance visible in the screenshot:
+
+```text
+Scenario 1 Today Attend or bunk today's remaining classes
+Scenario 2 Sessional Checkpoints Plan attendance...
+```
+
+They appeared blue and underlined.
+
+That is technically functional but visually communicates "raw links", not "scenario choices".
+
+The intended UI is therefore card/button-like controls with:
+
+- clear scenario number;
+- scenario name;
+- short description;
+- spacing;
+- hover state;
+- selected/active state;
+- responsive layout.
+
+The styling belongs in `static/style.css`, not inline HTML.
+
+---
+
+## 35.5 Why the event question is shared
+
+The user explicitly identified an important behavior:
+
+> If today's event question is answered once, the same answer must be reused by other scenarios.
+
+This means the event answer is **shared planning context**, not scenario-specific input.
+
+Correct:
+
+```text
+Today scenario
+    ↓
+event answer saved
+    ↓
+Sessional scenario
+    ↓
+reuse same event answer
+```
+
+Incorrect:
+
+```text
+Today scenario → ask event
+Sessional scenario → ask event again
+Future scenario → ask event again
+```
+
+The backend therefore stores one `pending_event` in the current session.
+
+The event contains:
+
+```python
+{
+    "date": "YYYY-MM-DD",
+    "classes": N,
+    "attended": True_or_False,
+}
+```
+
+The scenario engine reads that shared value.
+
+---
+
+## 35.6 Why the event does not modify actual attendance
+
+The event is only a planning assumption because the portal has not necessarily posted those classes yet.
+
+Therefore:
+
+```text
+REAL PORTAL STATE
+        ≠
+PLANNING STATE
+```
+
+The event must never be written into the actual P/A/U portal state.
+
+Instead, the scenario starting point temporarily applies it:
+
+```text
+Effective starting attended
+    = effective attended + event attended
+
+Effective starting total
+    = effective total + event classes
+```
+
+And ordinary remaining classes for today are reduced by the event-covered classes.
+
+This lets every scenario start from the same "today/right now" reality without corrupting the actual attendance snapshot.
+
+---
+
+## 35.7 Why every scenario starts from Right Now
+
+A previous interpretation treated events as something that only belonged to one special scenario.
+
+That was corrected.
+
+The actual rule is:
+
+> Every What-If scenario starts from today/right now.
+
+Therefore the scenario engine conceptually does:
+
+```text
+Current Effective State
+        +
+Today's planning context
+        ↓
+Effective Starting State
+        ↓
+chosen scenario
+```
+
+For a future date scenario, it would therefore be:
+
+```text
+Right Now
+  ↓
+apply today's event
+  ↓
+apply today's remaining classes
+  ↓
+future teaching days
+  ↓
+requested date
+```
+
+This is why a shared starting-state function is more important than building isolated calculators.
+
+---
+
+## 35.8 Why subject attendance needed a shared cache
+
+A real bug exposed an architecture problem.
+
+Observed behavior:
+
+```text
+Login
+  ↓
+Open Subject Attendance
+  ↓
+subject details do not fully expand
+```
+
+but:
+
+```text
+Login
+  ↓
+Open Attendance Planner
+  ↓
+open Subject Attendance
+  ↓
+details work
+```
+
+That meant Planner was accidentally initializing data required by Subject Attendance.
+
+The fix was not to make Subject Attendance call Planner.
+
+Instead both features call the same data-layer function:
+
+```text
+load_subject_details(token)
+```
+
+with a server-side cache:
+
+```text
+                 ┌── Planner
+                 │
+load_subject_details
+                 │
+                 └── Subject Attendance
+                         ↓
+                    same cache
+```
+
+The first consumer loads the data.
+
+Later consumers reuse it.
+
+This is an architectural fix rather than a UI workaround.
+
+---
+
+## 35.9 Why detailed portal loading is lazy
+
+The initial login only needs aggregate attendance to render Home.
+
+Fetching every subject's complete attendance history through Playwright is more expensive.
+
+Therefore the initial flow stores:
+
+- aggregate attendance;
+- course data;
+- authenticated Playwright storage state;
+- a short-lived server-side token.
+
+Detailed subject history is loaded only when a feature actually needs it.
+
+This gives:
+
+```text
+Initial login
+    ↓
+fast aggregate snapshot
+    ↓
+Home can render
+
+Detailed feature
+    ↓
+load_subject_details(token)
+    ↓
+fetch once
+    ↓
+cache
+```
+
+This also lets Today/Sessional/Subject Attendance share the same detailed data instead of each starting another expensive scan.
+
+---
+
+## 35.10 Why the attendance formulas were explicitly locked
+
+Several attendance interpretations were considered during development.
+
+The final model is intentionally explicit:
+
+```text
+P = portal-present
+A = portal-absent
+U = already-held but unposted
+```
+
+Then:
+
+```text
+Portal    = P / (P + A)
+Site      = P / (P + A + U)
+Effective = (P + U) / (P + A + U)
+```
+
+The distinction matters because the site and effective percentages answer different questions.
+
+The Site figure treats unmarked classes as classes in the denominator but does not call them present.
+
+The Effective figure treats those same unmarked classes as effectively attended for planning.
+
+Future classes are not part of any of these current attendance percentages.
+
+---
+
+## 35.11 Why What-If uses Effective Attendance
+
+What-If is a planning tool.
+
+If an already-held class has not yet appeared in the portal, the planner should not pretend that the user has no attendance information for it.
+
+That is why the scenario starting point is the Effective state.
+
+Then today's event/remaining-class context can be layered on top temporarily.
+
+The actual portal/site/effective dashboard values remain unchanged.
+
+---
+
+## 35.12 Why the Sessional target is one value
+
+The target originally risked becoming checkpoint-specific.
+
+That was explicitly rejected.
+
+The user wants:
+
+```text
+One planning target
+        ↓
+First Sessional
+Second Sessional
+Third Sessional
+```
+
+For example, if the user enters 75:
+
+```text
+First  → 75%
+Second → 75%
+Third  → 75%
+```
+
+If the user enters 80:
+
+```text
+First  → 80%
+Second → 80%
+Third → 80%
+```
+
+Therefore the state is:
+
+```python
+planner_target_attendance = 75
+```
+
+not a dictionary of checkpoint targets.
+
+This is important for both UI and calculator design.
+
+---
+
+## 35.13 Why today's remaining classes had to be added to the active checkpoint
+
+A checkpoint projection represents what can happen from **today forward**.
+
+Therefore, when the current checkpoint is still ahead, today's remaining classes are part of the available planning window.
+
+The active checkpoint calculation was corrected so that:
+
+```text
+today remaining
++
+future teaching-day classes
+```
+
+is considered before calculating:
+
+- maximum safe leave;
+- maximum possible leave;
+- recovery;
+- requested projection.
+
+Without this, the active checkpoint could undercount the actual number of classes available from right now.
+
+---
+
+# 36. Exact state machine for the current What-If UI
+
+This is the intended behavior to preserve.
+
+## State A — What-If selector
+
+URL:
+
+```text
+/what-if
+```
+
+Show:
+
+- What-If introduction;
+- Today button;
+- Sessional Checkpoints button;
+- future scenario buttons.
+
+Do not show Planner Setup as a separate page.
+
+---
+
+## State B — Today selected, planner data not loaded
+
+URL:
+
+```text
+/what-if?scenario=today
+```
+
+Show:
+
+```text
+Today
+↓
+Ready to calculate
+↓
+Start Today's Scenario
+```
+
+Submitting starts the deferred portal/detail loading.
+
+---
+
+## State C — Today selected, event not answered
+
+Show the event question inside the Today scenario.
+
+If the user says no event:
+
+```text
+planner_event_checked = True
+pending_event = None
+```
+
+If the user saves an event:
+
+```text
+planner_event_checked = True
+pending_event = saved event
+```
+
+Then return to:
+
+```text
+/what-if?scenario=today
+```
+
+---
+
+## State D — Today scenario ready
+
+Show the Today calculator:
+
+```text
+Right now
+↓
+Attend X
+Bunk Y
+↓
+After today
+```
+
+No portal data is modified.
+
+---
+
+## State E — Sessional selected, planner data not loaded
+
+URL:
+
+```text
+/what-if?scenario=sessional
+```
+
+Show:
+
+```text
+Sessional Checkpoints
+↓
+Ready to calculate
+↓
+Start Sessional Scenario
+```
+
+---
+
+## State F — Sessional selected, event not answered
+
+Show the shared event question.
+
+The wording explains that the answer is shared with checkpoint planning.
+
+After answering, return to:
+
+```text
+/what-if?scenario=sessional
+```
+
+---
+
+## State G — Sessional selected, target not set
+
+Show one target question:
+
+> What minimum attendance percentage do you need?
+
+The value applies to all checkpoints.
+
+After saving, return to the same selected scenario.
+
+---
+
+## State H — Sessional scenario ready
+
+Show the checkpoint flow/tracker.
+
+The tracker identifies:
+
+```text
+Passed
+Current
+Upcoming
+```
+
+The current checkpoint can show its forward projection after a leave choice.
+
+---
+
+# 37. Current backend state keys
+
+The important Flask session values are:
+
+```text
+attendance_data
+selected_leaves
+planner_loaded
+planner_choice_made
+planner_target_attendance
+planner_event_checked
+pending_event
+today_scenario_result
+```
+
+Meaning:
+
+### `attendance_data`
+
+Current portal aggregate snapshot plus subject records/token.
+
+### `selected_leaves`
+
+Temporary user planning choices for checkpoint calculations.
+
+### `planner_loaded`
+
+Whether today's deferred planning data has been loaded.
+
+### `planner_choice_made`
+
+Whether checkpoint planning has started/made a choice.
+
+### `planner_target_attendance`
+
+One shared target for all checkpoints.
+
+### `planner_event_checked`
+
+Whether the user has answered today's event question.
+
+### `pending_event`
+
+Today's planning-only event adjustment.
+
+### `today_scenario_result`
+
+Latest Today What-If projection.
+
+All of these are planning/session state, not a replacement for portal truth.
+
+---
+
+# 38. Route responsibilities — current canonical model
+
+## `/`
+
+Home.
+
+Only the current attendance snapshot and normal dashboard information should be presented here.
+
+## `/what-if`
+
+Canonical What-If page.
+
+The `scenario` query parameter selects the internal scenario.
+
+## `/subjects`
+
+Canonical Subject Attendance page.
+
+Uses shared subject detail cache.
+
+## `/get-attendance`
+
+Fresh portal retrieval.
+
+Resets planning state because a new portal snapshot starts a new planning session.
+
+## `/load-planner`
+
+Deferred loading action.
+
+It prepares today's planning data and returns to the scenario that requested it.
+
+It is an internal action, not a top-level product page.
+
+## `/event`
+
+Saves today's shared event decision.
+
+It returns to the scenario supplied by `return_to`.
+
+## `/planner-target`
+
+Saves the single shared planner target.
+
+It returns to the selected scenario.
+
+## `/scenario/today`
+
+Processes Today What-If input.
+
+The UI entry point is inside What-If; this route is the calculation endpoint.
+
+## `/sessional-1`, `/sessional-2`, `/sessional-3`
+
+Process checkpoint submissions.
+
+They are internal form endpoints for the Sessional scenario.
+
+## Compatibility routes
+
+```text
+/planner
+/what-if/today
+/sessional
+```
+
+may remain temporarily so old links do not break, but they should redirect toward the canonical What-If page rather than becoming separate user-facing experiences.
+
+---
+
+# 39. What changed in the latest cleanup
+
+The latest cleanup is specifically about making the product match the final UX decision.
+
+### Navigation
+
+Changed from exposing Planner Setup to:
+
+```text
+Home | What-If | Subject Attendance
+```
+
+### What-If
+
+Scenario selection is now inside one page.
+
+### Scenario selection
+
+Uses:
+
+```text
+/what-if?scenario=today
+/what-if?scenario=sessional
+```
+
+### Scenario styling
+
+Dedicated CSS classes were added for the scenario cards/buttons.
+
+### Planner
+
+Planner setup is treated as an internal compatibility flow rather than a top-level destination.
+
+### Redirects
+
+Scenario actions should return to the selected What-If scenario rather than unexpectedly dropping the user into an old Planner Setup page.
+
+---
+
+# 40. Current screenshot diagnosis
+
+The supplied screenshot showed the correct high-level navigation:
+
+```text
+Home
+What-If
+Subject Attendance
+```
+
+and the correct What-If concept:
+
+```text
+Scenario 1 Today
+Scenario 2 Sessional Checkpoints
+```
+
+The problem visible in the screenshot was presentation:
+
+- scenario choices were plain underlined blue links;
+- they were not visually separated into cards/buttons;
+- both descriptions ran together horizontally;
+- there was excessive empty space after the links.
+
+The intended CSS solution is to turn the two choices into a responsive grid of scenario cards.
+
+Desktop:
+
+```text
+┌─────────────────────────┐  ┌─────────────────────────────┐
+│ SCENARIO 1              │  │ SCENARIO 2                  │
+│ Today                   │  │ Sessional Checkpoints       │
+│ Attend or bunk...       │  │ Plan through checkpoints... │
+└─────────────────────────┘  └─────────────────────────────┘
+```
+
+Mobile:
+
+```text
+┌─────────────────────────────┐
+│ SCENARIO 1                  │
+│ Today                       │
+│ Attend or bunk...           │
+└─────────────────────────────┘
+
+┌─────────────────────────────┐
+│ SCENARIO 2                  │
+│ Sessional Checkpoints       │
+│ Plan through checkpoints... │
+└─────────────────────────────┘
+```
+
+The active scenario uses the dark BunkMaster treatment.
+
+---
+
+# 41. Future development workflow
+
+When adding another What-If scenario, follow this order:
+
+### Step 1 — Define the user question
+
+Example:
+
+> "How much attendance will I have by 15 October?"
+
+Do not start by copying another calculator.
+
+### Step 2 — Identify shared starting state
+
+Use the same:
+
+```text
+get_effective_starting_state(...)
+```
+
+or extend `scenario_engine.py`.
+
+### Step 3 — Define only the scenario-specific inputs
+
+Do not ask for information already known from:
+
+- current portal state;
+- shared event decision;
+- shared planner target;
+- existing scenario state.
+
+### Step 4 — Put math in `scenario_engine.py`
+
+Do not put calculation formulas directly in Jinja.
+
+### Step 5 — Put the UI in its own template
+
+For example:
+
+```text
+templates/scenario_date_plan.html
+```
+
+### Step 6 — Add one button to `what_if.html`
+
+Do not add another top-level navigation item.
+
+### Step 7 — Add styling to `static/style.css`
+
+Keep visual logic out of Python.
+
+### Step 8 — Preserve URL model
+
+Use:
+
+```text
+/what-if?scenario=<scenario-name>
+```
+
+### Step 9 — Test switching scenarios
+
+Especially verify:
+
+- event answer is reused;
+- no repeated setup appears unnecessarily;
+- actual attendance remains unchanged;
+- selected scenario remains selected.
+
+### Step 10 — Update this file
+
+Document:
+
+- what changed;
+- why it changed;
+- which state is shared;
+- which route/template owns it;
+- any rejected alternative.
+
+---
+
+# 42. Testing checklist for every future change
+
+## Attendance correctness
+
+- [ ] Portal percentage uses P/(P+A).
+- [ ] Site percentage uses P/(P+A+U).
+- [ ] Effective percentage uses (P+U)/(P+A+U).
+- [ ] Future classes are excluded from current attendance.
+
+## What-If correctness
+
+- [ ] Starts from Effective attendance.
+- [ ] Starts from today/right now.
+- [ ] Applies today's event only as planning state.
+- [ ] Applies event exactly once.
+- [ ] Reduces today's ordinary remaining classes by event-covered classes.
+- [ ] Does not mutate portal attendance.
+- [ ] Switching scenarios does not ask the same event question again.
+
+## Sessional correctness
+
+- [ ] One target applies to all checkpoints.
+- [ ] Current checkpoint includes today's remaining classes.
+- [ ] Passed checkpoint does not invent historical attendance.
+- [ ] Current projection is explicitly forward-looking.
+
+## UI correctness
+
+- [ ] Only Home / What-If / Subject Attendance are top-level.
+- [ ] What-If contains scenario buttons.
+- [ ] No visible Planner Setup navigation.
+- [ ] Only selected scenario content is shown.
+- [ ] Scenario button remains visibly active.
+- [ ] Mobile layout remains usable.
+
+## Architecture correctness
+
+- [ ] Shared subject cache remains shared.
+- [ ] Subject Attendance does not depend on Planner initialization.
+- [ ] Scenario math remains centralized.
+- [ ] app.py remains orchestration-focused.
+- [ ] No giant HTML/CSS blocks are moved into Python.
+- [ ] Portal errors are not silently converted into partial data.
+
+---
+
+# 43. Decision history — rejected designs
+
+These are important because future development may otherwise accidentally reintroduce them.
+
+### Rejected: Planner Setup as top-level navigation
+
+Reason:
+
+It exposes an implementation/setup concept instead of the actual What-If product.
+
+### Rejected: Today and Sessional as separate top-level pages
+
+Reason:
+
+The user wants one What-If hub with scenario buttons.
+
+### Rejected: All scenario calculators stacked vertically
+
+Reason:
+
+The user wants to choose one scenario and see that scenario's flow, not a giant page containing every calculator.
+
+### Rejected: Event as a separate scenario
+
+Reason:
+
+The event is shared context used to establish today's planning starting point.
+
+### Rejected: Re-asking the event question per scenario
+
+Reason:
+
+The user answered it once; it should be reused.
+
+### Rejected: Per-checkpoint attendance targets
+
+Reason:
+
+The target is one shared planner-level requirement.
+
+### Rejected: Making Subject Attendance depend on Planner
+
+Reason:
+
+Features should initialize their own shared data dependency through the common cache.
+
+### Rejected: Duplicating scenario formulas
+
+Reason:
+
+Multiple calculators would drift and produce inconsistent attendance logic.
+
+---
+
+# 44. Continuation instruction for the next conversation
+
+If a future conversation begins with something like:
+
+> "continue BunkMaster"
+
+the correct starting procedure is:
+
+1. Read `BUNKMASTER_PROJECT_MEMORY.md` from `version-D`.
+2. Confirm the current branch is `version-D`.
+3. Inspect the relevant files before editing.
+4. Treat the decisions in this file as authoritative until the user explicitly changes them.
+5. Do not recreate old Planner Setup UX.
+6. Do not ask the user to explain the attendance formulas again.
+7. Do not reintroduce separate Today/Sessional top-level pages.
+8. Do not make the user repeat today's event information across scenarios.
+9. Make the smallest clean change required.
+10. Update this memory file when the architecture or behavior changes.
+11. Commit the implementation and memory update on `version-D`.
+
+The purpose of this document is to make a new conversation behave like a continuation of the same development session rather than starting the project from zero.
+
+---
+
+# 45. Current implementation snapshot
+
+At the time of this update:
+
+```text
+Branch:
+version-D
+
+Canonical navigation:
+Home | What-If | Subject Attendance
+
+Canonical What-If:
+ /what-if
+
+Scenario selectors:
+ /what-if?scenario=today
+ /what-if?scenario=sessional
+
+Shared scenario starting state:
+ scenario_engine.py
+
+Shared subject-detail cache:
+ portal.py
+
+Attendance model:
+ attendance_state.py
+
+Checkpoint math:
+ bunk_calculator.py
+
+What-If UI:
+ templates/what_if.html
+
+Today UI:
+ templates/scenario_today.html
+
+Sessional UI:
+ templates/sessional_scenario.html
+
+Checkpoint tracker:
+ templates/checkpoint_tracker.html
+
+Styling:
+ static/style.css
+```
+
+The next changes should build on this architecture rather than replacing it.
+
