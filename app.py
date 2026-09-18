@@ -406,7 +406,7 @@ def handle_checkpoint_submission(checkpoint_index):
 
     next_index = checkpoint_index + 1
     if next_index < len(CHECKPOINTS):
-        return redirect("/planner")
+        return redirect("/sessional")
 
     phase_1_result = run_phase_1(
         attendance_data,
