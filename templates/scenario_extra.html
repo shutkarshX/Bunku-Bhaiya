@@ -519,9 +519,21 @@
         input.setCustomValidity("");
     }
 
-    input.addEventListener("input", enforceMaximum);
+    // Do not change the value while the user is typing. A multi-digit
+    // value is built one keystroke at a time, so clamping on every input
+    // event can turn normal typing into values like 0 or 1.
     input.addEventListener("blur", enforceMaximum);
     input.addEventListener("change", enforceMaximum);
+
+    // Keep the spinner from stepping above the maximum.
+    input.addEventListener("keydown", function (event) {
+        if (event.key !== "ArrowUp") return;
+        const value = Number(input.value);
+        if (Number.isFinite(value) && value >= maximum) {
+            event.preventDefault();
+            input.value = maximum;
+        }
+    });
 
     // Mouse-wheel scrolling should also stop exactly at the maximum.
     input.addEventListener("wheel", function (event) {
