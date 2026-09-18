@@ -1,7 +1,13 @@
 import unittest
 from unittest.mock import patch
 
-from scenario_engine import (calculate_today_scenario, calculate_date_range_scenario, calculate_until_date_scenario, get_effective_starting_state)
+from scenario_engine import (
+    calculate_today_scenario,
+    calculate_date_range_scenario,
+    calculate_date_selection_scenario,
+    calculate_until_date_scenario,
+    get_effective_starting_state,
+)
 
 
 def attendance(remaining=8):
@@ -115,6 +121,43 @@ class DateRangeScenarioTests(unittest.TestCase):
         result = calculate_date_range_scenario(attendance(8), event, "2026-09-21", "2026-09-21", attended=8, leave=0)
         self.assertTrue(result["valid"])
         self.assertEqual(result["future_classes"], 8)
+
+
+
+
+class DateSelectionScenarioTests(unittest.TestCase):
+    def test_selected_days_convert_to_attend_and_bunk_classes(self):
+        plan = {
+            "2026-09-21": {"action": "attend"},
+            "2026-09-23": {"action": "bunk"},
+        }
+        result = calculate_date_selection_scenario(attendance(8), None, plan)
+        self.assertTrue(result["valid"])
+        self.assertEqual(result["attended_days"], 1)
+        self.assertEqual(result["bunk_days"], 1)
+        self.assertEqual(result["attended"], 8)
+        self.assertEqual(result["leave"], 8)
+        self.assertEqual(result["planned_classes"], 16)
+
+    def test_today_selected_day_uses_remaining_classes(self):
+        plan = {"2026-09-18": {"action": "attend"}}
+        result = calculate_date_selection_scenario(attendance(5), None, plan)
+        self.assertTrue(result["valid"])
+        self.assertEqual(result["attended"], 5)
+        self.assertEqual(result["planned_classes"], 5)
+
+    def test_selected_day_can_use_custom_class_count(self):
+        plan = {"2026-09-21": {"action": "bunk", "classes": 3}}
+        result = calculate_date_selection_scenario(attendance(8), None, plan)
+        self.assertTrue(result["valid"])
+        self.assertEqual(result["bunk_days"], 1)
+        self.assertEqual(result["leave"], 3)
+        self.assertEqual(result["planned_classes"], 3)
+
+    def test_non_teaching_selected_date_is_rejected(self):
+        plan = {"2026-09-19": {"action": "bunk"}}
+        result = calculate_date_selection_scenario(attendance(8), None, plan)
+        self.assertFalse(result["valid"])
 
 
 if __name__ == "__main__":
