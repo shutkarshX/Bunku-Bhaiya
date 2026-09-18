@@ -241,6 +241,7 @@ def render_dashboard(
             session.get("planner_choice_made", False),
         ),
         page=page,
+        scenario=request.args.get("scenario") if page == "what_if" else None,
     )
 
 
@@ -406,7 +407,7 @@ def handle_checkpoint_submission(checkpoint_index):
 
     next_index = checkpoint_index + 1
     if next_index < len(CHECKPOINTS):
-        return redirect("/what-if")
+        return redirect("/what-if?scenario=sessional")
 
     phase_1_result = run_phase_1(
         attendance_data,
