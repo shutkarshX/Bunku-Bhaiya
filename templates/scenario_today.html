@@ -1,118 +1,159 @@
-<div class="summary">
+<div class="summary what-if-card">
 
-    <h2>Quick What-If — Today</h2>
-
-    <p>
-        Starting from your <strong>effective attendance right now</strong>,
-        see what happens if you attend or leave classes today.
-    </p>
-
-    <p>
-        Remaining classes you can plan today:
-        <strong>{{ today_scenario_start.today_remaining }}</strong>
-    </p>
-
-    {% if today_scenario and not today_scenario.valid %}
-
-    <div class="summary">
-        <h3>⚠️ Plan exceeds today's remaining classes</h3>
-        <p>{{ today_scenario.error }}</p>
+    <div class="what-if-header">
+        <div>
+            <span class="what-if-kicker">WHAT-IF</span>
+            <h2>How much can you bunk today?</h2>
+            <p>
+                Try a plan without changing your real attendance.
+                BunkMaster starts from your effective attendance right now.
+            </p>
+        </div>
     </div>
 
+    <div class="what-if-start">
+        <span>Starting effective attendance</span>
+        <strong>
+            {{ today_scenario_start.attended }} /
+            {{ today_scenario_start.total }}
+        </strong>
+        <small>{{ today_scenario_start.percentage }}%</small>
+    </div>
+
+    <div class="what-if-remaining">
+        <span>Remaining classes today</span>
+        <strong>{{ today_scenario_start.today_remaining }}</strong>
+    </div>
+
+    {% if today_scenario_start.event_classes > 0 %}
+    <p class="what-if-note">
+        {{ today_scenario_start.event_classes }} event class(es) are already
+        accounted for in the planning state.
+    </p>
     {% endif %}
 
-    <form action="/scenario/today" method="POST">
+    {% if today_scenario_start.today_remaining > 0 %}
 
-        <div class="leave-inputs">
+    <form action="/scenario/today" method="POST" class="what-if-form">
 
-            <div>
-                <label for="scenario_attended">
-                    Classes to attend
-                </label>
+        <div class="what-if-options">
 
-                <input
-                    type="number"
-                    id="scenario_attended"
-                    name="attended"
-                    min="0"
-                    max="{{ today_scenario_start.today_remaining }}"
-                    value="{{ today_scenario.attended if today_scenario else 0 }}"
-                    required
-                >
+            <div class="what-if-field">
+                <label for="scenario_attended">Attend</label>
+                <div class="what-if-input">
+                    <input
+                        type="number"
+                        id="scenario_attended"
+                        name="attended"
+                        min="0"
+                        max="{{ today_scenario_start.today_remaining }}"
+                        value="{{ today_scenario.attended if today_scenario else 0 }}"
+                        required
+                    >
+                    <span>classes</span>
+                </div>
             </div>
 
-            <div>
-                <label for="scenario_leave">
-                    Classes to leave
-                </label>
-
-                <input
-                    type="number"
-                    id="scenario_leave"
-                    name="leave"
-                    min="0"
-                    max="{{ today_scenario_start.today_remaining }}"
-                    value="{{ today_scenario.leave if today_scenario else 0 }}"
-                    required
-                >
+            <div class="what-if-field">
+                <label for="scenario_leave">Bunk</label>
+                <div class="what-if-input">
+                    <input
+                        type="number"
+                        id="scenario_leave"
+                        name="leave"
+                        min="0"
+                        max="{{ today_scenario_start.today_remaining }}"
+                        value="{{ today_scenario.leave if today_scenario else 0 }}"
+                        required
+                    >
+                    <span>classes</span>
+                </div>
             </div>
 
         </div>
 
+        {% if today_scenario and not today_scenario.valid %}
+        <div class="what-if-error">
+            <strong>That plan is too large.</strong>
+            <span>{{ today_scenario.error }}</span>
+        </div>
+        {% endif %}
+
         <button type="submit" class="attendance-button">
-            Calculate Today's Attendance
+            See What Happens
         </button>
 
     </form>
 
-    {% if today_scenario and today_scenario.valid %}
+    {% else %}
 
-    <hr>
-
-    <h3>Projected Effective Attendance</h3>
-
-    <div class="attendance-flow">
-
-        <div class="flow-card">
-            <span>Starting Now</span>
-            <strong>
-                {{ today_scenario.starting.attended }} /
-                {{ today_scenario.starting.total }}
-            </strong>
-            <small>
-                {{ today_scenario.starting.percentage }}%
-            </small>
-        </div>
-
-        <div class="flow-arrow">
-            →
-        </div>
-
-        <div class="flow-card">
-            <span>After Today</span>
-            <strong>
-                {{ today_scenario.projected_attended }} /
-                {{ today_scenario.projected_total }}
-            </strong>
-            <small>
-                {{ today_scenario.projected_percentage }}%
-            </small>
-        </div>
-
+    <div class="what-if-empty">
+        <strong>No unaccounted classes left today.</strong>
+        <span>There is nothing left to simulate for today.</span>
     </div>
 
-    <p>
-        You plan to attend
-        <strong>{{ today_scenario.attended }}</strong>
-        and leave
-        <strong>{{ today_scenario.leave }}</strong>
-        class(es).
-    </p>
+    {% endif %}
 
-    <p>
-        Classes still unplanned today:
-        <strong>{{ today_scenario.remaining_after_plan }}</strong>
-    </p>
+    {% if today_scenario and today_scenario.valid %}
+
+    <div class="what-if-result">
+
+        <div class="what-if-result-header">
+            <span>YOUR PLAN</span>
+            <strong>
+                Attend {{ today_scenario.attended }}
+                · Bunk {{ today_scenario.leave }}
+            </strong>
+        </div>
+
+        <div class="what-if-projection">
+
+            <div>
+                <span>Right now</span>
+                <strong>{{ today_scenario.starting.percentage }}%</strong>
+                <small>
+                    {{ today_scenario.starting.attended }} /
+                    {{ today_scenario.starting.total }}
+                </small>
+            </div>
+
+            <div class="what-if-arrow">→</div>
+
+            <div>
+                <span>After today</span>
+                <strong>{{ today_scenario.projected_percentage }}%</strong>
+                <small>
+                    {{ today_scenario.projected_attended }} /
+                    {{ today_scenario.projected_total }}
+                </small>
+            </div>
+
+        </div>
+
+        {% if today_scenario.leave > 0 and today_scenario.attended == 0 %}
+        <p class="what-if-verdict">
+            If you bunk all planned classes, your effective attendance becomes
+            <strong>{{ today_scenario.projected_percentage }}%</strong>.
+        </p>
+        {% elif today_scenario.leave > 0 %}
+        <p class="what-if-verdict">
+            With this plan, your effective attendance becomes
+            <strong>{{ today_scenario.projected_percentage }}%</strong>.
+        </p>
+        {% else %}
+        <p class="what-if-verdict">
+            If you attend all planned classes, your effective attendance becomes
+            <strong>{{ today_scenario.projected_percentage }}%</strong>.
+        </p>
+        {% endif %}
+
+        {% if today_scenario.remaining_after_plan > 0 %}
+        <p class="what-if-note">
+            {{ today_scenario.remaining_after_plan }} class(es) remain unplanned today.
+        </p>
+        {% endif %}
+
+    </div>
 
     {% endif %}
 
