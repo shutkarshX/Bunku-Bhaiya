@@ -821,49 +821,13 @@
 
     {% if calculator_step == 4 and phase_1 %}
 
-    <div class="summary">
-
-        <h2>Semester Attendance Plan</h2>
-
+    <div class="sessional-final-intro">
+        <span>SCENARIO 2</span>
+        <h2>Your Attendance Plan</h2>
         <p>
-            All three sessional checkpoints have
-            passed or been completed.
+            Your three checkpoint decisions are now combined into one plan.
         </p>
-
     </div>
-
-    {% for checkpoint in phase_1.checkpoints %}
-
-    <div class="bunk-results">
-
-        <div class="bunk-card">
-
-            <h3>{{ checkpoint.name }}</h3>
-
-            <p>
-                Checkpoint:
-                <strong>{{ checkpoint.date }}</strong>
-            </p>
-
-            {% if checkpoint.state == "completed" %}
-
-            <div class="summary">
-
-                <h3>✅ Completed</h3>
-
-                <p>
-                    This checkpoint has already passed.
-                </p>
-
-            </div>
-
-            {% endif %}
-
-        </div>
-
-    </div>
-
-    {% endfor %}
 
     {% endif %}
 
