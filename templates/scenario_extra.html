@@ -265,7 +265,19 @@
         if (!existing || existing.action !== action || existing.classes !== classes) {
             plan[key] = { action: action, classes: classes };
             dragChanged = true;
-            renderCalendar();
+
+            // Do not rebuild the calendar while the pointer is travelling.
+            // Rebuilding would replace the element currently receiving pointer
+            // events and make drag selection feel broken.
+            cell.classList.remove("attend", "bunk");
+            cell.classList.add(action);
+
+            let state = cell.querySelector("small");
+            if (!state) {
+                state = document.createElement("small");
+                cell.appendChild(state);
+            }
+            state.textContent = action === "attend" ? "ATTEND" : "BUNK";
             renderPlan();
         }
     }
