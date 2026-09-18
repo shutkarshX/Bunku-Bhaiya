@@ -276,9 +276,7 @@ def subjects_page():
     try:
         load_subject_details(token)
     except PortalUnavailableError as e:
-        print("
-Subject attendance load failed
-", e)
+        print("\nSubject attendance load failed\n", e)
         return render_dashboard(
             attendance_data,
             portal_error="unavailable",
@@ -293,25 +291,18 @@ def get_attendance_page():
     username = request.form.get("username")
     password = request.form.get("password")
 
-    print("
-Starting attendance retrieval...")
+    print("\nStarting attendance retrieval...")
 
     try:
         subjects = get_attendance(username, password)
     except PortalUnavailableError as e:
-        print("
-NIET PORTAL UNAVAILABLE
-", e)
+        print("\nNIET PORTAL UNAVAILABLE\n", e)
         return render_dashboard(empty_attendance(), portal_error="unavailable")
     except PortalLoginError as e:
-        print("
-NIET LOGIN FAILED
-", e)
+        print("\nNIET LOGIN FAILED\n", e)
         return render_dashboard(empty_attendance(), portal_error="login")
     except Exception as e:
-        print("
-Unexpected portal error:
-", e)
+        print("\nUnexpected portal error:\n", e)
         return render_dashboard(empty_attendance(), portal_error="unavailable")
 
     if not subjects:
@@ -365,9 +356,7 @@ def load_planner():
     try:
         today_logged, remaining_today = get_today_attendance(token)
     except PortalUnavailableError as e:
-        print("
-Deferred planner load failed
-", e)
+        print("\nDeferred planner load failed\n", e)
         return render_dashboard(
             attendance_data,
             portal_error="unavailable",
