@@ -621,6 +621,61 @@
     {% endif %}
 
 
+    <!-- CHECKPOINT REQUIREMENT -->
+    <!-- ================================= -->
+
+    {% if not phase_1 and planner_loaded and active_checkpoint_target is none %}
+
+    {% set target_index = namespace(value=0) %}
+    <div class="summary checkpoint-target-card">
+
+        <h2>Checkpoint Attendance Requirement</h2>
+
+        <p>
+            What minimum attendance percentage do you need at
+            <strong>
+                {% if active_checkpoint_target is none %}
+                    {{ "the current sessional checkpoint" }}
+                {% endif %}
+            </strong>?
+        </p>
+
+        <form action="/checkpoint-target" method="POST">
+
+            <label for="target_attendance">
+                Required attendance percentage
+            </label>
+
+            <div class="target-input-row">
+                <input
+                    type="number"
+                    id="target_attendance"
+                    name="target_attendance"
+                    min="1"
+                    max="100"
+                    step="0.01"
+                    placeholder="e.g. 75"
+                    required
+                    autofocus
+                >
+                <span>%</span>
+            </div>
+
+            <p>
+                Enter the requirement for this checkpoint. It is not assumed by BunkMaster.
+            </p>
+
+            <button type="submit" class="attendance-button">
+                Continue
+            </button>
+
+        </form>
+
+    </div>
+
+    {% endif %}
+
+
     <!-- STEP 1 -->
     <!-- ================================= -->
 
@@ -658,6 +713,11 @@
                 <strong>{{ first.date }}</strong>
             </p>
 
+            <p>
+                Required attendance:
+                <strong>{{ first.target_attendance }}%</strong>
+            </p>
+
 
             <!-- STATUS -->
 
@@ -669,7 +729,7 @@
 
                 <p>
                     You are currently above the
-                    75% attendance requirement.
+                    {{ first.target_attendance }}% attendance requirement.
                 </p>
 
             </div>
@@ -682,7 +742,7 @@
 
                 <p>
                     Your attendance is currently
-                    below 75%.
+                    below {{ first.target_attendance }}%.
                 </p>
 
                 <p>
@@ -690,7 +750,7 @@
                     <strong>
                         {{ first.classes_needed_for_75 }}
                     </strong>
-                    consecutive classes to reach 75%.
+                    consecutive classes to reach {{ first.target_attendance }}%.
                 </p>
 
             </div>
@@ -699,7 +759,7 @@
 
             <div class="summary">
 
-                <h3>🔴 75% Not Reachable</h3>
+                <h3>🔴 {{ first.target_attendance }}% Not Reachable</h3>
 
                 <p>
                     Even if you attend every remaining
@@ -772,7 +832,7 @@
 
                 <p>
                     This is the maximum you can miss
-                    while staying at or above 75%.
+                    while staying at or above {{ first.target_attendance }}%.
                 </p>
 
             </div>
