@@ -124,6 +124,98 @@ def calculate_today_scenario(attendance_data, pending_event=None, attended=0, le
     }
 
 
+def get_teaching_classes_between(start_date, end_date, attendance_data, pending_event=None):
+    """Return planning classes available inside an inclusive date range."""
+    if start_date > end_date:
+        return 0
+
+    today = date.today()
+    total = 0
+    current = start_date
+    while current <= end_date:
+        if is_teaching_day(current.isoformat()):
+            if current == today:
+                remaining = get_effective_starting_state(
+                    attendance_data,
+                    pending_event,
+                )["today_remaining"]
+                total += remaining
+            elif current > today:
+                total += CLASSES_PER_DAY
+        current += timedelta(days=1)
+    return total
+
+
+def calculate_date_range_scenario(
+    attendance_data,
+    pending_event=None,
+    start_date=None,
+    end_date=None,
+    attended=0,
+    leave=0,
+):
+    """Project attendance for a selected inclusive future date range."""
+    starting = get_effective_starting_state(attendance_data, pending_event)
+
+    try:
+        start_date = date.fromisoformat(str(start_date))
+        end_date = date.fromisoformat(str(end_date))
+    except (TypeError, ValueError):
+        return {"valid": False, "error": "Choose valid start and end dates.", "starting": starting}
+
+    today = date.today()
+    if start_date < today:
+        return {"valid": False, "error": "The start date must be today or later.", "starting": starting}
+    if end_date < start_date:
+        return {"valid": False, "error": "The end date must be on or after the start date.", "starting": starting}
+
+    # Today's event only belongs to a range that actually includes today.
+    range_starting = starting if start_date == today else get_effective_starting_state(attendance_data, None)
+    future_classes = get_teaching_classes_between(
+        start_date,
+        end_date,
+        attendance_data,
+        pending_event if start_date == today else None,
+    )
+
+    attended = _safe_nonnegative_int(attended)
+    leave = _safe_nonnegative_int(leave)
+    planned_classes = attended + leave
+
+    if planned_classes > future_classes:
+        return {
+            "valid": False,
+            "error": f"You can only plan {future_classes} class(es) in this date range.",
+            "starting": range_starting,
+            "start_date": start_date.isoformat(),
+            "end_date": end_date.isoformat(),
+            "start_date_display": start_date.strftime("%d %B %Y"),
+            "end_date_display": end_date.strftime("%d %B %Y"),
+            "future_classes": future_classes,
+            "attended": attended,
+            "leave": leave,
+        }
+
+    projected_attended = range_starting["attended"] + attended
+    projected_total = range_starting["total"] + planned_classes
+    return {
+        "valid": True,
+        "starting": range_starting,
+        "start_date": start_date.isoformat(),
+        "end_date": end_date.isoformat(),
+        "start_date_display": start_date.strftime("%d %B %Y"),
+        "end_date_display": end_date.strftime("%d %B %Y"),
+        "future_classes": future_classes,
+        "attended": attended,
+        "leave": leave,
+        "planned_classes": planned_classes,
+        "remaining_after_plan": future_classes - planned_classes,
+        "projected_attended": projected_attended,
+        "projected_total": projected_total,
+        "projected_percentage": round(calculate_percentage(projected_attended, projected_total), 2),
+    }
+
+
 def calculate_until_date_scenario(
     attendance_data,
     pending_event=None,
@@ -131,50 +223,15 @@ def calculate_until_date_scenario(
     attended=0,
     leave=0,
 ):
-    """Project attendance through a selected date."""
-    starting = get_effective_starting_state(attendance_data, pending_event)
-
-    try:
-        target_date = date.fromisoformat(str(target_date))
-    except (TypeError, ValueError):
-        return {"valid": False, "error": "Choose a valid date.", "starting": starting}
-
-    if target_date < date.today():
-        return {"valid": False, "error": "The date must be today or later.", "starting": starting}
-
-    future_classes = get_future_classes_until(target_date, attendance_data, pending_event)
-    attended = _safe_nonnegative_int(attended)
-    leave = _safe_nonnegative_int(leave)
-
-    if attended + leave > future_classes:
-        return {
-            "valid": False,
-            "error": f"You can only plan {future_classes} class(es) through {target_date.strftime('%d %b %Y')}.",
-            "starting": starting,
-            "target_date": target_date.isoformat(),
-            "future_classes": future_classes,
-            "attended": attended,
-            "leave": leave,
-        }
-
-    projected_attended = starting["attended"] + attended
-    projected_total = starting["total"] + attended + leave
-    return {
-        "valid": True,
-        "starting": starting,
-        "target_date": target_date.isoformat(),
-        "target_date_display": target_date.strftime("%d %B %Y"),
-        "future_classes": future_classes,
-        "attended": attended,
-        "leave": leave,
-        "planned_classes": attended + leave,
-        "remaining_after_plan": future_classes - attended - leave,
-        "projected_attended": projected_attended,
-        "projected_total": projected_total,
-        "projected_percentage": round(
-            calculate_percentage(projected_attended, projected_total), 2
-        ),
-    }
+    """Backward-compatible today-to-date wrapper."""
+    return calculate_date_range_scenario(
+        attendance_data,
+        pending_event,
+        date.today().isoformat(),
+        target_date,
+        attended,
+        leave,
+    )
 
 
 def calculate_target_scenario(attendance_data, pending_event=None, target_attendance=75):
