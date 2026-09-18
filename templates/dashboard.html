@@ -398,27 +398,38 @@
 
         <div class="stats">
 
-            <div class="stat-card">
-                <span>Actual / Portal Classes</span>
-                <strong>{{ attendance.total_classes }}</strong>
-            </div>
-
             <div class="stat-card overall">
-                <span>Actual / Portal Attendance</span>
-                <strong>{{ attendance.overall_percentage }}%</strong>
+                <span>College Site Attendance</span>
+                <strong>{{ current_state.site.percentage }}%</strong>
                 <small>
-                    {{ attendance.total_attended }} /
-                    {{ attendance.total_classes }}
+                    {{ current_state.site.present }} /
+                    {{ current_state.site.total }}
                 </small>
             </div>
 
             <div class="stat-card">
-                <span>Absent</span>
-                <strong>{{ attendance.total_absent }}</strong>
+                <span>Freeze / Unmarked Classes</span>
+                <strong>{{ current_state.unmarked }}</strong>
+                <small>Already held, not yet posted</small>
+            </div>
+
+            <div class="stat-card overall">
+                <span>Effective Attendance</span>
+                <strong>{{ current_state.effective.percentage }}%</strong>
+                <small>
+                    {{ current_state.effective.present }} /
+                    {{ current_state.effective.total }}
+                </small>
             </div>
 
         </div>
 
+        <p>
+            <small>
+                Detailed subject-wise class history and today's remaining classes
+                are loaded only when you open the Attendance Planner.
+            </small>
+        </p>
         {% endif %}
 
     </div>
