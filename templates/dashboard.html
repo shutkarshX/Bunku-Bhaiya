@@ -82,12 +82,8 @@
             Planner Setup
         </a>
 
-        <a href="/what-if/today" class="{% if page == 'today_scenario' %}active{% endif %}">
-            What-If: Today
-        </a>
-
-        <a href="/sessional" class="{% if page == 'sessional' %}active{% endif %}">
-            What-If: Sessional
+        <a href="/what-if" class="{% if page == 'what_if' %}active{% endif %}">
+            What-If
         </a>
 
         <a href="/subjects" class="{% if page == 'subjects' %}active{% endif %}">
@@ -690,15 +686,9 @@
     {% endif %}
 
 
-    {% if page == "today_scenario" %}
+    {% if page == "what_if" %}
 
-    {% include "scenario_today.html" %}
-
-    {% endif %}
-
-    {% if page == "sessional" %}
-
-    {% include "sessional_scenario.html" %}
+    {% include "what_if.html" %}
 
     {% endif %}
 
