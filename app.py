@@ -301,7 +301,14 @@ def get_attendance_page():
     username = request.form.get("username")
     password = request.form.get("password")
 
-    print("\nStarting attendance retrieval...")
+    print("\n[LOGIN] POST /get-attendance received", flush=True)
+    print("[LOGIN] Username:", username or "<missing>", flush=True)
+    print("[LOGIN] Password supplied:", bool(password), flush=True)
+    print("[LOGIN] Starting attendance retrieval...", flush=True)
+
+    if not username or not password:
+        print("[LOGIN] Missing username or password; refusing portal request.", flush=True)
+        return render_dashboard(empty_attendance(), portal_error="login")
 
     try:
         subjects = get_attendance(username, password)
