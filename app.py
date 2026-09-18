@@ -235,7 +235,7 @@ def render_dashboard(
         planner_target_attendance=get_planner_target(),
         planner_target_required=get_planner_target() is None,
         today_scenario=get_today_scenario_result(),
-        today_scenario_start=get_effective_starting_state(attendance, get_pending_event()),\n        until_date_scenario=session.get("until_date_scenario"),\n        target_scenario=session.get("target_scenario"),\n        safe_leaves_scenario=session.get("safe_leaves_scenario"),
+        today_scenario_start=get_effective_starting_state(attendance, get_pending_event()),\n        until_date_scenario=session.get("until_date_scenario"),\n        target_scenario=session.get("target_scenario"),\n        safe_leaves_scenario=session.get("safe_leaves_scenario"),\n        today_date=date.today().isoformat(),
         tracker_checkpoints=build_checkpoint_tracker_data(
             phase_1,
             session.get("planner_choice_made", False),
@@ -317,7 +317,7 @@ def get_attendance_page():
     session.pop("planner_target_attendance", None)
     session.pop("planner_event_checked", None)
     session.pop("pending_event", None)
-    session.pop("today_scenario_result", None)
+    session.pop("today_scenario_result", None)\n    session.pop("until_date_scenario", None)\n    session.pop("target_scenario", None)\n    session.pop("safe_leaves_scenario", None)
 
     print("Website received:", len(subjects), "subjects")
     print("Portal attendance:", state["portal"]["present"], "/", state["portal"]["total"])
