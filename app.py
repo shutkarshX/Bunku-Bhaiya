@@ -18,7 +18,7 @@ from bunk_calculator import (
     CHECKPOINTS,
 )
 from attendance_state import build_attendance_state
-from scenario_engine import calculate_today_scenario
+from scenario_engine import calculate_today_scenario, get_effective_starting_state
 
 
 app = Flask(__name__)
@@ -235,6 +235,7 @@ def render_dashboard(
         planner_target_attendance=get_planner_target(),
         planner_target_required=get_planner_target() is None,
         today_scenario=get_today_scenario_result(),
+        today_scenario_start=get_effective_starting_state(attendance, get_pending_event()),
         tracker_checkpoints=build_checkpoint_tracker_data(
             phase_1,
             session.get("planner_choice_made", False),
