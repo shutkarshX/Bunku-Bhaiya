@@ -1,8 +1,85 @@
-<aside class="sessional-tracker" aria-label="Sessional checkpoint progress">
+<div class="sessional-tracker{% if calculator_step == 4 %} is-expanded{% endif %}" aria-label="Sessional checkpoint progress">
+
     <div class="sessional-tracker-heading">
-        <span>YOUR PROGRESS</span>
-        <strong>Sessional Checkpoints</strong>
+        {% if calculator_step == 4 %}
+            <span>YOUR PLAN</span>
+            <strong>Sessional Checkpoints</strong>
+        {% else %}
+            <span>YOUR PROGRESS</span>
+            <strong>Sessional Checkpoints</strong>
+        {% endif %}
     </div>
+
+    {% if calculator_step == 4 and phase_1 %}
+
+    <div class="checkpoint-plan-list">
+
+        {% for checkpoint in phase_1.checkpoints %}
+
+        <section class="checkpoint-plan-item {{ 'completed' if checkpoint.state == 'completed' else 'planned' }}">
+
+            <div class="checkpoint-plan-marker">
+                {% if checkpoint.state == "completed" %}✓{% else %}✓{% endif %}
+            </div>
+
+            <div class="checkpoint-plan-copy">
+
+                <div class="checkpoint-plan-heading">
+                    <div>
+                        <span class="checkpoint-plan-kicker">
+                            {{ loop.index }} · SESSIONAL
+                        </span>
+                        <h3>{{ checkpoint.name }}</h3>
+                    </div>
+
+                    <strong class="checkpoint-plan-date">
+                        {{ checkpoint.date }}
+                    </strong>
+                </div>
+
+                {% if checkpoint.state == "completed" %}
+
+                <div class="checkpoint-plan-status">
+                    <strong>Completed</strong>
+                    <span>This checkpoint has already passed.</span>
+                </div>
+
+                {% elif checkpoint.requested_projected_percentage is defined %}
+
+                <div class="checkpoint-plan-stats">
+
+                    <div>
+                        <span>Planned Leave</span>
+                        <strong>{{ checkpoint.requested_leave_display }}</strong>
+                    </div>
+
+                    <div>
+                        <span>Projected Attendance</span>
+                        <strong>
+                            {{ checkpoint.requested_projected_attended }}
+                            /
+                            {{ checkpoint.requested_projected_total }}
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Projected Percentage</span>
+                        <strong>{{ checkpoint.requested_projected_percentage }}%</strong>
+                    </div>
+
+                </div>
+
+                {% endif %}
+
+            </div>
+
+        </section>
+
+        {% endfor %}
+
+    </div>
+
+    {% else %}
 
     <div class="checkpoint-list">
         {% for checkpoint in tracker_checkpoints %}
@@ -32,4 +109,7 @@
         </div>
         {% endfor %}
     </div>
-</aside>
+
+    {% endif %}
+
+</div>
