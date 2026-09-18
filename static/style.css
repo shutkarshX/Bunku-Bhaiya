@@ -1897,3 +1897,95 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+
+
+/* =========================================
+   CALENDAR SPECIAL-DATE COLORS
+   ========================================= */
+
+/* Special dates stay purely visual; the tooltip supplies the meaning. */
+.calendar-day[data-tooltip] {
+    position: relative;
+}
+
+/* Detain List — warm amber */
+.calendar-day.calendar-event-detain_list {
+    background: #fff7e6;
+    border-color: #f0b84b;
+}
+
+.calendar-day.calendar-event-detain_list strong {
+    color: #9a6700;
+}
+
+/* Sessional Exam — cool blue */
+.calendar-day.calendar-event-sessional_exam {
+    background: #eef5ff;
+    border-color: #78a9e6;
+}
+
+.calendar-day.calendar-event-sessional_exam strong {
+    color: #245b9c;
+}
+
+/* Planning state wins over the event background, while the event remains
+   visible as a strong inset accent. */
+.calendar-day.calendar-event-detain_list.attend,
+.calendar-day.calendar-event-detain_list.bunk,
+.calendar-day.calendar-event-sessional_exam.attend,
+.calendar-day.calendar-event-sessional_exam.bunk {
+    background: #f3f4f6;
+}
+
+.calendar-day.calendar-event-detain_list.attend {
+    box-shadow: inset 0 0 0 3px #f0b84b;
+}
+
+.calendar-day.calendar-event-sessional_exam.attend {
+    box-shadow: inset 0 0 0 3px #78a9e6;
+}
+
+.calendar-day.calendar-event-detain_list.bunk {
+    box-shadow: inset 0 0 0 3px #f0b84b;
+}
+
+.calendar-day.calendar-event-sessional_exam.bunk {
+    box-shadow: inset 0 0 0 3px #78a9e6;
+}
+
+/* Hover tooltip: no permanent text label inside the date cell. */
+.calendar-day[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 8px);
+    z-index: 20;
+    width: max-content;
+    max-width: 180px;
+    padding: 7px 9px;
+    border-radius: 8px;
+    background: #111827;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.25;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, 4px);
+    transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.calendar-day[data-tooltip]:hover::after,
+.calendar-day[data-tooltip]:focus-visible::after {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+@media (max-width: 600px) {
+    /* On touch screens there is no reliable hover; keep the color-only UI. */
+    .calendar-day[data-tooltip]::after {
+        display: none;
+    }
+}
