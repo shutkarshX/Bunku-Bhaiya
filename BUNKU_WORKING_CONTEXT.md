@@ -2064,3 +2064,111 @@ State/session impact:
 
 Reversible/reverted?:
 - No.
+
+
+---
+
+# 65. THREE-PAGE INFORMATION ARCHITECTURE — VERSION-D
+
+Date: 2026-09-18
+
+Status: **ACTIVE**
+
+The authenticated application is now organized into three user-facing destinations while reusing the existing attendance/planner backend.
+
+## Page 1 — Home
+
+Route:
+
+```text
+/
+```
+
+Purpose:
+
+Show the current attendance snapshot only.
+
+Primary values:
+
+- College Site Attendance
+- Effective Attendance
+- Freeze / Unmarked Classes
+
+The home page does not run the checkpoint planner when planner data has not been loaded.
+
+## Page 2 — Attendance Planner
+
+Route:
+
+```text
+/planner
+```
+
+Purpose:
+
+Contain the planning workflow:
+
+- deferred planner data loading
+- today's event decision
+- checkpoint calculations
+- maximum safe leave
+- requested leave
+- projections
+- carry-forward
+- sessional steps
+
+The expensive today/subject scan remains lazy and is triggered by the existing planner-load action.
+
+## Page 3 — Subject Attendance
+
+Route:
+
+```text
+/subjects
+```
+
+Purpose:
+
+Show the existing subject-wise attendance table separately from the home page and planner.
+
+The subject summary continues to use the same portal-derived `attendance.subjects` records.
+
+If detailed subject records have already been loaded, the existing subject-detail panels remain available on this page.
+
+## Architecture rule
+
+No new attendance calculation model was introduced.
+
+```text
+portal.py
+    ↓
+attendance_state.py
+    ↓
+app.py
+    ├── Home
+    ├── Attendance Planner
+    └── Subject Attendance
+```
+
+The change is presentation/routing organization only. Existing portal contracts and attendance formulas remain unchanged.
+
+## Navigation
+
+When attendance exists, the header provides:
+
+```text
+Home | Attendance Planner | Subject Attendance
+```
+
+The active destination is highlighted.
+
+## Session/state behavior
+
+- Home reads the already-stored attendance state.
+- Planner reuses stored attendance and planner state.
+- Subject Attendance reuses stored subject summaries and any already-loaded detailed records.
+- Fresh `/get-attendance` continues to reset planner state and pending event state.
+
+## Reversible/reverted?
+
+No.
