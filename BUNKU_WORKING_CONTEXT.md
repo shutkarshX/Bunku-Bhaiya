@@ -2571,7 +2571,7 @@ This separation is intentional so the project remains easy to edit during rapid/
 - cd86203 — Include editable checkpoint tracker template
 - 57edcaf — Move checkpoint tracker styling into stylesheet
 - 76197f5 — Expose current checkpoint name to planner UI
-- fc087? — Show current checkpoint name in requirement question
+- fc5269d — Show current checkpoint name in requirement question
 - 0a3402f — Sequence checkpoint requirements through planner
 - df08793 — Use checkpoint-specific requirement in planner UI
 - 0eb1aeb — Reset checkpoint planning inputs on fresh login
