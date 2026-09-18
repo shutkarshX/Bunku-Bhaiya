@@ -118,6 +118,7 @@ def render_dashboard(attendance_data, phase_1=None, portal_error=None, calculato
         phase_1=phase_1,
         calculator_step=calculator_step,
         portal_error=portal_error,
+        planner_loaded=session.get("planner_loaded", False),
     )
 
 
