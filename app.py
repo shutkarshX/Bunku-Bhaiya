@@ -19,6 +19,7 @@ from bunk_calculator import (
     CHECKPOINTS,
 )
 from attendance_state import build_attendance_state
+from academic_calendar import TEACHING_DAYS, TEACHING_CLASSES_PER_DAY
 from scenario_engine import (
     calculate_today_scenario, get_effective_starting_state,
     calculate_date_range_scenario, calculate_date_selection_scenario,
@@ -248,9 +249,9 @@ def render_dashboard(
         today_date=date.today().isoformat(),
         today_date_display=date.today().strftime("%d %B %Y"),
         today_remaining_classes=get_effective_starting_state(attendance, get_pending_event())["today_remaining"],
-        classes_per_day=8,
-        semester_end_date=max(__import__("datetime").date.fromisoformat(value) for value in __import__("academic_calendar").TEACHING_DAYS).isoformat(),
-        teaching_days_json=__import__("json").dumps(sorted(__import__("academic_calendar").TEACHING_DAYS)),
+        classes_per_day=TEACHING_CLASSES_PER_DAY,
+        semester_end_date=max(date.fromisoformat(value) for value in TEACHING_DAYS).isoformat(),
+        teaching_days_json=json.dumps(sorted(TEACHING_DAYS)),
         tracker_checkpoints=build_checkpoint_tracker_data(
             phase_1,
             session.get("planner_choice_made", False),
