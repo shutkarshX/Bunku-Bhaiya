@@ -1541,3 +1541,359 @@ body {
         font-size: 34px;
     }
 }
+
+
+/* =========================================
+   INTERACTIVE DATE PLANNER
+   ========================================= */
+
+.date-planner {
+    margin-top: 22px;
+}
+
+.date-planner-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 20px;
+    margin-bottom: 16px;
+}
+
+.date-planner-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6b7280;
+}
+
+.date-planner-modes {
+    display: flex;
+    gap: 8px;
+}
+
+.date-plan-mode {
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #374151;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.date-plan-mode.active {
+    background: #111827;
+    border-color: #111827;
+    color: #fff;
+}
+
+.date-planner-month {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.date-planner-month strong {
+    min-width: 145px;
+    text-align: center;
+    font-size: 17px;
+}
+
+.calendar-nav {
+    width: 36px;
+    height: 36px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #fff;
+    color: #111827;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.calendar-nav:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.calendar-weekdays,
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 7px;
+}
+
+.calendar-weekdays {
+    margin-bottom: 7px;
+}
+
+.calendar-weekdays span {
+    text-align: center;
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.calendar-day {
+    min-height: 78px;
+    padding: 9px 7px;
+    border: 1px solid #e5e7eb;
+    border-radius: 11px;
+    background: #fff;
+    color: #111827;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+
+.calendar-day:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: #9ca3af;
+}
+
+.calendar-day strong {
+    font-size: 15px;
+}
+
+.calendar-day span {
+    color: #6b7280;
+    font-size: 10px;
+}
+
+.calendar-day small {
+    margin-top: auto;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+}
+
+.calendar-day.disabled {
+    background: #f9fafb;
+    color: #9ca3af;
+    cursor: default;
+}
+
+.calendar-day.today {
+    box-shadow: inset 0 0 0 2px #111827;
+}
+
+.calendar-day.attend {
+    background: #f3f4f6;
+    border-color: #111827;
+}
+
+.calendar-day.attend small {
+    color: #111827;
+}
+
+.calendar-day.bunk {
+    background: #f3f4f6;
+    border-color: #6b7280;
+}
+
+.calendar-day.bunk small {
+    color: #374151;
+}
+
+.date-planner-help {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 10px;
+    color: #6b7280;
+    font-size: 12px;
+}
+
+.selected-plan {
+    margin-top: 18px;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 13px;
+    background: #f9fafb;
+}
+
+.selected-plan-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.selected-plan-header strong {
+    display: block;
+}
+
+.clear-plan {
+    border: 0;
+    background: transparent;
+    color: #6b7280;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.selected-plan-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-top: 12px;
+}
+
+.selected-plan-row {
+    display: grid;
+    grid-template-columns: 1.2fr 0.7fr 0.8fr 80px 30px;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 9px;
+    background: #fff;
+    font-size: 13px;
+}
+
+.selected-plan-row strong {
+    font-size: 12px;
+}
+
+.selected-plan-row.attend strong {
+    color: #111827;
+}
+
+.selected-plan-row.bunk strong {
+    color: #4b5563;
+}
+
+.selected-plan-row input {
+    width: 80px;
+    padding: 8px 9px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+}
+
+.selected-plan-remove {
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: 7px;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.date-plan-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.date-plan-summary > div {
+    padding: 13px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.date-plan-summary span {
+    display: block;
+    margin-bottom: 4px;
+    color: #6b7280;
+    font-size: 12px;
+}
+
+.date-plan-summary strong {
+    font-size: 14px;
+}
+
+@media (max-width: 600px) {
+    .date-planner-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .date-planner-modes {
+        width: 100%;
+    }
+
+    .date-plan-mode {
+        flex: 1;
+    }
+
+    .date-planner-month {
+        justify-content: space-between;
+    }
+
+    .calendar-weekdays,
+    .calendar-grid {
+        gap: 4px;
+    }
+
+    .calendar-day {
+        min-height: 64px;
+        padding: 7px 5px;
+        border-radius: 9px;
+    }
+
+    .calendar-day strong {
+        font-size: 14px;
+    }
+
+    .calendar-day span {
+        font-size: 9px;
+    }
+
+    .calendar-day small {
+        font-size: 8px;
+    }
+
+    .date-planner-help {
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .selected-plan-row {
+        grid-template-columns: 1fr auto;
+        gap: 5px 8px;
+    }
+
+    .selected-plan-row strong,
+    .selected-plan-row > span:nth-child(3),
+    .selected-plan-row input,
+    .selected-plan-remove {
+        grid-column: auto;
+    }
+
+    .selected-plan-row > span:first-child {
+        grid-column: 1 / 2;
+    }
+
+    .selected-plan-row strong {
+        grid-column: 2 / 3;
+        grid-row: 1;
+    }
+
+    .selected-plan-row > span:nth-child(3) {
+        grid-column: 1 / 2;
+    }
+
+    .selected-plan-row input {
+        grid-column: 2 / 3;
+        width: 72px;
+    }
+
+    .selected-plan-remove {
+        grid-column: 2 / 3;
+        justify-self: end;
+    }
+
+    .date-plan-summary {
+        grid-template-columns: 1fr;
+    }
+}
