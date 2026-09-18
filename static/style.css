@@ -2155,3 +2155,183 @@ body {
 .target-day-row strong {
     font-size: 13px;
 }
+
+
+/* =========================================
+   SESSIONAL SCENARIO — CALM INFORMATION HIERARCHY
+   ========================================= */
+
+/* Keep Scenario 2 focused: one main decision area, with supporting
+   calculations visually quieter instead of competing for attention. */
+body:has(.sessional-tracker) .what-if-scenario-box {
+    padding: 20px;
+}
+
+body:has(.sessional-tracker) .what-if-scenario-heading {
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #eef0f2;
+}
+
+body:has(.sessional-tracker) .what-if-scenario-heading h2 {
+    font-size: 22px;
+    letter-spacing: -0.2px;
+}
+
+body:has(.sessional-tracker) .bunk-results {
+    gap: 14px;
+    margin-bottom: 0;
+}
+
+body:has(.sessional-tracker) .bunk-card {
+    padding: 20px;
+    border-radius: 14px;
+    box-shadow: none;
+}
+
+body:has(.sessional-tracker) .bunk-card h3 {
+    font-size: 18px;
+    margin-bottom: 7px;
+}
+
+body:has(.sessional-tracker) .bunk-card > p {
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+body:has(.sessional-tracker) .bunk-card > .summary {
+    margin: 16px 0;
+    padding: 14px 16px;
+    border-radius: 11px;
+    background: #f8fafc;
+}
+
+body:has(.sessional-tracker) .bunk-card > .summary h3 {
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+body:has(.sessional-tracker) .bunk-card > .summary p {
+    margin-bottom: 4px;
+    font-size: 13px;
+}
+
+body:has(.sessional-tracker) .attendance-flow {
+    gap: 8px;
+    margin: 16px 0;
+}
+
+body:has(.sessional-tracker) .flow-card {
+    padding: 14px;
+    border-radius: 11px;
+}
+
+body:has(.sessional-tracker) .flow-card strong {
+    font-size: 21px;
+}
+
+body:has(.sessional-tracker) .flow-arrow {
+    font-size: 20px;
+}
+
+body:has(.sessional-tracker) .safe-leave-box {
+    margin-top: 12px;
+    padding: 14px 16px;
+    border-radius: 11px;
+}
+
+body:has(.sessional-tracker) .safe-leave-box strong {
+    font-size: 22px;
+}
+
+body:has(.sessional-tracker) .safe-leave-box p {
+    font-size: 12px;
+}
+
+body:has(.sessional-tracker) .bunk-card hr {
+    margin: 18px 0;
+}
+
+body:has(.sessional-tracker) .leave-inputs {
+    margin-top: 12px;
+}
+
+body:has(.sessional-tracker) .leave-preview {
+    margin-top: 10px;
+    padding: 10px 13px;
+}
+
+body:has(.sessional-tracker) .projection-box {
+    margin-top: 12px;
+    padding: 14px 16px;
+    border-radius: 11px;
+}
+
+body:has(.sessional-tracker) .projection-box strong {
+    font-size: 19px;
+}
+
+body:has(.sessional-tracker) .projection-box p {
+    font-size: 12px;
+}
+
+body:has(.sessional-tracker) .bunk-card form .attendance-button {
+    width: auto;
+    min-width: 220px;
+    margin-top: 14px;
+}
+
+/* When a previous checkpoint is only being carried forward, make it a
+   quiet context strip instead of another full-sized information card. */
+body:has(.sessional-tracker) .bunk-card.carried-forward {
+    padding: 15px 18px;
+    background: #fafafa;
+}
+
+body:has(.sessional-tracker) .carried-forward h3 {
+    font-size: 15px;
+}
+
+body:has(.sessional-tracker) .carried-forward .carried-grid {
+    gap: 8px;
+    margin-top: 12px;
+}
+
+body:has(.sessional-tracker) .carried-forward .carried-grid > div {
+    padding: 11px 12px;
+    border-radius: 9px;
+}
+
+body:has(.sessional-tracker) .carried-forward .carried-grid strong {
+    font-size: 17px;
+}
+
+body:has(.sessional-tracker) .carried-forward .carry-message {
+    margin-top: 10px;
+    padding: 9px 11px;
+    font-size: 12px;
+}
+
+@media (max-width: 700px) {
+    body:has(.sessional-tracker) .what-if-scenario-box {
+        padding: 16px;
+    }
+
+    body:has(.sessional-tracker) .bunk-card {
+        padding: 16px;
+    }
+
+    body:has(.sessional-tracker) .attendance-flow {
+        grid-template-columns: 1fr;
+    }
+
+    body:has(.sessional-tracker) .flow-arrow {
+        text-align: center;
+        transform: rotate(90deg);
+    }
+
+    body:has(.sessional-tracker) .bunk-card form .attendance-button {
+        width: 100%;
+        min-width: 0;
+    }
+}
