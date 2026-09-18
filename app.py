@@ -82,7 +82,7 @@ def get_planner_target():
 
 def save_planner_target(value):
     try:
-        target = float(value)
+        target = int(value)
     except (TypeError, ValueError):
         return False
     if target < 1 or target > 100:
