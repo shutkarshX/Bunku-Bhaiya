@@ -232,7 +232,7 @@ def calculate_target_scenario(attendance_data, pending_event=None, target_attend
 def calculate_safe_leaves_scenario(attendance_data, pending_event=None, target_attendance=75):
     """Calculate the maximum classes that can be missed through the calendar end."""
     starting = get_effective_starting_state(attendance_data, pending_event)
-    target_attendance = min(100, _safe_nonnegative_int(target_attendance))
+    target_attendance = min(99, _safe_nonnegative_int(target_attendance))
 
     semester_end = max(date.fromisoformat(value) for value in TEACHING_DAYS)
     future_classes = get_future_classes_until(
@@ -241,21 +241,16 @@ def calculate_safe_leaves_scenario(attendance_data, pending_event=None, target_a
         pending_event,
     )
 
-    if future_classes == 0:
-        maximum_leave = 0
-    elif starting["percentage"] < target_attendance:
-        maximum_leave = 0
-    else:
-        # If x future classes are attended and L are missed, total future
-        # classes stay fixed. Find the largest L that preserves the target.
-        maximum_leave = 0
-        for missed in range(future_classes + 1):
-            final_attended = starting["attended"] + future_classes - missed
-            final_total = starting["total"] + future_classes
-            if calculate_percentage(final_attended, final_total) >= target_attendance:
-                maximum_leave = missed
-            else:
-                break
+    # Future classes are split between attended and missed. Find the largest
+    # number of missed classes that still leaves the final attendance at target.
+    maximum_leave = 0
+    for missed in range(future_classes + 1):
+        final_attended = starting["attended"] + future_classes - missed
+        final_total = starting["total"] + future_classes
+        if calculate_percentage(final_attended, final_total) >= target_attendance:
+            maximum_leave = missed
+        else:
+            break
 
     projected_attended = starting["attended"] + future_classes - maximum_leave
     projected_total = starting["total"] + future_classes
