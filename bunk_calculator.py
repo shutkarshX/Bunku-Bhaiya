@@ -31,7 +31,7 @@ def classes_needed_to_reach_target(attended, total_classes, target_attendance=TA
         return 0
     required_classes = math.ceil(
         ((target_attendance / 100) * total_classes - attended)
-        / (1 - (TARGET_ATTENDANCE / 100))
+        / (1 - (target_attendance / 100))
     )
     return max(0, required_classes)
 
@@ -138,7 +138,7 @@ def get_active_checkpoint_index(current_date):
     return None
 
 
-def _completed_checkpoint(checkpoint_name, checkpoint_date, actual_attended, actual_total):
+def _completed_checkpoint(checkpoint_name, checkpoint_date, actual_attended, actual_total, target_attendance=TARGET_ATTENDANCE):
     current_percentage = calculate_percentage(actual_attended, actual_total)
     checkpoint_key = checkpoint_date.strftime("%Y-%m-%d")
     return {
@@ -162,7 +162,8 @@ def _completed_checkpoint(checkpoint_name, checkpoint_date, actual_attended, act
         "maximum_leave_days": 0,
         "maximum_leave_remaining_classes": 0,
         "maximum_leave_display": "0 class(es)",
-        "classes_needed_for_75": classes_needed_to_reach_target(actual_attended, actual_total),
+        "target_attendance": target_attendance,
+        "classes_needed_for_target": classes_needed_to_reach_target(actual_attended, actual_total, target_attendance),
         "maximum_possible_percentage": round(current_percentage, 2),
         "projected_without_leave": round(current_percentage, 2),
         "requested_leave": 0,
@@ -272,7 +273,7 @@ def _future_checkpoint(
         "maximum_leave_days": maximum_leave_days,
         "maximum_leave_remaining_classes": maximum_leave_remaining_classes,
         "maximum_leave_display": classes_to_leave_display(maximum_leave_classes),
-        "classes_needed_for_75": classes_needed,
+        "classes_needed_for_target": classes_needed,
         "maximum_possible_percentage": round(maximum_possible_percentage, 2),
         "projected_without_leave": round(projected_without_leave, 2),
         "requested_leave": requested_leave_classes,
@@ -323,10 +324,11 @@ def _get_remaining_today(attendance_data):
     return max(0, value)
 
 
-def run_phase_1(attendance_data, requested_leaves=None, pending_event=None, checkpoint_targets=None):
+def run_phase_1(attendance_data, requested_leaves=None, pending_event=None, planner_target=None):
     """Run checkpoint planning from normalized effective attendance state."""
     requested_leaves = requested_leaves or {}
-    checkpoint_targets = checkpoint_targets or {}
+    if planner_target is None:
+        planner_target = TARGET_ATTENDANCE
     state = build_attendance_state(attendance_data)
     remaining_today = _get_remaining_today(attendance_data)
     event_classes, event_attended = _get_pending_event_adjustment(pending_event)
@@ -354,12 +356,9 @@ def run_phase_1(attendance_data, requested_leaves=None, pending_event=None, chec
 
     for index, (checkpoint_name, checkpoint_date) in enumerate(CHECKPOINTS):
         if get_checkpoint_state(checkpoint_date, current_date) == "completed":
-            results.append(_completed_checkpoint(checkpoint_name, checkpoint_date, actual_attended, actual_total))
+            results.append(_completed_checkpoint(checkpoint_name, checkpoint_date, actual_attended, actual_total, planner_target))
             continue
-        target_attendance = checkpoint_targets.get(
-            checkpoint_date.strftime("%Y-%m-%d"),
-            TARGET_ATTENDANCE,
-        )
+        target_attendance = planner_target
         result = _future_checkpoint(
             checkpoint_name,
             checkpoint_date,
