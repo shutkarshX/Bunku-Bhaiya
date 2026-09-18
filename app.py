@@ -253,28 +253,8 @@ def dashboard():
 
 @app.route("/planner")
 def planner_page():
-    """Show the attendance planner without re-fetching portal data."""
-    attendance_data = get_user_attendance()
-    if not attendance_data.get("subjects"):
-        return render_dashboard(attendance_data, page="home")
-
-    if not session.get("planner_loaded", False):
-        return render_dashboard(attendance_data, page="planner")
-
-    # The event decision must happen before checkpoint calculations.
-    if not session.get("planner_event_checked", False):
-        return render_dashboard(attendance_data, page="planner")
-
-    if get_planner_target() is None:
-        return render_dashboard(attendance_data, page="planner")
-
-    phase_1_result = run_phase_1(
-        attendance_data,
-        get_user_leaves(),
-        get_pending_event(),
-        get_planner_target(),
-    )
-    return render_dashboard(attendance_data, phase_1_result, page="planner")
+    """Compatibility route; planner setup now lives inside What-If scenarios."""
+    return redirect("/what-if")
 
 
 @app.route("/subjects")
@@ -359,7 +339,7 @@ def load_planner():
         return render_dashboard(
             attendance_data,
             portal_error="unavailable",
-            page="planner",
+            page="what_if",
         )
 
     try:
@@ -387,7 +367,7 @@ def load_planner():
 
         session.modified = True
 
-    return redirect(request.form.get("next", "/planner"))
+    return redirect(request.form.get("next", "/what-if"))
 
 
 def handle_checkpoint_submission(checkpoint_index):
@@ -428,7 +408,7 @@ def save_event():
     """Save today's optional event as a planning-only pending attendance."""
     attendance_data = get_user_attendance()
     if not attendance_data.get("subjects") or not session.get("planner_loaded", False):
-        return render_dashboard(attendance_data, portal_error="unavailable", page="planner")
+        return render_dashboard(attendance_data, portal_error="unavailable", page="what_if")
 
     action = request.form.get("event_action")
     if action == "none":
@@ -436,7 +416,7 @@ def save_event():
         save_user_event(None)
         session["planner_event_checked"] = True
         session.modified = True
-        return redirect("/planner")
+        return redirect("/what-if")
     elif action == "save":
         try:
             classes = int(request.form.get("event_classes", 0) or 0)
@@ -472,7 +452,7 @@ def save_event():
 
     # Redirect after the event decision so the planner route becomes the
     # single source of truth for the next screen/state.
-    return redirect(request.form.get("return_to", "/planner"))
+    return redirect(request.form.get("return_to", "/what-if"))
 
 
 @app.route("/planner-target", methods=["POST"])
@@ -496,7 +476,6 @@ def today_scenario():
 
     if not session.get("planner_event_checked", False):
         return redirect("/planner")
-
     result = calculate_today_scenario(
         attendance_data,
         get_pending_event(),
@@ -510,7 +489,7 @@ def today_scenario():
 
 @app.route("/what-if")
 def what_if_page():
-    """Show all What-If scenarios together on one page."""
+    """Show the What-If scenario selector and the selected scenario flow."""
     attendance_data = get_user_attendance()
     if not attendance_data.get("subjects"):
         return render_dashboard(attendance_data, page="home")
@@ -538,13 +517,13 @@ def what_if_page():
 @app.route("/what-if/today")
 def today_scenario_page():
     """Compatibility route for the Today scenario."""
-    return redirect("/what-if")
+    return redirect("/what-if?scenario=today")
 
 
 @app.route("/sessional")
 def sessional_scenario_page():
     """Compatibility route for the Sessional scenario."""
-    return redirect("/what-if")
+    return redirect("/what-if?scenario=sessional")
 
 
 @app.route("/sessional-1", methods=["POST"])
