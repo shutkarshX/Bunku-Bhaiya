@@ -161,35 +161,40 @@ def get_attendance_page():
     return render_dashboard(attendance_data, phase_1_result)
 
 
-@app.route("/sessional-1", methods=["POST"])
-def sessional_1():
+def handle_checkpoint_submission(checkpoint_index):
+    """Apply one checkpoint leave submission using the shared checkpoint flow."""
     attendance_data = get_user_attendance()
     selected_leaves = get_user_leaves()
-    selected_leaves[CHECKPOINTS[0]] = get_requested_leave_classes(request.form, 1)
+    form_step = checkpoint_index + 1
+    checkpoint_key = CHECKPOINTS[checkpoint_index]
+
+    selected_leaves[checkpoint_key] = get_requested_leave_classes(
+        request.form,
+        form_step,
+    )
     save_user_leaves(selected_leaves)
+
     phase_1_result = run_phase_1(attendance_data, selected_leaves)
-    return render_dashboard(attendance_data, phase_1_result, calculator_step=2)
+    return render_dashboard(
+        attendance_data,
+        phase_1_result,
+        calculator_step=checkpoint_index + 2,
+    )
+
+
+@app.route("/sessional-1", methods=["POST"])
+def sessional_1():
+    return handle_checkpoint_submission(0)
 
 
 @app.route("/sessional-2", methods=["POST"])
 def sessional_2():
-    attendance_data = get_user_attendance()
-    selected_leaves = get_user_leaves()
-    selected_leaves[CHECKPOINTS[1]] = get_requested_leave_classes(request.form, 2)
-    save_user_leaves(selected_leaves)
-    phase_1_result = run_phase_1(attendance_data, CHECKPOINT_CHOICES, selected_leaves)
-    return render_dashboard(attendance_data, phase_1_result, calculator_step=3)
+    return handle_checkpoint_submission(1)
 
 
 @app.route("/sessional-3", methods=["POST"])
 def sessional_3():
-    attendance_data = get_user_attendance()
-    selected_leaves = get_user_leaves()
-    selected_leaves[CHECKPOINTS[2]] = get_requested_leave_classes(request.form, 3)
-    save_user_leaves(selected_leaves)
-    phase_1_result = run_phase_1(attendance_data, CHECKPOINT_CHOICES, selected_leaves)
-    return render_dashboard(attendance_data, phase_1_result, calculator_step=4)
-
+    return handle_checkpoint_submission(2)
 
 @app.route("/reset")
 def reset_session():
