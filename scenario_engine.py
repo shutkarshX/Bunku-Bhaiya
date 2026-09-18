@@ -337,26 +337,10 @@ def calculate_until_date_scenario(
     )
 
 
-def calculate_target_scenario(attendance_data, pending_event=None, target_attendance=75):
-    """Calculate consecutive classes required to reach a target percentage."""
+
+def get_target_capacity(attendance_data, pending_event=None):
+    """Return the maximum attendance percentage reachable by semester end."""
     starting = get_effective_starting_state(attendance_data, pending_event)
-    target_attendance = _safe_nonnegative_int(target_attendance)
-    target_attendance = min(99, target_attendance)
-
-    if target_attendance <= 0:
-        return {
-            "valid": False,
-            "error": "Target attendance must be above 0%.",
-            "starting": starting,
-        }
-
-    needed = classes_needed_to_reach_target(
-        starting["attended"],
-        starting["total"],
-        target_attendance,
-    )
-    # TEACHING_DAYS stores ISO date strings, so convert the latest
-    # calendar date explicitly before passing it to the projection helper.
     semester_end = max(
         date.fromisoformat(value)
         for value in TEACHING_DAYS
@@ -366,42 +350,110 @@ def calculate_target_scenario(attendance_data, pending_event=None, target_attend
         attendance_data,
         pending_event,
     )
+    maximum_attended = starting["attended"] + available
+    maximum_total = starting["total"] + available
+    return {
+        "available_classes": available,
+        "maximum_attended": maximum_attended,
+        "maximum_total": maximum_total,
+        "maximum_percentage": round(
+            calculate_percentage(maximum_attended, maximum_total), 2
+        ),
+    }
+
+
+def _build_target_day_plan(needed, attendance_data, pending_event=None):
+    """Break required consecutive classes into chronological teaching days."""
+    if needed <= 0:
+        return []
+
+    starting = get_effective_starting_state(attendance_data, pending_event)
+    today = date.today()
+    remaining = needed
+    plan = []
+    current = today
+
+    while current <= max(date.fromisoformat(value) for value in TEACHING_DAYS) and remaining > 0:
+        if is_teaching_day(current.isoformat()):
+            available = (
+                starting["today_remaining"]
+                if current == today
+                else CLASSES_PER_DAY
+            )
+            classes = min(remaining, available)
+            if classes > 0:
+                plan.append({
+                    "date": current.isoformat(),
+                    "date_display": current.strftime("%d %b %Y"),
+                    "classes": classes,
+                })
+                remaining -= classes
+        current += timedelta(days=1)
+
+    return plan
+def calculate_target_scenario(attendance_data, pending_event=None, target_attendance=75):
+    """Calculate consecutive classes required to reach a target percentage."""
+    starting = get_effective_starting_state(attendance_data, pending_event)
+    try:
+        target_attendance = int(target_attendance)
+    except (TypeError, ValueError):
+        target_attendance = 0
+
+    capacity = get_target_capacity(attendance_data, pending_event)
+    maximum_input = int(capacity["maximum_percentage"])
+
+    if target_attendance <= 0:
+        return {
+            "valid": False,
+            "error": "Target attendance must be above 0%.",
+            "starting": starting,
+            **capacity,
+            "maximum_input": maximum_input,
+        }
+
+    if target_attendance > maximum_input:
+        return {
+            "valid": False,
+            "error": f"Target cannot be above the maximum reachable attendance of {capacity['maximum_percentage']}%.",
+            "starting": starting,
+            "target_attendance": target_attendance,
+            **capacity,
+            "maximum_input": maximum_input,
+        }
+
+    needed = classes_needed_to_reach_target(
+        starting["attended"],
+        starting["total"],
+        target_attendance,
+    )
 
     if needed == 0:
         status = "already_reached"
-    elif needed <= available:
-        status = "reachable"
     else:
-        status = "not_reachable"
-
-    # Maximum possible attendance is reached by attending every remaining
-    # teaching class through the academic calendar end.
-    maximum_attended = starting["attended"] + available
-    maximum_total = starting["total"] + available
-    maximum_percentage = round(
-        calculate_percentage(maximum_attended, maximum_total), 2
-    )
-
-    projected_attended = starting["attended"] + needed
-    projected_total = starting["total"] + needed
+        status = "reachable"
 
     return {
         "valid": True,
         "starting": starting,
         "target_attendance": target_attendance,
         "classes_needed": needed,
-        "available_classes": available,
-        "maximum_percentage": maximum_percentage,
-        "maximum_attended": maximum_attended,
-        "maximum_total": maximum_total,
+        **capacity,
         "status": status,
-        "projected_attended": projected_attended,
-        "projected_total": projected_total,
+        "day_plan": _build_target_day_plan(
+            needed,
+            attendance_data,
+            pending_event,
+        ),
+        "projected_attended": starting["attended"] + needed,
+        "projected_total": starting["total"] + needed,
         "projected_percentage": round(
-            calculate_percentage(projected_attended, projected_total), 2
+            calculate_percentage(
+                starting["attended"] + needed,
+                starting["total"] + needed,
+            ),
+            2,
         ),
     }
-
 
 def calculate_safe_leaves_scenario(attendance_data, pending_event=None, target_attendance=75):
     """Calculate the maximum classes that can be missed through the calendar end."""
