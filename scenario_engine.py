@@ -399,6 +399,9 @@ def calculate_target_scenario(attendance_data, pending_event=None, target_attend
     except (TypeError, ValueError):
         target_attendance = 0
 
+    if isinstance(target_attendance, float) and target_attendance.is_integer():
+        target_attendance = int(target_attendance)
+
     capacity = get_target_capacity(attendance_data, pending_event)
     maximum_input = capacity["maximum_percentage"]
 
