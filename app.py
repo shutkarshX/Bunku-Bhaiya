@@ -89,7 +89,7 @@ def save_planner_target(value):
         target = int(value)
     except (TypeError, ValueError):
         return False
-    if target < 1 or target > 100:
+    if target < 1 or target > 99:
         return False
     session["planner_target_attendance"] = target
     session.modified = True
