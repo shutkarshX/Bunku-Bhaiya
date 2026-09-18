@@ -424,6 +424,33 @@
     </div>
 
 
+    <!-- PLANNER LOAD -->
+    <!-- ================================= -->
+
+    {% if not phase_1 %}
+
+    <div class="summary">
+
+        <h2>Attendance Planner</h2>
+
+        <p>
+            Your current attendance is ready.
+            Detailed subject-wise class history is loaded only when you open the planner.
+        </p>
+
+        <form action="/load-planner" method="POST" onsubmit="showLoading()">
+
+            <button type="submit" class="attendance-button">
+                Open Attendance Planner
+            </button>
+
+        </form>
+
+    </div>
+
+    {% endif %}
+
+
     <!-- STEP 1 -->
     <!-- ================================= -->
 
