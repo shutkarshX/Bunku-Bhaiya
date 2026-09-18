@@ -95,10 +95,12 @@ def render_dashboard(attendance_data, phase_1=None, portal_error=None, calculato
     attendance = dict(attendance_data)
     token = get_planner_token(attendance)
     attendance["subject_details"] = get_subject_details(token)
+    current_state = build_attendance_state(attendance)
 
     return render_template(
         "dashboard.html",
         attendance=attendance,
+        current_state=current_state,
         phase_1=phase_1,
         calculator_step=calculator_step,
         portal_error=portal_error,
