@@ -2172,3 +2172,75 @@ The active destination is highlighted.
 ## Reversible/reverted?
 
 No.
+
+
+---
+
+# 66. VERSION-D CHANGE LOG — 2026-09-18 THREE-PAGE PRESENTATION
+
+Date: 2026-09-18
+
+Status: **ACTIVE**
+
+What changed:
+
+- Split the authenticated UI into three destinations:
+  - Home: `/`
+  - Attendance Planner: `/planner`
+  - Subject Attendance: `/subjects`
+- Added shared navigation between the three destinations.
+- Moved the existing subject-wise attendance presentation off the home page and onto the Subject Attendance page.
+- Kept the existing subject attendance table and subject-detail presentation rather than creating a second implementation.
+- Kept planner/event/checkpoint UI on the Attendance Planner page.
+- Kept Home focused on the current Site Attendance, Effective Attendance, and Unmarked/Freeze summary.
+- Kept planner data loading lazy.
+- Changed the planner load flow to redirect to `/planner` after the deferred portal scan completes.
+
+Exact old behavior:
+
+- The authenticated dashboard rendered current attendance, planner/event/checkpoint UI, and subject-wise attendance on one page.
+- `/` could also run the checkpoint calculator after planner state had previously been loaded.
+
+Exact new behavior:
+
+- `/` is a lightweight Home page and does not run checkpoint calculations merely because planner state exists.
+- `/planner` owns the planner workflow and reuses stored attendance/planner state.
+- `/subjects` owns the existing subject-wise attendance presentation and reuses stored subject records/details.
+- Navigation makes the three destinations explicit.
+
+Why it changed:
+
+- Reduce cognitive load on the home page.
+- Give the planner and subject attendance their own focused destinations.
+- Preserve the existing backend and calculations while improving information placement.
+
+Calculation impact:
+
+- None to attendance formulas or checkpoint calculations.
+- Planner calculations are only invoked from the planner destination.
+
+UI impact:
+
+- Three-page navigation added.
+- Subject-wise table moved from the shared dashboard to the Subject Attendance destination.
+- Planner content is no longer shown on Home.
+
+Portal impact:
+
+- None.
+- Existing lazy portal retrieval remains unchanged.
+
+State/session impact:
+
+- No new attendance model.
+- Existing `attendance_data`, planner state, selected leaves, pending event, and subject-detail token are reused.
+
+Files changed:
+
+- `app.py`
+- `templates/dashboard.html`
+- `BUNKU_WORKING_CONTEXT.md`
+
+Reversible/reverted?:
+
+- No.
