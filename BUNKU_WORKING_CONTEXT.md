@@ -1876,3 +1876,191 @@ Do not assume any of the following without checking the actual Version-D code:
 - a completed checkpoint's historical attendance can be reconstructed
 
 This section exists specifically to stop context drift during vibe coding.
+
+
+---
+
+# 63. PENDING EVENT ATTENDANCE — VERSION-D
+
+Status: **ACTIVE**
+
+The planner now handles college events whose attendance may be posted later than the event itself.
+
+## Event meaning
+
+An event is a planning-only declaration for classes that are currently unaccounted for today.
+
+The system does not assume:
+
+- every event covers the whole remaining day
+- the user attended the event
+- event attendance is posted immediately
+
+## Event coverage
+
+Today's maximum possible event coverage is derived from the portal scan:
+
+```text
+maximum event coverage = 8 - today's logged classes
+```
+
+The UI pre-fills this value and allows the user to reduce it.
+
+The backend caps the submitted event coverage to the currently unaccounted classes.
+
+## Event attendance
+
+The user explicitly chooses:
+
+```text
+Yes, I attended
+No, I didn't attend
+```
+
+Only an attended event contributes present classes to the planning numerator.
+
+Event-covered classes still count as classes that have happened, so they are included in the planning denominator. If the user did not attend, those event classes are therefore not counted as present.
+
+## Planning-only state
+
+Pending event data is stored separately from the core P/A/U attendance state:
+
+```text
+pending_event = {
+    date,
+    classes,
+    attended
+}
+```
+
+The raw portal/effective attendance numbers are not mutated.
+
+The calculator receives the pending event separately and creates a planning state:
+
+```text
+planning_attended = effective_attended + attended_event_classes
+planning_total    = effective_total + event_classes
+```
+
+For an event happening today, event-covered classes are removed from today's ordinary remaining classes so they cannot also be treated as future bunkable classes.
+
+## Portal remains authoritative
+
+A pending event is not permanently added to portal attendance.
+
+A fresh `/get-attendance` retrieval clears the pending event state, allowing newly posted portal attendance to become authoritative rather than double-counting the event.
+
+## Planner flow
+
+After expensive planner data is loaded:
+
+```text
+Today's Event
+    ↓
+No event today
+OR
+Yes, there was an event
+    ↓
+How many unaccounted classes did it cover?
+    ↓
+Did you attend?
+    ↓
+Checkpoint planner uses the resulting planning state
+```
+
+If today's portal scan has zero remaining classes, the event decision is skipped automatically.
+
+## Session keys
+
+```text
+planner_event_checked
+pending_event
+```
+
+`planner_event_checked` prevents the event prompt from appearing repeatedly after the user has made a choice.
+
+## Reusable calculator helper
+
+File:
+
+```text
+bunk_calculator.py
+```
+
+Function:
+
+```python
+_get_pending_event_adjustment()
+```
+
+This keeps event-to-planning conversion in the calculation layer instead of duplicating the arithmetic in routes or templates.
+
+---
+
+# 64. VERSION-D CHANGE LOG — 2026-09-18 EVENT FEATURE
+
+Date: 2026-09-18
+
+Version-D commits:
+- `34baae8` — Add pending event attendance to planner calculations
+- `558fac6` — Add event planning state and event route
+- `ce337fb` — Add event input to attendance planner
+- `6661013` — Expose planner load state to event UI
+- `dae04c0` — Clean up event planner flow
+- `c202eed` — Handle event coverage limits safely
+- `af0e5b3` — Show planner load prompt only before planner load
+
+What changed:
+- Added a planning-only pending event model.
+- Added user-controlled event coverage based on `8 - today's logged classes`.
+- Added attended/not-attended event choice.
+- Added event-aware checkpoint calculations.
+- Prevented event-covered classes from also being counted as today's ordinary remaining classes.
+- Added an event decision step after the expensive planner load.
+- Kept the initial dashboard/lazy portal loading behavior unchanged.
+- Cleared pending event state whenever fresh portal attendance is retrieved.
+
+Files changed:
+- `bunk_calculator.py`
+- `app.py`
+- `templates/dashboard.html`
+- `BUNKU_WORKING_CONTEXT.md`
+
+Exact old behavior:
+- Today's remaining classes were calculated as `8 - today_logged`.
+- There was no way to tell BunkMaster that some of those unaccounted classes were an event whose attendance had not yet been posted.
+- The calculator could therefore treat event-covered periods as ordinary future/bunkable classes.
+
+Exact new behavior:
+- Maximum possible event coverage is `8 - today_logged`.
+- User can reduce that number.
+- User explicitly states whether they attended.
+- Attended event classes are included in planning attendance.
+- Event-covered classes are removed from today's ordinary remaining classes.
+- Raw portal/effective attendance remains unchanged until the portal itself reports the event.
+
+Why it changed:
+- College event attendance may be filled later, so portal data can temporarily under-report classes the student actually attended.
+- Event duration and student participation are not known automatically.
+
+Calculation impact:
+- Pending attended event classes increase planning attended and total by the same amount.
+- Pending non-attended event classes increase planning total but not planning attended.
+- Today's future class window is reduced by event-covered classes.
+
+UI impact:
+- Planner asks about an event only after planner data is loaded.
+- Event coverage is prefilled from the number of today's unaccounted classes.
+- User can reduce coverage and select attended/not attended.
+
+Portal impact:
+- None to portal scraping.
+- Existing subject-wise scan and lazy-loading flow are preserved.
+
+State/session impact:
+- Added `planner_event_checked`.
+- Added `pending_event`.
+- Fresh `/get-attendance` clears both so a new portal snapshot is authoritative.
+
+Reversible/reverted?:
+- No.
