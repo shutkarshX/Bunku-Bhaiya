@@ -18,7 +18,7 @@ from bunk_calculator import (
     CHECKPOINTS,
 )
 from attendance_state import build_attendance_state
-from scenario_engine import calculate_today_scenario, get_effective_starting_state
+from scenario_engine import (\n    calculate_today_scenario, get_effective_starting_state,\n    calculate_until_date_scenario, calculate_target_scenario,\n    calculate_safe_leaves_scenario,\n)
 
 
 app = Flask(__name__)
@@ -235,7 +235,7 @@ def render_dashboard(
         planner_target_attendance=get_planner_target(),
         planner_target_required=get_planner_target() is None,
         today_scenario=get_today_scenario_result(),
-        today_scenario_start=get_effective_starting_state(attendance, get_pending_event()),
+        today_scenario_start=get_effective_starting_state(attendance, get_pending_event()),\n        until_date_scenario=session.get("until_date_scenario"),\n        target_scenario=session.get("target_scenario"),\n        safe_leaves_scenario=session.get("safe_leaves_scenario"),
         tracker_checkpoints=build_checkpoint_tracker_data(
             phase_1,
             session.get("planner_choice_made", False),
@@ -516,7 +516,7 @@ def what_if_page():
     )
 
 
-@app.route("/what-if/today")
+@app.route("/scenario/until-date", methods=["POST"])\ndef until_date_scenario():\n    attendance_data = get_user_attendance()\n    if not attendance_data.get("subjects") or not session.get("planner_loaded", False):\n        return redirect("/what-if?scenario=until-date")\n    if not session.get("planner_event_checked", False):\n        return redirect("/what-if?scenario=until-date")\n    result = calculate_until_date_scenario(attendance_data, get_pending_event(), request.form.get("target_date"), request.form.get("attended", 0), request.form.get("leave", 0))\n    session["until_date_scenario"] = result\n    session.modified = True\n    return redirect("/what-if?scenario=until-date")\n\n@app.route("/scenario/target", methods=["POST"])\ndef target_scenario():\n    attendance_data = get_user_attendance()\n    if not attendance_data.get("subjects") or not session.get("planner_loaded", False):\n        return redirect("/what-if?scenario=target")\n    if not session.get("planner_event_checked", False):\n        return redirect("/what-if?scenario=target")\n    result = calculate_target_scenario(attendance_data, get_pending_event(), request.form.get("target_attendance", 75))\n    session["target_scenario"] = result\n    session.modified = True\n    return redirect("/what-if?scenario=target")\n\n@app.route("/scenario/safe-leaves", methods=["POST"])\ndef safe_leaves_scenario():\n    attendance_data = get_user_attendance()\n    if not attendance_data.get("subjects") or not session.get("planner_loaded", False):\n        return redirect("/what-if?scenario=safe-leaves")\n    if not session.get("planner_event_checked", False):\n        return redirect("/what-if?scenario=safe-leaves")\n    result = calculate_safe_leaves_scenario(attendance_data, get_pending_event(), request.form.get("target_attendance", 75))\n    session["safe_leaves_scenario"] = result\n    session.modified = True\n    return redirect("/what-if?scenario=safe-leaves")\n\n@app.route("/what-if/today")
 def today_scenario_page():
     """Compatibility route for the Today scenario."""
     return redirect("/what-if?scenario=today")
