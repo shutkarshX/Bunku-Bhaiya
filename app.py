@@ -416,7 +416,7 @@ def save_event():
         save_user_event(None)
         session["planner_event_checked"] = True
         session.modified = True
-        return redirect("/what-if")
+        return redirect(request.form.get("return_to", "/what-if"))
     elif action == "save":
         try:
             classes = int(request.form.get("event_classes", 0) or 0)
@@ -461,10 +461,12 @@ def planner_target():
     if not attendance_data.get("subjects") or not session.get("planner_loaded", False):
         return redirect("/")
 
-    if not save_planner_target(request.form.get("target_attendance")):
-        return redirect("/planner")
+    return_to = request.form.get("return_to", "/what-if?scenario=sessional")
 
-    return redirect(request.form.get("return_to", "/planner"))
+    if not save_planner_target(request.form.get("target_attendance")):
+        return redirect(return_to)
+
+    return redirect(return_to)
 
 
 @app.route("/scenario/today", methods=["POST"])
@@ -472,10 +474,10 @@ def today_scenario():
     """Calculate a planning-only projection for today's remaining classes."""
     attendance_data = get_user_attendance()
     if not attendance_data.get("subjects") or not session.get("planner_loaded", False):
-        return redirect("/planner")
+        return redirect("/what-if?scenario=today")
 
     if not session.get("planner_event_checked", False):
-        return redirect("/planner")
+        return redirect("/what-if?scenario=today")
     result = calculate_today_scenario(
         attendance_data,
         get_pending_event(),
@@ -484,7 +486,7 @@ def today_scenario():
     )
     session["today_scenario_result"] = result
     session.modified = True
-    return redirect(request.form.get("return_to", "/planner"))
+    return redirect(request.form.get("return_to", "/what-if?scenario=today"))
 
 
 @app.route("/what-if")
