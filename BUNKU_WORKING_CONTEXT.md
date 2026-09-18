@@ -2244,3 +2244,121 @@ Files changed:
 Reversible/reverted?:
 
 - No.
+
+
+---
+
+# 67. VERSION-D — SHARED SUBJECT-DATA KEY + ONE-TIME LOAD
+
+Date: 2026-09-18
+
+Status: **ACTIVE**
+
+## Problem
+
+After the three-page split, Subject Attendance could show the subject summary rows, but clicking a subject did not expand into the full attendance history until the Attendance Planner had been opened.
+
+The reason was architectural:
+
+- initial login stores a subject-data token
+- detailed subject records are intentionally deferred
+- the planner used to be the only feature that actually fetched those records
+- the Subject Attendance page only read the cache
+- therefore Subject Attendance had nothing to display if the planner had never been opened
+
+## Correct architecture
+
+The existing subject-details token is the shared key for the authenticated subject-data session.
+
+That same token is now used by both:
+
+    Attendance Planner
+            ↓
+    load_subject_details(token)
+            ↓
+    SUBJECT_DETAILS_CACHE[token]
+
+    Subject Attendance
+            ↓
+    load_subject_details(token)
+            ↓
+    SUBJECT_DETAILS_CACHE[token]
+
+The first feature that needs detailed subject history performs the portal request.
+
+The other feature reuses the already-loaded data.
+
+## One-time subject-data rule
+
+For a given login/session token:
+
+    if subject details are already cached:
+        return cached details
+
+    else:
+        use saved authenticated portal session
+        fetch each subject's detailed attendance
+        cache the complete result under the token
+        return it
+
+This means the detailed subject attendance request is not duplicated merely because the user navigates between Planner and Subject Attendance.
+
+## Planner interaction
+
+get_today_attendance(token) now uses the same shared subject-detail cache.
+
+It:
+
+1. ensures subject details are loaded
+2. reads today's records from those details
+3. calculates today's logged classes
+4. calculates today's remaining classes
+
+So the planner and subject page are based on the same detailed subject-data snapshot.
+
+## Subject page interaction
+
+/subjects now explicitly ensures the detailed subject data is loaded before rendering.
+
+Therefore:
+
+- opening Subject Attendance first works
+- opening Attendance Planner first works
+- opening both in either order works
+- navigating between them reuses the same cached subject records
+
+## Important separation
+
+The shared subject-data cache does not replace the normalized attendance state.
+
+    Raw portal aggregate attendance
+            ↓
+    attendance_state.py
+            ↓
+    P / A / U attendance state
+
+    Raw subject-wise history
+            ↓
+    shared token/cache
+            ↓
+    Planner + Subject Attendance
+
+The cache is only a reuse mechanism for the raw detailed subject records.
+
+## Fresh login
+
+A fresh /get-attendance creates a new subject-data token and a new server-side portal session.
+
+The new token represents the new portal snapshot.
+
+The old token is not reused by the new login.
+
+## Files changed
+
+- portal.py
+- app.py
+- BUNKU_WORKING_CONTEXT.md
+
+## Reversible/reverted?
+
+No.
