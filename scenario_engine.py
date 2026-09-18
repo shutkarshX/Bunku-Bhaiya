@@ -395,7 +395,7 @@ def calculate_target_scenario(attendance_data, pending_event=None, target_attend
     """Calculate consecutive classes required to reach a target percentage."""
     starting = get_effective_starting_state(attendance_data, pending_event)
     try:
-        target_attendance = int(target_attendance)
+        target_attendance = float(target_attendance)
     except (TypeError, ValueError):
         target_attendance = 0
 
