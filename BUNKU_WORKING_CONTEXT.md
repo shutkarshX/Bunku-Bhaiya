@@ -2636,6 +2636,8 @@ No.
 
 # 71. VERSION-D — WHAT-IF SCENARIO ENGINE FOUNDATION
 
+UI polish for Scenario 1 was added after the engine foundation. The Today scenario is presented as a compact "How much can you bunk today?" interaction with a starting-attendance snapshot, remaining-class count, two inputs, and an inline projection result. The scenario remains planning-only and independent of checkpoint target selection.
+
 Date: 2026-09-18
 
 Status: **ACTIVE**
