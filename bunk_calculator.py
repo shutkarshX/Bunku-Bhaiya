@@ -151,7 +151,7 @@ def _completed_checkpoint(checkpoint_name, checkpoint_date, actual_attended, act
         "is_completed": True,
         "is_active": False,
         "is_upcoming": False,
-        "status": determine_status(actual_attended, actual_total, 0),
+        "status": determine_status(actual_attended, actual_total, 0, target_attendance),
         "starting_attended": actual_attended,
         "starting_total": actual_total,
         "starting_percentage": round(current_percentage, 2),
