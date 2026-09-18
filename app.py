@@ -101,7 +101,212 @@ def get_requested_leave_classes(form, step):
     return days_and_classes_to_classes(days, classes)
 
 
-def render_dashboard(attendance_data, phase_1=None, portal_error=None, calculator_step=None, page="home"):
+def build_checkpoint_tracker(phase_1_result, choice_made):
+    if not phase_1_result:
+        return ""
+
+    checkpoints = phase_1_result.get("checkpoints", [])
+    active_index = phase_1_result.get("active_checkpoint_index")
+    cards = []
+
+    for index, checkpoint in enumerate(checkpoints):
+        if checkpoint.get("is_completed"):
+            state_class = "passed"
+            icon = "✓"
+            label = "Passed"
+        elif index == active_index:
+            state_class = "current"
+            icon = "●"
+            label = "Current"
+        else:
+            state_class = "upcoming"
+            icon = "○"
+            label = "Upcoming"
+
+        carry_forward = ""
+        if choice_made and index == active_index and not checkpoint.get("is_completed"):
+            carry_forward = f"""
+                <div class="checkpoint-projection">
+                    <span>Projected at this checkpoint</span>
+                    <strong>{checkpoint.get("requested_projected_percentage", 0):.2f}%</strong>
+                    <small>
+                        {checkpoint.get("requested_projected_attended", 0)}
+                        /
+                        {checkpoint.get("requested_projected_total", 0)}
+                        attendance
+                    </small>
+                    <em>Carried into the next sessional</em>
+                </div>
+            """
+
+        cards.append(f"""
+            <div class="checkpoint-item {state_class}">
+                <div class="checkpoint-marker">{icon}</div>
+                <div class="checkpoint-copy">
+                    <strong>{checkpoint.get("checkpoint", "")}</strong>
+                    <span>{label}</span>
+                    {carry_forward}
+                </div>
+            </div>
+        """)
+
+    return f"""
+        <style>
+            .sessional-tracker {{
+                position: fixed;
+                top: 132px;
+                right: max(24px, calc((100vw - 1180px) / 2));
+                width: 270px;
+                box-sizing: border-box;
+                padding: 20px;
+                border: 1px solid #e5e7eb;
+                border-radius: 18px;
+                background: rgba(255, 255, 255, 0.97);
+                box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+                z-index: 20;
+            }}
+
+            .sessional-tracker h3 {{
+                margin: 0 0 18px;
+                font-size: 17px;
+            }}
+
+            .checkpoint-item {{
+                display: flex;
+                gap: 11px;
+                position: relative;
+                padding-bottom: 18px;
+            }}
+
+            .checkpoint-item:not(:last-child)::after {{
+                content: "";
+                position: absolute;
+                left: 8px;
+                top: 21px;
+                bottom: 0;
+                width: 2px;
+                background: #e5e7eb;
+            }}
+
+            .checkpoint-marker {{
+                width: 18px;
+                height: 18px;
+                flex: 0 0 18px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 13px;
+                font-weight: 800;
+                position: relative;
+                z-index: 1;
+                background: #fff;
+            }}
+
+            .checkpoint-copy {{
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+            }}
+
+            .checkpoint-copy > strong {{
+                font-size: 14px;
+            }}
+
+            .checkpoint-copy > span {{
+                font-size: 12px;
+                color: #6b7280;
+            }}
+
+            .checkpoint-item.passed .checkpoint-marker {{
+                color: #15803d;
+                border: 2px solid #22c55e;
+            }}
+
+            .checkpoint-item.current .checkpoint-marker {{
+                color: #2563eb;
+                border: 2px solid #3b82f6;
+                background: #eff6ff;
+            }}
+
+            .checkpoint-item.current .checkpoint-copy > strong {{
+                color: #1d4ed8;
+            }}
+
+            .checkpoint-item.upcoming .checkpoint-marker {{
+                color: #9ca3af;
+                border: 2px solid #d1d5db;
+            }}
+
+            .checkpoint-projection {{
+                margin-top: 10px;
+                padding: 12px;
+                border-radius: 12px;
+                background: #eff6ff;
+                border: 1px solid #bfdbfe;
+            }}
+
+            .checkpoint-projection span,
+            .checkpoint-projection small,
+            .checkpoint-projection em {{
+                display: block;
+            }}
+
+            .checkpoint-projection span {{
+                font-size: 11px;
+                color: #1e40af;
+            }}
+
+            .checkpoint-projection strong {{
+                display: block;
+                margin: 3px 0;
+                font-size: 23px;
+                color: #1d4ed8;
+            }}
+
+            .checkpoint-projection small {{
+                font-size: 11px;
+                color: #475569;
+            }}
+
+            .checkpoint-projection em {{
+                margin-top: 7px;
+                font-size: 10px;
+                font-style: normal;
+                color: #64748b;
+            }}
+
+            @media (min-width: 1050px) {{
+                body:has(.sessional-tracker) .container {{
+                    padding-right: 330px;
+                    box-sizing: border-box;
+                }}
+            }}
+
+            @media (max-width: 1049px) {{
+                .sessional-tracker {{
+                    position: static;
+                    width: 100%;
+                    margin: 0 0 24px;
+                }}
+            }}
+        </style>
+
+        <aside class="sessional-tracker" aria-label="Sessional checkpoint tracker">
+            <h3>Sessional Checkpoints</h3>
+            {''.join(cards)}
+        </aside>
+    """
+
+
+def render_dashboard(
+    attendance_data,
+    phase_1=None,
+    portal_error=None,
+    calculator_step=None,
+    page="home",
+):
     if phase_1 is None:
         calculator_step = 0
     elif calculator_step is None:
@@ -112,7 +317,7 @@ def render_dashboard(attendance_data, phase_1=None, portal_error=None, calculato
     attendance["subject_details"] = get_subject_details(token)
     current_state = build_attendance_state(attendance)
 
-    return render_template(
+    rendered = render_template(
         "dashboard.html",
         attendance=attendance,
         current_state=current_state,
@@ -123,6 +328,17 @@ def render_dashboard(attendance_data, phase_1=None, portal_error=None, calculato
         planner_choice_made=session.get("planner_choice_made", False),
         page=page,
     )
+
+    if page == "planner" and phase_1:
+        rendered = rendered.replace(
+            "</body>",
+            build_checkpoint_tracker(
+                phase_1,
+                session.get("planner_choice_made", False),
+            ) + "</body>",
+        )
+
+    return rendered
 
 
 @app.route("/")
@@ -160,9 +376,7 @@ def subjects_page():
     try:
         load_subject_details(token)
     except PortalUnavailableError as e:
-        print("
-Subject attendance load failed
-", e)
+        print("\nSubject attendance load failed\n", e)
         return render_dashboard(
             attendance_data,
             portal_error="unavailable",
@@ -177,25 +391,18 @@ def get_attendance_page():
     username = request.form.get("username")
     password = request.form.get("password")
 
-    print("
-Starting attendance retrieval...")
+    print("\nStarting attendance retrieval...")
 
     try:
         subjects = get_attendance(username, password)
     except PortalUnavailableError as e:
-        print("
-NIET PORTAL UNAVAILABLE
-", e)
+        print("\nNIET PORTAL UNAVAILABLE\n", e)
         return render_dashboard(empty_attendance(), portal_error="unavailable")
     except PortalLoginError as e:
-        print("
-NIET LOGIN FAILED
-", e)
+        print("\nNIET LOGIN FAILED\n", e)
         return render_dashboard(empty_attendance(), portal_error="login")
     except Exception as e:
-        print("
-Unexpected portal error:
-", e)
+        print("\nUnexpected portal error:\n", e)
         return render_dashboard(empty_attendance(), portal_error="unavailable")
 
     if not subjects:
@@ -212,8 +419,7 @@ Unexpected portal error:
     }
 
     session["attendance_data"] = attendance_data
-    selected_leaves = dict(DEFAULT_SELECTED_LEAVES)
-    save_user_leaves(selected_leaves)
+    save_user_leaves(dict(DEFAULT_SELECTED_LEAVES))
     session["planner_loaded"] = False
     session["planner_choice_made"] = False
     session.pop("planner_event_checked", None)
@@ -224,14 +430,9 @@ Unexpected portal error:
     print("Portal:", state["portal"]["percentage"], "%")
     print("Site:", state["site"]["percentage"], "%")
     print("Effective:", state["effective"]["percentage"], "%")
-
-    # The initial login intentionally does not fetch subject-wise attendance
-    # history. That expensive request is deferred until the planner is opened.
-    phase_1_result = None
-
     print("Planner data is deferred until the user opens the planner.")
 
-    return render_dashboard(attendance_data, phase_1_result)
+    return render_dashboard(attendance_data)
 
 
 @app.route("/load-planner", methods=["POST"])
@@ -267,8 +468,6 @@ def load_planner():
         session.pop("planner_event_checked", None)
         session.pop("pending_event", None)
 
-        # If every class for today is already accounted for, there is no
-        # unaccounted window in which an event can be declared.
         if remaining_today <= 0:
             session["planner_event_checked"] = True
 
