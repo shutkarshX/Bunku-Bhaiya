@@ -113,6 +113,9 @@ def dashboard():
     if not attendance_data["subjects"]:
         return render_dashboard(attendance_data)
 
+    if not session.get("planner_loaded", False):
+        return render_dashboard(attendance_data)
+
     phase_1_result = run_phase_1(
         attendance_data,
         get_user_leaves(),
@@ -155,6 +158,7 @@ def get_attendance_page():
     session["attendance_data"] = attendance_data
     selected_leaves = dict(DEFAULT_SELECTED_LEAVES)
     save_user_leaves(selected_leaves)
+    session["planner_loaded"] = False
 
     print("Website received:", len(subjects), "subjects")
     print("Portal attendance:", state["portal"]["present"], "/", state["portal"]["total"])
@@ -167,9 +171,6 @@ def get_attendance_page():
     phase_1_result = None
 
     print("Planner data is deferred until the user opens the planner.")
-
-    print("Active index:", phase_1_result.get("active_checkpoint_index"))
-    print("Semester completed:", phase_1_result.get("semester_completed"))
 
     return render_dashboard(attendance_data, phase_1_result)
 
@@ -201,6 +202,7 @@ def load_planner():
         subjects[0]["_bunkmaster_remaining_today"] = remaining_today
         attendance_data["subjects"] = subjects
         session["attendance_data"] = attendance_data
+        session["planner_loaded"] = True
         session.modified = True
 
     phase_1_result = run_phase_1(
