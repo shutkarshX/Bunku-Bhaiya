@@ -618,13 +618,9 @@ def save_event():
     session["planner_event_checked"] = True
     session.modified = True
 
-    phase_1_result = run_phase_1(
-        attendance_data,
-        get_user_leaves(),
-        get_pending_event(),
-        get_checkpoint_targets(),
-    )
-    return render_dashboard(attendance_data, phase_1_result, page="planner")
+    # Redirect after the event decision so the planner route becomes the
+    # single source of truth for the next screen/state.
+    return redirect("/planner")
 
 
 @app.route("/checkpoint-target", methods=["POST"])
