@@ -427,17 +427,33 @@
     <div class="what-if-header">
         <span class="what-if-kicker">SCENARIO 4</span>
         <h2>Reach a Target</h2>
-        <p>Find how many consecutive classes you need to attend to reach a chosen attendance percentage.</p>
+        <p>See the highest attendance you can reach first, then choose a target within that limit.</p>
     </div>
 
-    <form action="/scenario/target" method="POST" class="what-if-form">
+    <div class="target-capacity-card">
+        <span>Maximum reachable attendance</span>
+        <strong>{{ target_capacity.maximum_percentage }}%</strong>
+        <small>if you attend all {{ target_capacity.available_classes }} remaining classes through the academic calendar</small>
+    </div>
+
+    {% if target_scenario and not target_scenario.valid %}
+    <div class="what-if-error">
+        <strong>Target not available</strong>
+        <span>{{ target_scenario.error }}</span>
+    </div>
+    {% endif %}
+
+    <form action="/scenario/target" method="POST" class="what-if-form" id="target-scenario-form">
         <div class="what-if-field">
             <label for="target_attendance_scenario">Target attendance</label>
             <div class="what-if-input">
                 <input type="number" id="target_attendance_scenario" name="target_attendance"
-                       min="1" max="99" value="{{ target_scenario.target_attendance if target_scenario else 75 }}" required>
+                       min="1" max="{{ target_capacity.maximum_input }}"
+                       value="{{ target_scenario.target_attendance if target_scenario and target_scenario.target_attendance is defined and target_scenario.target_attendance <= target_capacity.maximum_input else target_capacity.maximum_input }}"
+                       required>
                 <span>%</span>
             </div>
+            <small class="what-if-field-note">Enter up to {{ target_capacity.maximum_input }}%.</small>
         </div>
         <button class="attendance-button" type="submit">Find Classes Needed</button>
     </form>
@@ -452,25 +468,63 @@
             <div class="target-summary-box">
                 <span>Maximum possible</span>
                 <strong>{{ target_scenario.maximum_percentage }}%</strong>
-                <small>if you attend all {{ target_scenario.available_classes }} remaining classes</small>
+                <small>by attending all {{ target_scenario.available_classes }} remaining classes</small>
             </div>
         </div>
 
         {% if target_scenario.status == "already_reached" %}
         <p class="what-if-verdict"><strong>Target already reached.</strong> You are currently at {{ target_scenario.starting.percentage }}%.</p>
-        {% elif target_scenario.status == "reachable" %}
+        {% else %}
         <div class="what-if-big-number">
             <strong>{{ target_scenario.classes_needed }}</strong>
             <span>classes to attend consecutively</span>
         </div>
         <p class="what-if-verdict">After attending {{ target_scenario.classes_needed }} classes: <strong>{{ target_scenario.projected_percentage }}%</strong> ({{ target_scenario.projected_attended }} / {{ target_scenario.projected_total }}).</p>
-        {% else %}
-        <p class="what-if-verdict"><strong>This target cannot be reached</strong> within the remaining academic calendar.</p>
-        <p class="what-if-note">You can attend {{ target_scenario.available_classes }} remaining classes, reaching a maximum of <strong>{{ target_scenario.maximum_percentage }}%</strong>.</p>
+
+        {% if target_scenario.day_plan %}
+        <div class="target-day-plan">
+            <div class="target-day-plan-header">
+                <span>Day-wise plan</span>
+                <small>Consecutive attendance required</small>
+            </div>
+            {% for day in target_scenario.day_plan %}
+            <div class="target-day-row">
+                <span>{{ day.date_display }}</span>
+                <strong>Attend {{ day.classes }} class{% if day.classes != 1 %}es{% endif %}</strong>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
         {% endif %}
     </div>
     {% endif %}
 </div>
+
+<script>
+(function () {
+    const input = document.getElementById("target_attendance_scenario");
+    const form = document.getElementById("target-scenario-form");
+    if (!input || !form) return;
+
+    const maximum = Number(input.max);
+
+    function clampTarget() {
+        let value = Number(input.value);
+        if (!Number.isFinite(value)) return;
+        if (value > maximum) input.value = maximum;
+        if (value < 1) input.value = 1;
+    }
+
+    input.addEventListener("input", clampTarget);
+    form.addEventListener("submit", function (event) {
+        clampTarget();
+        if (Number(input.value) > maximum) {
+            event.preventDefault();
+            input.value = maximum;
+        }
+    });
+})();
+</script>
 
 {% elif scenario == "safe-leaves" %}
 <div class="what-if-card">
