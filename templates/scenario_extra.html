@@ -115,6 +115,13 @@
     let mode = "attend";
     let visibleMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
+    // Pointer-based "paint" selection: press and drag across teaching days
+    // to apply the active Attend/Bunk action, just like swipe selection on a phone.
+    let isDragging = false;
+    let dragAction = null;
+    let dragChanged = false;
+    let lastDraggedDate = null;
+
     function iso(date) {
         return [
             date.getFullYear(),
@@ -203,6 +210,10 @@
 
             if (selectable) {
                 cell.addEventListener("click", function () {
+                    // A drag already painted this date; don't toggle it again on
+                    // the synthetic click fired after a touch/mouse release.
+                    if (dragChanged) return;
+
                     if (plan[key]) {
                         if (plan[key].action === mode) {
                             delete plan[key];
@@ -216,6 +227,21 @@
                     renderCalendar();
                     renderPlan();
                 });
+
+                cell.addEventListener("pointerdown", function (event) {
+                    if (event.button !== undefined && event.button !== 0) return;
+                    isDragging = true;
+                    dragAction = mode;
+                    dragChanged = false;
+                    lastDraggedDate = null;
+                    cell.setPointerCapture?.(event.pointerId);
+                    paintDate(cell, current, key);
+                });
+
+                cell.addEventListener("pointerenter", function () {
+                    if (!isDragging) return;
+                    paintDate(cell, current, key);
+                });
             }
 
             grid.appendChild(cell);
@@ -225,6 +251,35 @@
         const canNext = visibleMonth < new Date(semesterEnd.getFullYear(), semesterEnd.getMonth(), 1);
         document.getElementById("calendar-prev").disabled = !canPrev;
         document.getElementById("calendar-next").disabled = !canNext;
+    }
+
+    function paintDate(cell, current, key) {
+        if (!isDragging || !isSelectable(current)) return;
+        if (lastDraggedDate === key) return;
+        lastDraggedDate = key;
+
+        const existing = plan[key];
+        const action = dragAction || mode;
+        const classes = classesFor(current);
+
+        if (!existing || existing.action !== action || existing.classes !== classes) {
+            plan[key] = { action: action, classes: classes };
+            dragChanged = true;
+            renderCalendar();
+            renderPlan();
+        }
+    }
+
+    function stopDragging() {
+        if (!isDragging) return;
+        isDragging = false;
+        dragAction = null;
+        lastDraggedDate = null;
+
+        // Reset after the browser's click event has had a chance to fire.
+        window.setTimeout(function () {
+            dragChanged = false;
+        }, 0);
     }
 
     function renderPlan() {
@@ -306,6 +361,10 @@
 
         document.getElementById("date-plan-input").value = JSON.stringify(plan);
     }
+
+    window.addEventListener("pointerup", stopDragging);
+    window.addEventListener("pointercancel", stopDragging);
+    window.addEventListener("blur", stopDragging);
 
     document.querySelectorAll(".date-plan-mode").forEach(function (button) {
         button.addEventListener("click", function () {
