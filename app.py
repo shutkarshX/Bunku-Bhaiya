@@ -126,18 +126,7 @@ def render_dashboard(attendance_data, phase_1=None, portal_error=None, calculato
 @app.route("/")
 def dashboard():
     attendance_data = get_user_attendance()
-    if not attendance_data["subjects"]:
-        return render_dashboard(attendance_data)
-
-    if not session.get("planner_loaded", False):
-        return render_dashboard(attendance_data)
-
-    phase_1_result = run_phase_1(
-        attendance_data,
-        get_user_leaves(),
-        get_pending_event(),
-    )
-    return render_dashboard(attendance_data, phase_1_result)
+    return render_dashboard(attendance_data, page="home")
 
 
 @app.route("/planner")
@@ -232,6 +221,7 @@ def load_planner():
         return render_dashboard(
             attendance_data,
             portal_error="unavailable",
+            page="planner",
         )
 
     try:
@@ -296,7 +286,7 @@ def save_event():
     """Save today's optional event as a planning-only pending attendance."""
     attendance_data = get_user_attendance()
     if not attendance_data.get("subjects") or not session.get("planner_loaded", False):
-        return render_dashboard(attendance_data, portal_error="unavailable")
+        return render_dashboard(attendance_data, portal_error="unavailable", page="planner")
 
     action = request.form.get("event_action")
     if action == "none":
