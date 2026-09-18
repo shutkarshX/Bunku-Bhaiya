@@ -4,8 +4,7 @@ import math
 from academic_calendar import (
     TEACHING_CLASSES_PER_DAY,
     ATTENDANCE_TARGET,
-    CHECKPOINT_NAMES,
-    CHECKPOINTS as CHECKPOINT_DATE_KEYS,
+    CHECKPOINTS as CHECKPOINT_DEFINITIONS,
     is_teaching_day,
 )
 from attendance_state import build_attendance_state
@@ -13,7 +12,10 @@ from attendance_state import build_attendance_state
 
 CLASSES_PER_DAY = TEACHING_CLASSES_PER_DAY
 TARGET_ATTENDANCE = ATTENDANCE_TARGET
-CHECKPOINTS = tuple(zip(CHECKPOINT_NAMES, map(date.fromisoformat, CHECKPOINT_DATE_KEYS)))
+CHECKPOINTS = tuple(
+    (name, date.fromisoformat(date_key))
+    for name, date_key in CHECKPOINT_DEFINITIONS
+)
 
 
 def calculate_percentage(attended, total):
