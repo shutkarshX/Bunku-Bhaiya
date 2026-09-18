@@ -23,11 +23,7 @@
                     {% endif %}
                 </span>
 
-                {% if checkpoint.state_class == "passed" %}
-                    <small class="checkpoint-attendance">
-                        {{ checkpoint.projected_percentage if checkpoint.projected_percentage else checkpoint.starting_percentage }}%
-                    </small>
-                {% elif checkpoint.show_projection %}
+                {% if checkpoint.show_projection %}
                     <small class="checkpoint-attendance">
                         {{ checkpoint.projected_percentage }}% projected
                     </small>
