@@ -422,7 +422,11 @@ def save_event():
 
     action = request.form.get("event_action")
     if action == "none":
+        # Explicitly record the user's "No event today" decision.
         save_user_event(None)
+        session["planner_event_checked"] = True
+        session.modified = True
+        return redirect("/planner")
     elif action == "save":
         try:
             classes = int(request.form.get("event_classes", 0) or 0)
