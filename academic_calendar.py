@@ -6,6 +6,12 @@
 TEACHING_CLASSES_PER_DAY = 8
 ATTENDANCE_TARGET = 75
 
+CHECKPOINT_NAMES = (
+    "First Sessional",
+    "Second Sessional",
+    "Third Sessional",
+)
+
 CHECKPOINTS = (
     "2026-08-29",
     "2026-10-10",
