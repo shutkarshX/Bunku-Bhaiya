@@ -18,6 +18,7 @@ from bunk_calculator import (
     CHECKPOINTS,
 )
 from attendance_state import build_attendance_state
+from scenario_engine import calculate_today_scenario
 
 
 app = Flask(__name__)
@@ -89,6 +90,11 @@ def save_planner_target(value):
     session["planner_target_attendance"] = target
     session.modified = True
     return True
+
+
+def get_today_scenario_result():
+    result = session.get("today_scenario_result")
+    return result if isinstance(result, dict) else None
 
 
 def get_planner_token(attendance_data):
@@ -228,6 +234,7 @@ def render_dashboard(
         planner_choice_made=session.get("planner_choice_made", False),
         planner_target_attendance=get_planner_target(),
         planner_target_required=get_planner_target() is None,
+        today_scenario=get_today_scenario_result(),
         tracker_checkpoints=build_checkpoint_tracker_data(
             phase_1,
             session.get("planner_choice_made", False),
@@ -328,6 +335,7 @@ def get_attendance_page():
     session.pop("planner_target_attendance", None)
     session.pop("planner_event_checked", None)
     session.pop("pending_event", None)
+    session.pop("today_scenario_result", None)
 
     print("Website received:", len(subjects), "subjects")
     print("Portal attendance:", state["portal"]["present"], "/", state["portal"]["total"])
@@ -474,6 +482,27 @@ def planner_target():
     if not save_planner_target(request.form.get("target_attendance")):
         return redirect("/planner")
 
+    return redirect("/planner")
+
+
+@app.route("/scenario/today", methods=["POST"])
+def today_scenario():
+    """Calculate a planning-only projection for today's remaining classes."""
+    attendance_data = get_user_attendance()
+    if not attendance_data.get("subjects") or not session.get("planner_loaded", False):
+        return redirect("/planner")
+
+    if not session.get("planner_event_checked", False):
+        return redirect("/planner")
+
+    result = calculate_today_scenario(
+        attendance_data,
+        get_pending_event(),
+        request.form.get("attended", 0),
+        request.form.get("leave", 0),
+    )
+    session["today_scenario_result"] = result
+    session.modified = True
     return redirect("/planner")
 
 
