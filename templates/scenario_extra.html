@@ -448,8 +448,8 @@
             <label for="target_attendance_scenario">Target attendance</label>
             <div class="what-if-input">
                 <input type="number" id="target_attendance_scenario" name="target_attendance"
-                       min="1" max="{{ target_capacity.maximum_input }}" step="0.01"
-                       value="{{ target_scenario.target_attendance if target_scenario and target_scenario.target_attendance is defined else 75 }}"
+                       max="{{ target_capacity.maximum_input }}" step="0.01"
+                       value="{{ target_scenario.target_attendance if target_scenario and target_scenario.valid and target_scenario.target_attendance is defined else 75 }}"
                        required>
                 <span>%</span>
             </div>
@@ -521,8 +521,9 @@
     input.addEventListener("change", enforceMaximum);
 
     form.addEventListener("submit", function (event) {
-        const value = Number(input.value);
-        if (!Number.isFinite(value) || value < 1 || value > maximum) {
+        const raw = input.value.trim();
+        const value = Number(raw);
+        if (!raw || !Number.isFinite(value) || value < 1 || value > maximum) {
             event.preventDefault();
             input.setCustomValidity("Enter a target from 1% to " + maximum + "%.");
             input.reportValidity();
