@@ -31,6 +31,7 @@
         </div>
 
         <div class="calendar-weekdays" aria-hidden="true">
+            <span class="calendar-week-spacer"></span>
             <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
         </div>
         <div class="calendar-grid" id="calendar-grid"></div>
@@ -154,97 +155,180 @@
         });
 
         grid.innerHTML = "";
+
         const firstDay = new Date(year, month, 1);
         const mondayOffset = (firstDay.getDay() + 6) % 7;
         const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const totalCells = Math.ceil((mondayOffset + daysInMonth) / 7) * 7;
 
-        for (let i = 0; i < mondayOffset; i++) {
-            const blank = document.createElement("div");
-            blank.className = "calendar-day blank";
-            grid.appendChild(blank);
-        }
+        for (let rowStart = 0; rowStart < totalCells; rowStart += 7) {
+            const rowDates = [];
 
-        for (let day = 1; day <= daysInMonth; day++) {
-            const current = new Date(year, month, day);
-            const key = iso(current);
-            const cell = document.createElement("button");
-            cell.type = "button";
-            cell.className = "calendar-day";
-            cell.dataset.date = key;
+            for (let column = 0; column < 7; column++) {
+                const cellIndex = rowStart + column;
+                const day = cellIndex - mondayOffset + 1;
 
-            const selectable = isSelectable(current);
-            const selected = plan[key];
-            const event = calendarEvents[key];
-
-            if (!selectable) {
-                cell.classList.add("disabled");
-                cell.disabled = true;
-            }
-            if (key === "{{ today_date }}") cell.classList.add("today");
-            if (event) {
-                cell.classList.add("calendar-event-" + event.type);
-                cell.dataset.tooltip = event.label;
-                cell.setAttribute("aria-label", day + " " + event.label);
-            }
-            if (selected) cell.classList.add(selected.action);
-
-            const number = document.createElement("strong");
-            number.textContent = day;
-            cell.appendChild(number);
-
-            if (selectable) {
-                const meta = document.createElement("span");
-                meta.textContent = classesFor(current) + " classes";
-                cell.appendChild(meta);
-
-                if (selected) {
-                    const state = document.createElement("small");
-                    state.textContent = selected.action === "attend" ? "ATTEND" : "BUNK";
-                    cell.appendChild(state);
+                if (day >= 1 && day <= daysInMonth) {
+                    rowDates.push(new Date(year, month, day));
                 }
-            } else if (!teachingDays.has(key)) {
-                const meta = document.createElement("span");
-                meta.textContent = "No classes";
-                cell.appendChild(meta);
             }
 
-            if (selectable) {
-                cell.addEventListener("click", function () {
-                    // A drag already painted this date; don't toggle it again on
-                    // the synthetic click fired after a touch/mouse release.
-                    if (dragChanged) return;
+            const selectableDates = rowDates.filter(isSelectable);
+            const selectedCount = selectableDates.filter(function (date) {
+                return Boolean(plan[iso(date)]);
+            }).length;
 
-                    if (plan[key]) {
-                        if (plan[key].action === mode) {
+            const weekButton = document.createElement("button");
+            weekButton.type = "button";
+            weekButton.className = "calendar-week-select";
+
+            if (!selectableDates.length) {
+                weekButton.disabled = true;
+                weekButton.classList.add("empty");
+                weekButton.textContent = "·";
+                weekButton.setAttribute("aria-label", "No teaching days in this week");
+            } else {
+                const allSelected = selectedCount === selectableDates.length;
+                const partiallySelected = selectedCount > 0 && !allSelected;
+
+                weekButton.classList.toggle("checked", allSelected);
+                weekButton.classList.toggle("mixed", partiallySelected);
+                weekButton.textContent = allSelected ? "✓" : (partiallySelected ? "−" : "○");
+
+                const first = selectableDates[0];
+                const last = selectableDates[selectableDates.length - 1];
+                const rangeLabel = first.toLocaleDateString(undefined, {
+                    day: "numeric",
+                    month: "short"
+                }) + " – " + last.toLocaleDateString(undefined, {
+                    day: "numeric",
+                    month: "short"
+                });
+
+                weekButton.title = "Select week · " + rangeLabel;
+                weekButton.setAttribute(
+                    "aria-label",
+                    (allSelected ? "Clear" : "Select") + " teaching days for " + rangeLabel
+                );
+
+                weekButton.addEventListener("click", function () {
+                    const shouldClear = selectableDates.length > 0 &&
+                        selectableDates.every(function (date) {
+                            return Boolean(plan[iso(date)]);
+                        });
+
+                    selectableDates.forEach(function (date) {
+                        const key = iso(date);
+
+                        if (shouldClear) {
                             delete plan[key];
                         } else {
-                            plan[key].action = mode;
-                            plan[key].classes = classesFor(current);
+                            plan[key] = {
+                                action: mode,
+                                classes: classesFor(date)
+                            };
                         }
-                    } else {
-                        plan[key] = { action: mode, classes: classesFor(current) };
-                    }
+                    });
+
                     renderCalendar();
                     renderPlan();
                 });
-
-                cell.addEventListener("pointerdown", function (event) {
-                    if (event.button !== undefined && event.button !== 0) return;
-                    isDragging = true;
-                    dragAction = mode;
-                    dragChanged = false;
-                    lastDraggedDate = null;
-                    cell.setPointerCapture?.(event.pointerId);
-                    paintDate(cell, current, key);
-                });
-
-                cell.addEventListener("pointerenter", function () {
-                    if (!isDragging) return;
-                    paintDate(cell, current, key);
-                });
             }
 
-            grid.appendChild(cell);
+            grid.appendChild(weekButton);
+
+            for (let column = 0; column < 7; column++) {
+                const cellIndex = rowStart + column;
+                const day = cellIndex - mondayOffset + 1;
+
+                if (day < 1 || day > daysInMonth) {
+                    const blank = document.createElement("div");
+                    blank.className = "calendar-day blank";
+                    grid.appendChild(blank);
+                    continue;
+                }
+
+                const current = new Date(year, month, day);
+                const key = iso(current);
+                const cell = document.createElement("button");
+                cell.type = "button";
+                cell.className = "calendar-day";
+                cell.dataset.date = key;
+
+                const selectable = isSelectable(current);
+                const selected = plan[key];
+                const event = calendarEvents[key];
+
+                if (!selectable) {
+                    cell.classList.add("disabled");
+                    cell.disabled = true;
+                }
+                if (key === "{{ today_date }}") cell.classList.add("today");
+                if (event) {
+                    cell.classList.add("calendar-event-" + event.type);
+                    cell.dataset.tooltip = event.label;
+                    cell.setAttribute("aria-label", day + " " + event.label);
+                }
+                if (selected) cell.classList.add(selected.action);
+
+                const number = document.createElement("strong");
+                number.textContent = day;
+                cell.appendChild(number);
+
+                if (selectable) {
+                    const meta = document.createElement("span");
+                    meta.textContent = classesFor(current) + " classes";
+                    cell.appendChild(meta);
+
+                    if (selected) {
+                        const state = document.createElement("small");
+                        state.textContent = selected.action === "attend" ? "ATTEND" : "BUNK";
+                        cell.appendChild(state);
+                    }
+                } else if (!teachingDays.has(key)) {
+                    const meta = document.createElement("span");
+                    meta.textContent = "No classes";
+                    cell.appendChild(meta);
+                }
+
+                if (selectable) {
+                    cell.addEventListener("click", function () {
+                        // A drag already painted this date; don't toggle it again on
+                        // the synthetic click fired after a touch/mouse release.
+                        if (dragChanged) return;
+
+                        if (plan[key]) {
+                            if (plan[key].action === mode) {
+                                delete plan[key];
+                            } else {
+                                plan[key].action = mode;
+                                plan[key].classes = classesFor(current);
+                            }
+                        } else {
+                            plan[key] = { action: mode, classes: classesFor(current) };
+                        }
+                        renderCalendar();
+                        renderPlan();
+                    });
+
+                    cell.addEventListener("pointerdown", function (event) {
+                        if (event.button !== undefined && event.button !== 0) return;
+                        isDragging = true;
+                        dragAction = mode;
+                        dragChanged = false;
+                        lastDraggedDate = null;
+                        cell.setPointerCapture?.(event.pointerId);
+                        paintDate(cell, current, key);
+                    });
+
+                    cell.addEventListener("pointerenter", function () {
+                        if (!isDragging) return;
+                        paintDate(cell, current, key);
+                    });
+                }
+
+                grid.appendChild(cell);
+            }
         }
 
         const canPrev = visibleMonth > new Date(today.getFullYear(), today.getMonth(), 1);
