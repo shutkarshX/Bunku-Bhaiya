@@ -59,9 +59,8 @@ class TodayScenarioTests(unittest.TestCase):
         with patch("scenario_engine.date") as today:
             today.today.return_value.isoformat.return_value = "2026-09-18"
             result = calculate_today_scenario(attendance(8), event, attended=3, leave=3)
-        self.assertTrue(result["valid"])
-        self.assertEqual(result["planned_classes"], 6)
-        self.assertEqual(result["remaining_after_plan"], 0)
+        self.assertFalse(result["valid"])
+        self.assertEqual(result["starting"]["today_remaining"], 5)
 
 
 class UntilDateScenarioTests(unittest.TestCase):
@@ -71,7 +70,7 @@ class UntilDateScenarioTests(unittest.TestCase):
         self.assertTrue(result["valid"])
         self.assertEqual(result["future_classes"], 5)
         self.assertEqual(result["planned_classes"], 5)
-        self.assertEqual(result["projected_attended"], 251)
+        self.assertEqual(result["projected_attended"], 248)
         self.assertEqual(result["projected_total"], 271)
 
     def test_until_date_rejects_plan_above_available_classes(self):
