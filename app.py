@@ -406,7 +406,7 @@ def handle_checkpoint_submission(checkpoint_index):
 
     next_index = checkpoint_index + 1
     if next_index < len(CHECKPOINTS):
-        return redirect("/sessional")
+        return redirect("/what-if")
 
     phase_1_result = run_phase_1(
         attendance_data,
@@ -418,7 +418,7 @@ def handle_checkpoint_submission(checkpoint_index):
         attendance_data,
         phase_1_result,
         calculator_step=checkpoint_index + 2,
-        page="sessional",
+        page="what_if",
     )
 
 
@@ -507,34 +507,43 @@ def today_scenario():
     return redirect(request.form.get("return_to", "/planner"))
 
 
-@app.route("/what-if/today")
-def today_scenario_page():
-    """Show the Today What-If scenario on its own page."""
+@app.route("/what-if")
+def what_if_page():
+    """Show all What-If scenarios together on one page."""
     attendance_data = get_user_attendance()
     if not attendance_data.get("subjects"):
         return render_dashboard(attendance_data, page="home")
-    return render_dashboard(attendance_data, page="today_scenario")
+
+    phase_1_result = None
+    if (
+        session.get("planner_loaded", False)
+        and session.get("planner_event_checked", False)
+        and get_planner_target() is not None
+    ):
+        phase_1_result = run_phase_1(
+            attendance_data,
+            get_user_leaves(),
+            get_pending_event(),
+            get_planner_target(),
+        )
+
+    return render_dashboard(
+        attendance_data,
+        phase_1_result,
+        page="what_if",
+    )
+
+
+@app.route("/what-if/today")
+def today_scenario_page():
+    """Compatibility route for the Today scenario."""
+    return redirect("/what-if")
 
 
 @app.route("/sessional")
 def sessional_scenario_page():
-    """Show the sessional checkpoint scenario on its own page."""
-    attendance_data = get_user_attendance()
-    if not attendance_data.get("subjects"):
-        return render_dashboard(attendance_data, page="home")
-    if not session.get("planner_loaded", False):
-        return render_dashboard(attendance_data, page="planner")
-    if not session.get("planner_event_checked", False):
-        return render_dashboard(attendance_data, page="planner")
-    if get_planner_target() is None:
-        return render_dashboard(attendance_data, page="planner")
-    phase_1_result = run_phase_1(
-        attendance_data,
-        get_user_leaves(),
-        get_pending_event(),
-        get_planner_target(),
-    )
-    return render_dashboard(attendance_data, phase_1_result, page="sessional")
+    """Compatibility route for the Sessional scenario."""
+    return redirect("/what-if")
 
 
 @app.route("/sessional-1", methods=["POST"])
