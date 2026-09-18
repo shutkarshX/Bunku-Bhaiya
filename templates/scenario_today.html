@@ -35,6 +35,7 @@
     {% if today_scenario_start.today_remaining > 0 %}
 
     <form action="/scenario/today" method="POST" class="what-if-form">
+        <input type="hidden" name="return_to" value="/what-if/today">
 
         <div class="what-if-options">
 
