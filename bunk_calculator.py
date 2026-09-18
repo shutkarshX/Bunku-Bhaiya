@@ -4,6 +4,7 @@ import math
 from academic_calendar import (
     TEACHING_CLASSES_PER_DAY,
     ATTENDANCE_TARGET,
+    CHECKPOINT_NAMES,
     CHECKPOINTS as CHECKPOINT_DATE_KEYS,
     is_teaching_day,
 )
@@ -12,7 +13,6 @@ from attendance_state import build_attendance_state
 
 CLASSES_PER_DAY = TEACHING_CLASSES_PER_DAY
 TARGET_ATTENDANCE = ATTENDANCE_TARGET
-CHECKPOINT_NAMES = ("First Sessional", "Second Sessional", "Third Sessional")
 CHECKPOINTS = tuple(zip(CHECKPOINT_NAMES, map(date.fromisoformat, CHECKPOINT_DATE_KEYS)))
 
 
@@ -304,9 +304,8 @@ def _get_remaining_today(attendance_data):
     return max(0, value)
 
 
-def run_phase_1(attendance_data, checkpoint_choices=None, requested_leaves=None):
+def run_phase_1(attendance_data, requested_leaves=None):
     """Run checkpoint planning from normalized effective attendance state."""
-    del checkpoint_choices
     requested_leaves = requested_leaves or {}
     state = build_attendance_state(attendance_data)
     remaining_today = _get_remaining_today(attendance_data)
