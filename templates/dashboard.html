@@ -624,7 +624,7 @@
     <!-- CHECKPOINT REQUIREMENT -->
     <!-- ================================= -->
 
-    {% if not phase_1 and planner_loaded and active_checkpoint_target is none %}
+    {% if not phase_1 and planner_loaded and target_checkpoint_required %}
 
     {% set target_index = namespace(value=0) %}
     <div class="summary checkpoint-target-card">
@@ -634,7 +634,7 @@
         <p>
             What minimum attendance percentage do you need at
             <strong>
-                {{ active_checkpoint_name or "the current sessional checkpoint" }}
+                {{ target_checkpoint_name or "the current sessional checkpoint" }}
             </strong>?
         </p>
 
@@ -761,7 +761,7 @@
 
                 <p>
                     Even if you attend every remaining
-                    class before this checkpoint, 75%
+                    class before this checkpoint, {{ first.target_attendance }}%
                     cannot be reached.
                 </p>
 
