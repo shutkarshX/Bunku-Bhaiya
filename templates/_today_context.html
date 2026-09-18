@@ -1,0 +1,54 @@
+{% if not session.get("planner_event_checked", False) %}
+
+<div class="summary">
+    <h3>One quick question about today</h3>
+    <p>
+        Today's event information is shared across every scenario that needs
+        today's actual attendance, so you only need to answer this once.
+    </p>
+
+    <form action="/event" method="POST" style="display:inline;">
+        <input type="hidden" name="return_to" value="{{ today_context_return_to }}">
+        <button type="submit" name="event_action" value="none" class="attendance-button">
+            No event today
+        </button>
+    </form>
+
+    <button type="button" class="attendance-button" onclick="showEventDetails()">
+        Yes, there was an event
+    </button>
+
+    <form action="/event" method="POST">
+        <input type="hidden" name="return_to" value="{{ today_context_return_to }}">
+        <div id="event-details" style="display:none; margin-top:20px;">
+            <label for="event_classes">How many of today's remaining classes did it cover?</label>
+            <input
+                type="number"
+                id="event_classes"
+                name="event_classes"
+                min="1"
+                max="{{ attendance.subjects[0].get('_bunkmaster_remaining_today', 0) if attendance.subjects else 0 }}"
+                value="{{ attendance.subjects[0].get('_bunkmaster_remaining_today', 0) if attendance.subjects else 0 }}"
+                required
+            >
+            <p>
+                Maximum possible event coverage:
+                <strong>{{ attendance.subjects[0].get('_bunkmaster_remaining_today', 0) if attendance.subjects else 0 }}</strong>
+            </p>
+            <p>Did you attend the event?</p>
+            <label>
+                <input type="radio" name="event_attended" value="yes" required>
+                Yes, I attended
+            </label>
+            <label>
+                <input type="radio" name="event_attended" value="no" required>
+                No, I didn't attend
+            </label>
+            <button type="submit" name="event_action" value="save" class="attendance-button">
+                Continue
+            </button>
+        </div>
+    </form>
+</div>
+
+{% endif %}
