@@ -2018,3 +2018,50 @@ body {
         touch-action: manipulation;
     }
 }
+
+
+/* =========================================
+   TARGET SCENARIO SUMMARY
+   ========================================= */
+
+.target-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.target-summary-box {
+    padding: 14px 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #f9fafb;
+}
+
+.target-summary-box span,
+.target-summary-box small {
+    display: block;
+    color: #6b7280;
+}
+
+.target-summary-box span {
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.target-summary-box strong {
+    display: block;
+    margin: 3px 0;
+    font-size: 24px;
+}
+
+.target-summary-box small {
+    font-size: 11px;
+    line-height: 1.35;
+}
+
+@media (max-width: 600px) {
+    .target-summary-grid {
+        grid-template-columns: 1fr;
+    }
+}
