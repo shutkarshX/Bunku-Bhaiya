@@ -3,55 +3,336 @@
     <div class="what-if-header">
         <span class="what-if-kicker">SCENARIO 3</span>
         <h2>Plan Between Dates</h2>
-        <p>What happens to your effective attendance if you attend or bunk classes between two selected dates?</p>
+        <p>Starting from today's attendance, choose the exact teaching days you want to attend or bunk.</p>
     </div>
 
-    <form action="/scenario/until-date" method="POST" class="what-if-form">
-        <div class="what-if-options">
-            <div class="what-if-field">
-                <label for="until_start_date">From</label>
-                <input type="date" id="until_start_date" name="start_date"
-                       min="{{ today_date }}" value="{{ until_date_scenario.start_date if until_date_scenario else today_date }}" required>
-            </div>
-            <div class="what-if-field">
-                <label for="until_end_date">To</label>
-                <input type="date" id="until_end_date" name="end_date"
-                       min="{{ today_date }}" value="{{ until_date_scenario.end_date if until_date_scenario else today_date }}" required>
-            </div>
-            <div class="what-if-field">
-                <label for="until_attended">Attend</label>
-                <div class="what-if-input">
-                    <input type="number" id="until_attended" name="attended" min="0"
-                           value="{{ until_date_scenario.attended if until_date_scenario else 0 }}" required>
-                    <span>classes</span>
+    <div class="what-if-start">
+        <div>
+            <span>Starting point</span>
+            <strong>Today · {{ today_date_display }}</strong>
+            <small>{{ until_date_scenario.starting.percentage if until_date_scenario else today_scenario_start.percentage }}% effective attendance</small>
+        </div>
+    </div>
+
+    <div class="date-planner" id="date-planner">
+        <div class="date-planner-toolbar">
+            <div>
+                <span class="date-planner-label">Choose what you want to do</span>
+                <div class="date-planner-modes" role="group" aria-label="Planning mode">
+                    <button type="button" class="date-plan-mode active" data-mode="attend">✓ Attend</button>
+                    <button type="button" class="date-plan-mode" data-mode="bunk">× Bunk</button>
                 </div>
             </div>
-            <div class="what-if-field">
-                <label for="until_leave">Bunk</label>
-                <div class="what-if-input">
-                    <input type="number" id="until_leave" name="leave" min="0"
-                           value="{{ until_date_scenario.leave if until_date_scenario else 0 }}" required>
-                    <span>classes</span>
-                </div>
+            <div class="date-planner-month">
+                <button type="button" class="calendar-nav" id="calendar-prev" aria-label="Previous month">‹</button>
+                <strong id="calendar-month-label"></strong>
+                <button type="button" class="calendar-nav" id="calendar-next" aria-label="Next month">›</button>
             </div>
         </div>
-        {% if until_date_scenario and not until_date_scenario.valid %}
-        <div class="what-if-error"><strong>Check the plan</strong><span>{{ until_date_scenario.error }}</span></div>
-        {% endif %}
-        <button class="attendance-button" type="submit">Calculate Projection</button>
-    </form>
+
+        <div class="calendar-weekdays" aria-hidden="true">
+            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+        </div>
+        <div class="calendar-grid" id="calendar-grid"></div>
+
+        <div class="date-planner-help">
+            <span>Tap a teaching day to apply the selected action.</span>
+            <span>Tap it again to clear it.</span>
+        </div>
+
+        <div class="selected-plan" id="selected-plan">
+            <div class="selected-plan-header">
+                <div>
+                    <span class="date-planner-label">Your plan</span>
+                    <strong id="selected-plan-count">No days selected</strong>
+                </div>
+                <button type="button" class="clear-plan" id="clear-plan">Clear all</button>
+            </div>
+            <div class="selected-plan-list" id="selected-plan-list"></div>
+        </div>
+
+        <div class="date-plan-summary" id="date-plan-summary">
+            <div><span>Attend</span><strong id="summary-attend">0 days · 0 classes</strong></div>
+            <div><span>Bunk</span><strong id="summary-bunk">0 days · 0 classes</strong></div>
+            <div><span>Projected</span><strong id="summary-projected">—</strong></div>
+        </div>
+
+        <form action="/scenario/until-date" method="POST" class="what-if-form" id="date-plan-form">
+            <input type="hidden" name="plan" id="date-plan-input" value="{}">
+            <button class="attendance-button" type="submit">Calculate Projection</button>
+        </form>
+    </div>
+
+    {% if until_date_scenario and not until_date_scenario.valid %}
+    <div class="what-if-error">
+        <strong>Check the plan</strong>
+        <span>{{ until_date_scenario.error }}</span>
+    </div>
+    {% endif %}
 
     {% if until_date_scenario and until_date_scenario.valid %}
     <div class="what-if-result">
         <div class="what-if-projection">
-            <div><span>Starting point</span><strong>{{ until_date_scenario.starting.percentage }}%</strong><small>{{ until_date_scenario.starting.attended }} / {{ until_date_scenario.starting.total }}</small></div>
+            <div>
+                <span>Starting point</span>
+                <strong>{{ until_date_scenario.starting.percentage }}%</strong>
+                <small>{{ until_date_scenario.starting.attended }} / {{ until_date_scenario.starting.total }}</small>
+            </div>
             <div class="what-if-arrow">→</div>
-            <div><span>{{ until_date_scenario.end_date_display }}</span><strong>{{ until_date_scenario.projected_percentage }}%</strong><small>{{ until_date_scenario.projected_attended }} / {{ until_date_scenario.projected_total }}</small></div>
+            <div>
+                <span>After your selected days</span>
+                <strong>{{ until_date_scenario.projected_percentage }}%</strong>
+                <small>{{ until_date_scenario.projected_attended }} / {{ until_date_scenario.projected_total }}</small>
+            </div>
         </div>
-        <p class="what-if-verdict"><strong>{{ until_date_scenario.future_classes }}</strong> teaching classes fall between {{ until_date_scenario.start_date_display }} and {{ until_date_scenario.end_date_display }}. You planned <strong>{{ until_date_scenario.planned_classes }}</strong>; <strong>{{ until_date_scenario.remaining_after_plan }}</strong> remain unplanned.</p>
+        <p class="what-if-verdict">
+            <strong>{{ until_date_scenario.attended_days }}</strong> attend day(s) ·
+            <strong>{{ until_date_scenario.bunk_days }}</strong> bunk day(s) ·
+            <strong>{{ until_date_scenario.planned_classes }}</strong> planned class(es).
+        </p>
     </div>
     {% endif %}
 </div>
+
+<script>
+(function () {
+    const planner = document.getElementById("date-planner");
+    if (!planner) return;
+
+    const today = new Date("{{ today_date }}T00:00:00");
+    const semesterEnd = new Date("{{ semester_end_date }}T00:00:00");
+    const todayClasses = {{ today_remaining_classes }};
+    const classesPerDay = {{ classes_per_day }};
+    const teachingDays = new Set({{ teaching_days_json | safe }});
+    const initialPlan = {{ (until_date_scenario.selected_dates if until_date_scenario and until_date_scenario.valid else []) | tojson }};
+
+    const plan = {};
+    initialPlan.forEach(function (item) {
+        plan[item.date] = { action: item.action, classes: item.classes };
+    });
+
+    let mode = "attend";
+    let visibleMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    function iso(date) {
+        return [
+            date.getFullYear(),
+            String(date.getMonth() + 1).padStart(2, "0"),
+            String(date.getDate()).padStart(2, "0")
+        ].join("-");
+    }
+
+    function classesFor(date) {
+        return iso(date) === "{{ today_date }}" ? todayClasses : classesPerDay;
+    }
+
+    function isPast(date) {
+        return date < today;
+    }
+
+    function isSelectable(date) {
+        return !isPast(date) && date <= semesterEnd && teachingDays.has(iso(date));
+    }
+
+    function renderCalendar() {
+        const grid = document.getElementById("calendar-grid");
+        const label = document.getElementById("calendar-month-label");
+        const year = visibleMonth.getFullYear();
+        const month = visibleMonth.getMonth();
+
+        label.textContent = visibleMonth.toLocaleDateString(undefined, {
+            month: "long",
+            year: "numeric"
+        });
+
+        grid.innerHTML = "";
+        const firstDay = new Date(year, month, 1);
+        const mondayOffset = (firstDay.getDay() + 6) % 7;
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        for (let i = 0; i < mondayOffset; i++) {
+            const blank = document.createElement("div");
+            blank.className = "calendar-day blank";
+            grid.appendChild(blank);
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const current = new Date(year, month, day);
+            const key = iso(current);
+            const cell = document.createElement("button");
+            cell.type = "button";
+            cell.className = "calendar-day";
+            cell.dataset.date = key;
+
+            const selectable = isSelectable(current);
+            const selected = plan[key];
+
+            if (!selectable) {
+                cell.classList.add("disabled");
+                cell.disabled = true;
+            }
+            if (key === "{{ today_date }}") cell.classList.add("today");
+            if (selected) cell.classList.add(selected.action);
+
+            const number = document.createElement("strong");
+            number.textContent = day;
+            cell.appendChild(number);
+
+            if (selectable) {
+                const meta = document.createElement("span");
+                meta.textContent = classesFor(current) + " classes";
+                cell.appendChild(meta);
+
+                if (selected) {
+                    const state = document.createElement("small");
+                    state.textContent = selected.action === "attend" ? "ATTEND" : "BUNK";
+                    cell.appendChild(state);
+                }
+            } else if (!teachingDays.has(key)) {
+                const meta = document.createElement("span");
+                meta.textContent = "No classes";
+                cell.appendChild(meta);
+            }
+
+            if (selectable) {
+                cell.addEventListener("click", function () {
+                    if (plan[key]) {
+                        if (plan[key].action === mode) {
+                            delete plan[key];
+                        } else {
+                            plan[key].action = mode;
+                            plan[key].classes = classesFor(current);
+                        }
+                    } else {
+                        plan[key] = { action: mode, classes: classesFor(current) };
+                    }
+                    renderCalendar();
+                    renderPlan();
+                });
+            }
+
+            grid.appendChild(cell);
+        }
+
+        const canPrev = visibleMonth > new Date(today.getFullYear(), today.getMonth(), 1);
+        const canNext = visibleMonth < new Date(semesterEnd.getFullYear(), semesterEnd.getMonth(), 1);
+        document.getElementById("calendar-prev").disabled = !canPrev;
+        document.getElementById("calendar-next").disabled = !canNext;
+    }
+
+    function renderPlan() {
+        const list = document.getElementById("selected-plan-list");
+        const count = document.getElementById("selected-plan-count");
+        const attend = Object.values(plan).filter(item => item.action === "attend");
+        const bunk = Object.values(plan).filter(item => item.action === "bunk");
+        const attendClasses = attend.reduce((sum, item) => sum + item.classes, 0);
+        const bunkClasses = bunk.reduce((sum, item) => sum + item.classes, 0);
+
+        const entries = Object.entries(plan).sort((a, b) => a[0].localeCompare(b[0]));
+        count.textContent = entries.length
+            ? entries.length + (entries.length === 1 ? " day selected" : " days selected")
+            : "No days selected";
+
+        list.innerHTML = "";
+        entries.forEach(function (entry) {
+            const key = entry[0];
+            const item = entry[1];
+            const row = document.createElement("div");
+            row.className = "selected-plan-row " + item.action;
+
+            const label = document.createElement("span");
+            const d = new Date(key + "T00:00:00");
+            label.textContent = d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+
+            const action = document.createElement("strong");
+            action.textContent = item.action === "attend" ? "Attend" : "Bunk";
+
+            const classes = document.createElement("span");
+            classes.textContent = item.classes + " classes";
+
+            const adjust = document.createElement("input");
+            adjust.type = "number";
+            adjust.min = "1";
+            adjust.max = String(classesFor(d));
+            adjust.value = String(item.classes);
+            adjust.setAttribute("aria-label", "Classes for " + label.textContent);
+            adjust.addEventListener("click", function (event) { event.stopPropagation(); });
+            adjust.addEventListener("input", function () {
+                let value = parseInt(adjust.value || "0", 10);
+                if (!Number.isFinite(value)) value = 0;
+                value = Math.max(1, Math.min(value, classesFor(d)));
+                plan[key].classes = value;
+                adjust.value = value;
+                renderPlan();
+                renderCalendar();
+            });
+
+            const remove = document.createElement("button");
+            remove.type = "button";
+            remove.className = "selected-plan-remove";
+            remove.textContent = "×";
+            remove.setAttribute("aria-label", "Remove " + label.textContent);
+            remove.addEventListener("click", function () {
+                delete plan[key];
+                renderCalendar();
+                renderPlan();
+            });
+
+            row.appendChild(label);
+            row.appendChild(action);
+            row.appendChild(classes);
+            row.appendChild(adjust);
+            row.appendChild(remove);
+            list.appendChild(row);
+        });
+
+        document.getElementById("summary-attend").textContent =
+            attend.length + (attend.length === 1 ? " day" : " days") + " · " + attendClasses + " classes";
+        document.getElementById("summary-bunk").textContent =
+            bunk.length + (bunk.length === 1 ? " day" : " days") + " · " + bunkClasses + " classes";
+
+        const starting = {{ (until_date_scenario.starting if until_date_scenario else today_scenario_start) | tojson }};
+        const projectedAttended = starting.attended + attendClasses;
+        const projectedTotal = starting.total + attendClasses + bunkClasses;
+        const percentage = projectedTotal > 0 ? (projectedAttended / projectedTotal * 100).toFixed(2) : "0.00";
+        document.getElementById("summary-projected").textContent = percentage + "%";
+
+        document.getElementById("date-plan-input").value = JSON.stringify(plan);
+    }
+
+    document.querySelectorAll(".date-plan-mode").forEach(function (button) {
+        button.addEventListener("click", function () {
+            mode = button.dataset.mode;
+            document.querySelectorAll(".date-plan-mode").forEach(function (item) {
+                item.classList.toggle("active", item === button);
+            });
+        });
+    });
+
+    document.getElementById("calendar-prev").addEventListener("click", function () {
+        visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
+        renderCalendar();
+    });
+
+    document.getElementById("calendar-next").addEventListener("click", function () {
+        visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
+        renderCalendar();
+    });
+
+    document.getElementById("clear-plan").addEventListener("click", function () {
+        Object.keys(plan).forEach(function (key) { delete plan[key]; });
+        renderCalendar();
+        renderPlan();
+    });
+
+    document.getElementById("date-plan-form").addEventListener("submit", function () {
+        renderPlan();
+    });
+
+    renderCalendar();
+    renderPlan();
+})();
+</script>
 
 {% elif scenario == "target" %}
 <div class="what-if-card">
