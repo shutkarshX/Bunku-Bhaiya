@@ -101,12 +101,30 @@ def get_requested_leave_classes(form, step):
     return days_and_classes_to_classes(days, classes)
 
 
-def build_checkpoint_tracker(phase_1_result, choice_made):
-    if not phase_1_result:
-        return ""
+def build_checkpoint_tracker(phase_1_result=None, choice_made=False):
+    current_date = date.today()
 
-    checkpoints = phase_1_result.get("checkpoints", [])
-    active_index = phase_1_result.get("active_checkpoint_index")
+    if phase_1_result:
+        checkpoints = phase_1_result.get("checkpoints", [])
+        active_index = phase_1_result.get("active_checkpoint_index")
+    else:
+        active_index = next(
+            (
+                index
+                for index, (_, checkpoint_date) in enumerate(CHECKPOINTS)
+                if current_date < checkpoint_date
+            ),
+            None,
+        )
+        checkpoints = [
+            {
+                "checkpoint": checkpoint_name,
+                "date": checkpoint_date.strftime("%d %B %Y"),
+                "is_completed": current_date >= checkpoint_date,
+            }
+            for checkpoint_name, checkpoint_date in CHECKPOINTS
+        ]
+
     cards = []
 
     for index, checkpoint in enumerate(checkpoints):
@@ -124,18 +142,23 @@ def build_checkpoint_tracker(phase_1_result, choice_made):
             label = "Upcoming"
 
         carry_forward = ""
-        if choice_made and index == active_index and not checkpoint.get("is_completed"):
+        if (
+            phase_1_result
+            and choice_made
+            and index == active_index
+            and not checkpoint.get("is_completed")
+        ):
             carry_forward = f"""
                 <div class="checkpoint-projection">
-                    <span>Projected at this checkpoint</span>
+                    <span>Your checkpoint attendance</span>
                     <strong>{checkpoint.get("requested_projected_percentage", 0):.2f}%</strong>
                     <small>
                         {checkpoint.get("requested_projected_attended", 0)}
                         /
                         {checkpoint.get("requested_projected_total", 0)}
-                        attendance
+                        classes
                     </small>
-                    <em>Carried into the next sessional</em>
+                    <em>This becomes the starting attendance for the next sessional.</em>
                 </div>
             """
 
@@ -329,7 +352,9 @@ def render_dashboard(
         page=page,
     )
 
-    if page == "planner" and phase_1:
+    if page == "planner" and (
+        phase_1 is not None or session.get("planner_loaded", False)
+    ):
         rendered = rendered.replace(
             "</body>",
             build_checkpoint_tracker(
@@ -355,6 +380,10 @@ def planner_page():
         return render_dashboard(attendance_data, page="home")
 
     if not session.get("planner_loaded", False):
+        return render_dashboard(attendance_data, page="planner")
+
+    # The event decision must happen before checkpoint calculations.
+    if not session.get("planner_event_checked", False):
         return render_dashboard(attendance_data, page="planner")
 
     phase_1_result = run_phase_1(
