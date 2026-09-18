@@ -104,6 +104,7 @@
     const todayClasses = {{ today_remaining_classes }};
     const classesPerDay = {{ classes_per_day }};
     const teachingDays = new Set({{ teaching_days_json | safe }});
+    const calendarEvents = {{ calendar_events_json | safe }};
     const initialPlan = {{ (until_date_scenario.selected_dates if until_date_scenario and until_date_scenario.valid else []) | tojson }};
 
     const plan = {};
@@ -166,12 +167,18 @@
 
             const selectable = isSelectable(current);
             const selected = plan[key];
+            const event = calendarEvents[key];
 
             if (!selectable) {
                 cell.classList.add("disabled");
                 cell.disabled = true;
             }
             if (key === "{{ today_date }}") cell.classList.add("today");
+            if (event) {
+                cell.classList.add("calendar-event-" + event.type);
+                cell.dataset.tooltip = event.label;
+                cell.setAttribute("aria-label", day + " " + event.label);
+            }
             if (selected) cell.classList.add(selected.action);
 
             const number = document.createElement("strong");
