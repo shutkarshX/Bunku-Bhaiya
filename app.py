@@ -6,6 +6,7 @@ from flask import Flask, redirect, render_template, request, session
 from portal import (
     get_attendance,
     get_subject_details,
+    load_subject_details,
     get_today_attendance,
     PortalUnavailableError,
     PortalLoginError,
@@ -149,10 +150,23 @@ def planner_page():
 
 @app.route("/subjects")
 def subjects_page():
-    """Show the existing subject-wise attendance view."""
+    """Show subject-wise attendance using the shared server-side cache."""
     attendance_data = get_user_attendance()
     if not attendance_data.get("subjects"):
         return render_dashboard(attendance_data, page="home")
+
+    token = get_planner_token(attendance_data)
+    try:
+        # The first feature that needs subject history loads it.
+        # Later features reuse the same token/cache without another portal scan.
+        load_subject_details(token)
+    except PortalUnavailableError as e:
+        print("\nSubject attendance load failed\n", e)
+        return render_dashboard(
+            attendance_data,
+            portal_error="unavailable",
+            page="subjects",
+        )
 
     return render_dashboard(attendance_data, page="subjects")
 
