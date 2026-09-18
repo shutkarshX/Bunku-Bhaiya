@@ -89,6 +89,13 @@ def get_active_checkpoint_target():
     return None, None
 
 
+def get_target_checkpoint_index():
+    pending = session.get("target_checkpoint_index")
+    if isinstance(pending, int) and 0 <= pending < len(CHECKPOINTS):
+        return pending
+    return get_active_checkpoint_target()[0]
+
+
 def save_checkpoint_target(index, value):
     try:
         target = float(value)
@@ -241,9 +248,13 @@ def render_dashboard(
         planner_choice_made=session.get("planner_choice_made", False),
         checkpoint_targets=get_checkpoint_targets(),
         active_checkpoint_target=get_active_checkpoint_target()[1],
-        active_checkpoint_name=(
-            CHECKPOINTS[get_active_checkpoint_target()[0]][0]
-            if get_active_checkpoint_target()[0] is not None
+        target_checkpoint_required=(
+            get_target_checkpoint_index() is not None
+            and get_target_checkpoint_index() not in get_checkpoint_targets()
+        ),
+        target_checkpoint_name=(
+            CHECKPOINTS[get_target_checkpoint_index()][0]
+            if get_target_checkpoint_index() is not None
             else None
         ),
         tracker_checkpoints=build_checkpoint_tracker_data(
@@ -274,8 +285,11 @@ def planner_page():
     if not session.get("planner_event_checked", False):
         return render_dashboard(attendance_data, page="planner")
 
-    active_index, active_target = get_active_checkpoint_target()
-    if active_index is not None and active_target is None:
+    target_index = get_target_checkpoint_index()
+    if (
+        target_index is not None
+        and target_index not in get_checkpoint_targets()
+    ):
         return render_dashboard(attendance_data, page="planner")
 
     phase_1_result = run_phase_1(
@@ -414,8 +428,10 @@ def handle_checkpoint_submission(checkpoint_index):
     session["planner_choice_made"] = True
     session.modified = True
 
-    active_index, active_target = get_active_checkpoint_target()
-    if active_index is not None and active_target is None:
+    next_index = checkpoint_index + 1
+    if next_index < len(CHECKPOINTS):
+        session["target_checkpoint_index"] = next_index
+        session.modified = True
         return redirect("/planner")
 
     phase_1_result = run_phase_1(
@@ -486,13 +502,15 @@ def checkpoint_target():
     if not attendance_data.get("subjects") or not session.get("planner_loaded", False):
         return redirect("/")
 
-    active_index, _ = get_active_checkpoint_target()
-    if active_index is None:
+    target_index = get_target_checkpoint_index()
+    if target_index is None:
         return redirect("/planner")
 
-    if not save_checkpoint_target(active_index, request.form.get("target_attendance")):
+    if not save_checkpoint_target(target_index, request.form.get("target_attendance")):
         return redirect("/planner")
 
+    session.pop("target_checkpoint_index", None)
+    session.modified = True
     return redirect("/planner")
 
 
