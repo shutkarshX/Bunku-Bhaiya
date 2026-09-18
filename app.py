@@ -1,4 +1,5 @@
 import os
+from datetime import date
 
 from flask import Flask, render_template, request, session
 
@@ -53,6 +54,19 @@ def get_user_attendance():
 
 def get_user_leaves():
     return session.get("selected_leaves", dict(DEFAULT_SELECTED_LEAVES))
+
+
+def get_pending_event():
+    event = session.get("pending_event")
+    return event if isinstance(event, dict) else None
+
+
+def save_user_event(event):
+    if event is None:
+        session.pop("pending_event", None)
+    else:
+        session["pending_event"] = event
+    session.modified = True
 
 
 def save_user_leaves(leaves):
@@ -119,6 +133,7 @@ def dashboard():
     phase_1_result = run_phase_1(
         attendance_data,
         get_user_leaves(),
+        get_pending_event(),
     )
     return render_dashboard(attendance_data, phase_1_result)
 
@@ -159,6 +174,8 @@ def get_attendance_page():
     selected_leaves = dict(DEFAULT_SELECTED_LEAVES)
     save_user_leaves(selected_leaves)
     session["planner_loaded"] = False
+    session.pop("planner_event_checked", None)
+    session.pop("pending_event", None)
 
     print("Website received:", len(subjects), "subjects")
     print("Portal attendance:", state["portal"]["present"], "/", state["portal"]["total"])
@@ -203,11 +220,17 @@ def load_planner():
         attendance_data["subjects"] = subjects
         session["attendance_data"] = attendance_data
         session["planner_loaded"] = True
+        session.pop("planner_event_checked", None)
+        session.pop("pending_event", None)
         session.modified = True
+
+    if not session.get("planner_event_checked", False):
+        return render_dashboard(attendance_data)
 
     phase_1_result = run_phase_1(
         attendance_data,
         get_user_leaves(),
+        get_pending_event(),
     )
     return render_dashboard(attendance_data, phase_1_result)
 
@@ -225,12 +248,69 @@ def handle_checkpoint_submission(checkpoint_index):
     )
     save_user_leaves(selected_leaves)
 
-    phase_1_result = run_phase_1(attendance_data, selected_leaves)
+    phase_1_result = run_phase_1(
+        attendance_data,
+        selected_leaves,
+        get_pending_event(),
+    )
     return render_dashboard(
         attendance_data,
         phase_1_result,
         calculator_step=checkpoint_index + 2,
     )
+
+
+
+
+@app.route("/event", methods=["POST"])
+def save_event():
+    """Save today's optional event as a planning-only pending attendance."""
+    attendance_data = get_user_attendance()
+    if not attendance_data.get("subjects") or not session.get("planner_loaded", False):
+        return render_dashboard(attendance_data, portal_error="unavailable")
+
+    action = request.form.get("event_action")
+    if action == "none":
+        save_user_event(None)
+    elif action == "save":
+        try:
+            classes = int(request.form.get("event_classes", 0) or 0)
+        except (TypeError, ValueError):
+            classes = 0
+
+        today_remaining = 0
+        subjects = attendance_data.get("subjects") or []
+        if subjects:
+            try:
+                today_remaining = int(
+                    subjects[0].get("_bunkmaster_remaining_today", 0) or 0
+                )
+            except (TypeError, ValueError):
+                today_remaining = 0
+
+        classes = max(1, min(classes, today_remaining))
+        attended = request.form.get("event_attended") == "yes"
+
+        if classes <= 0:
+            save_user_event(None)
+        else:
+            save_user_event({
+                "date": date.today().isoformat(),
+                "classes": classes,
+                "attended": attended,
+            })
+    else:
+        return render_dashboard(attendance_data, portal_error="unavailable")
+
+    session["planner_event_checked"] = True
+    session.modified = True
+
+    phase_1_result = run_phase_1(
+        attendance_data,
+        get_user_leaves(),
+        get_pending_event(),
+    )
+    return render_dashboard(attendance_data, phase_1_result)
 
 
 @app.route("/sessional-1", methods=["POST"])
