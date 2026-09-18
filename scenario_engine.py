@@ -1,16 +1,12 @@
 """What-if scenario calculations built on the shared planning state."""
 
 from datetime import date, timedelta
-import math
-
 from attendance_state import build_attendance_state
+from academic_calendar import TEACHING_DAYS, is_teaching_day
 from bunk_calculator import (
     calculate_percentage,
     classes_needed_to_reach_target,
     CLASSES_PER_DAY,
-    is_teaching_day,
-    TEACHING_DAYS,
-    _get_pending_event_adjustment,
 )
 
 
@@ -38,7 +34,8 @@ def get_effective_starting_state(attendance_data, pending_event=None):
         isinstance(pending_event, dict)
         and pending_event.get("date") == date.today().isoformat()
     ):
-        event_classes = _safe_nonnegative_int(pending_event.get("classes", 0))\n        event_attended = event_classes if pending_event.get("attended") else 0
+        event_classes = _safe_nonnegative_int(pending_event.get("classes", 0))
+        event_attended = event_classes if pending_event.get("attended") else 0
         event_classes = min(event_classes, remaining_today)
         event_attended = min(event_attended, event_classes)
         remaining_today -= event_classes
@@ -184,7 +181,7 @@ def calculate_target_scenario(attendance_data, pending_event=None, target_attend
     """Calculate consecutive classes required to reach a target percentage."""
     starting = get_effective_starting_state(attendance_data, pending_event)
     target_attendance = _safe_nonnegative_int(target_attendance)
-    target_attendance = min(100, target_attendance)
+    target_attendance = min(99, target_attendance)
 
     if target_attendance <= 0:
         return {
