@@ -359,6 +359,10 @@ def get_target_capacity(attendance_data, pending_event=None):
         "maximum_percentage": round(
             calculate_percentage(maximum_attended, maximum_total), 2
         ),
+        # Browser/input bound uses the exact same maximum value.
+        "maximum_input": round(
+            calculate_percentage(maximum_attended, maximum_total), 2
+        ),
     }
 
 
