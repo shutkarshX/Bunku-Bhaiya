@@ -425,6 +425,7 @@ def planner_page():
         attendance_data,
         get_user_leaves(),
         get_pending_event(),
+        get_checkpoint_targets(),
     )
     return render_dashboard(attendance_data, phase_1_result, page="planner")
 
@@ -556,10 +557,15 @@ def handle_checkpoint_submission(checkpoint_index):
     session["planner_choice_made"] = True
     session.modified = True
 
+    active_index, active_target = get_active_checkpoint_target()
+    if active_index is not None and active_target is None:
+        return redirect("/planner")
+
     phase_1_result = run_phase_1(
         attendance_data,
         selected_leaves,
         get_pending_event(),
+        get_checkpoint_targets(),
     )
     return render_dashboard(
         attendance_data,
@@ -616,6 +622,7 @@ def save_event():
         attendance_data,
         get_user_leaves(),
         get_pending_event(),
+        get_checkpoint_targets(),
     )
     return render_dashboard(attendance_data, phase_1_result, page="planner")
 
