@@ -2065,3 +2065,87 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+
+.target-capacity-card {
+    margin-bottom: 18px;
+    padding: 18px;
+    border: 1px solid #dbe5f2;
+    border-radius: 14px;
+    background: #f7faff;
+}
+
+.target-capacity-card span,
+.target-capacity-card small {
+    display: block;
+    color: #5f6b7a;
+}
+
+.target-capacity-card span {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.target-capacity-card strong {
+    display: block;
+    margin: 2px 0 3px;
+    font-size: 30px;
+}
+
+.target-capacity-card small {
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.what-if-field-note {
+    display: block;
+    margin-top: 6px;
+    color: #6b7280;
+    font-size: 12px;
+}
+
+.target-day-plan {
+    margin-top: 18px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.target-day-plan-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.target-day-plan-header span {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.target-day-plan-header small {
+    color: #6b7280;
+    font-size: 11px;
+}
+
+.target-day-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 14px;
+    border-bottom: 1px solid #f0f1f3;
+    font-size: 13px;
+}
+
+.target-day-row:last-child {
+    border-bottom: 0;
+}
+
+.target-day-row strong {
+    font-size: 13px;
+}
