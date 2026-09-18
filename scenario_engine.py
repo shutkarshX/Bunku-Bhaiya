@@ -234,7 +234,7 @@ def calculate_safe_leaves_scenario(attendance_data, pending_event=None, target_a
     starting = get_effective_starting_state(attendance_data, pending_event)
     target_attendance = min(100, _safe_nonnegative_int(target_attendance))
 
-    semester_end = max(TEACHING_DAYS)
+    semester_end = max(date.fromisoformat(value) for value in TEACHING_DAYS)
     future_classes = get_future_classes_until(
         semester_end,
         attendance_data,
