@@ -241,6 +241,11 @@ def render_dashboard(
         planner_choice_made=session.get("planner_choice_made", False),
         checkpoint_targets=get_checkpoint_targets(),
         active_checkpoint_target=get_active_checkpoint_target()[1],
+        active_checkpoint_name=(
+            CHECKPOINTS[get_active_checkpoint_target()[0]][0]
+            if get_active_checkpoint_target()[0] is not None
+            else None
+        ),
         tracker_checkpoints=build_checkpoint_tracker_data(
             phase_1,
             session.get("planner_choice_made", False),
