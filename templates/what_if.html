@@ -1,0 +1,58 @@
+<div class="what-if-page">
+
+    <div class="summary">
+        <h2>What-If Scenarios</h2>
+        <p>
+            Explore different attendance possibilities without changing your real portal attendance.
+            Each scenario starts from your effective attendance right now.
+        </p>
+    </div>
+
+    <div class="what-if-scenario-box">
+        <div class="what-if-scenario-heading">
+            <span class="what-if-kicker">SCENARIO 1</span>
+            <h2>Today</h2>
+            <p>What happens to your effective attendance if you attend or bunk today's remaining classes?</p>
+        </div>
+        {% include "scenario_today.html" %}
+    </div>
+
+    <div class="what-if-scenario-box">
+        <div class="what-if-scenario-heading">
+            <span class="what-if-kicker">SCENARIO 2</span>
+            <h2>Sessional Checkpoints</h2>
+            <p>Plan your leave through the First, Second and Third Sessional checkpoints.</p>
+        </div>
+
+        {% if not planner_loaded %}
+        <div class="summary">
+            <h3>Planner setup required</h3>
+            <p>Open Planner Setup first so BunkMaster can load today's classes.</p>
+            <a href="/planner" class="attendance-button">Open Planner Setup</a>
+        </div>
+        {% elif not session.get("planner_event_checked", False) %}
+        <div class="summary">
+            <h3>Today's event decision required</h3>
+            <p>Complete today's event question in Planner Setup before using checkpoint planning.</p>
+            <a href="/planner" class="attendance-button">Continue Planner Setup</a>
+        </div>
+        {% elif planner_target_required %}
+        <div class="summary">
+            <h3>Attendance requirement required</h3>
+            <p>Choose the minimum attendance percentage once. It will apply to all sessional checkpoints.</p>
+            <form action="/planner-target" method="POST">
+                <input type="hidden" name="return_to" value="/what-if">
+                <label for="what_if_target_attendance">Required attendance percentage</label>
+                <div class="target-input-row">
+                    <input type="number" id="what_if_target_attendance" name="target_attendance" min="1" max="100" step="1" placeholder="e.g. 75" required autofocus>
+                    <span>%</span>
+                </div>
+                <button type="submit" class="attendance-button">Continue</button>
+            </form>
+        </div>
+        {% else %}
+        {% include "sessional_scenario.html" %}
+        {% endif %}
+    </div>
+
+</div>
