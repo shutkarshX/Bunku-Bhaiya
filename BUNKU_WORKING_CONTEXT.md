@@ -2362,3 +2362,98 @@ The old token is not reused by the new login.
 ## Reversible/reverted?
 
 No.
+
+
+# 68. VERSION-D — SESSIONAL TRACKER + EVENT FLOW FIX
+
+Date: 2026-09-18
+
+Status: **ACTIVE**
+
+## Sessional tracker behavior
+
+The Attendance Planner now treats the right-side sessional tracker as a running academic checkpoint indicator.
+
+Before a planning choice is made, it shows only checkpoint state:
+
+```
+✓ First Sessional   PASSED
+● Second Sessional  CURRENT
+○ Third Sessional   UPCOMING
+```
+
+A passed checkpoint does **not** display an attendance percentage. The application does not reconstruct historical attendance for completed checkpoints.
+
+## Current checkpoint projection
+
+After the user chooses the leave amount for the current checkpoint, the current checkpoint entry on the right additionally shows:
+
+- projected checkpoint attendance percentage
+- projected attended / total classes
+- a note that this becomes the starting attendance for the next sessional
+
+This is a forward projection based on the user's current planning choice, not a historical record.
+
+The conceptual flow is:
+
+```
+Current effective attendance
+        ↓
+User chooses planned leave
+        ↓
+Projected current checkpoint attendance
+        ↓
+Starting attendance for next sessional
+```
+
+The existing left-side planner remains responsible for showing the actual planning inputs such as available/safe leave and the user's selected leave.
+
+## Event-flow correction
+
+The planner previously could skip the Today's Event decision because `/planner` immediately ran `run_phase_1()` as soon as `planner_loaded` became true.
+
+That made the template condition for the event prompt unreachable.
+
+The corrected flow is:
+
+```
+Open Attendance Planner
+        ↓
+Load detailed planner data
+        ↓
+If today's event decision is unresolved
+        → show event question
+        ↓
+After event choice
+        → run checkpoint calculations
+        ↓
+User chooses checkpoint leave
+        ↓
+show checkpoint projection in tracker
+```
+
+If there are zero remaining classes today, the existing loader automatically marks the event decision as complete and the planner can proceed directly to calculations.
+
+## Files changed
+
+- `app.py`
+- `BUNKU_WORKING_CONTEXT.md`
+
+## Version-D commit
+
+```
+09ce7c843239b48912eb78b5f31e58ac424d1504
+```
+
+## Calculation impact
+
+- No attendance formula changed.
+- No checkpoint dates changed.
+- No teaching-day rules changed.
+- No leave calculation changed.
+- The event decision now correctly occurs before checkpoint calculations.
+- The tracker reads the existing projected checkpoint result after the user makes a planning choice.
+
+## Reversible/reverted?
+
+No.
