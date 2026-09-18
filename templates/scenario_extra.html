@@ -444,14 +444,29 @@
 
     {% if target_scenario and target_scenario.valid %}
     <div class="what-if-result">
+        <div class="target-summary-grid">
+            <div class="target-summary-box">
+                <span>Current effective</span>
+                <strong>{{ target_scenario.starting.percentage }}%</strong>
+            </div>
+            <div class="target-summary-box">
+                <span>Maximum possible</span>
+                <strong>{{ target_scenario.maximum_percentage }}%</strong>
+                <small>if you attend all {{ target_scenario.available_classes }} remaining classes</small>
+            </div>
+        </div>
+
         {% if target_scenario.status == "already_reached" %}
-        <p class="what-if-verdict"><strong>Target already reached.</strong> Your current effective attendance is {{ target_scenario.starting.percentage }}%.</p>
+        <p class="what-if-verdict"><strong>Target already reached.</strong> You are currently at {{ target_scenario.starting.percentage }}%.</p>
         {% elif target_scenario.status == "reachable" %}
-        <div class="what-if-big-number"><strong>{{ target_scenario.classes_needed }}</strong><span>consecutive classes to attend</span></div>
-        <p class="what-if-verdict">After attending them: <strong>{{ target_scenario.projected_percentage }}%</strong> ({{ target_scenario.projected_attended }} / {{ target_scenario.projected_total }}).</p>
+        <div class="what-if-big-number">
+            <strong>{{ target_scenario.classes_needed }}</strong>
+            <span>classes to attend consecutively</span>
+        </div>
+        <p class="what-if-verdict">After attending {{ target_scenario.classes_needed }} classes: <strong>{{ target_scenario.projected_percentage }}%</strong> ({{ target_scenario.projected_attended }} / {{ target_scenario.projected_total }}).</p>
         {% else %}
-        <p class="what-if-verdict"><strong>This target is not reachable</strong> with the currently available teaching classes.</p>
-        <p class="what-if-note">Available through the academic calendar: {{ target_scenario.available_classes }} classes.</p>
+        <p class="what-if-verdict"><strong>This target cannot be reached</strong> within the remaining academic calendar.</p>
+        <p class="what-if-note">You can attend {{ target_scenario.available_classes }} remaining classes, reaching a maximum of <strong>{{ target_scenario.maximum_percentage }}%</strong>.</p>
         {% endif %}
     </div>
     {% endif %}
