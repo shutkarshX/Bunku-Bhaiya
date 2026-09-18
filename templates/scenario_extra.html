@@ -1,0 +1,120 @@
+{% if scenario == "until-date" %}
+<div class="what-if-card">
+    <div class="what-if-header">
+        <span class="what-if-kicker">SCENARIO 3</span>
+        <h2>Plan Until a Date</h2>
+        <p>Choose a date and simulate how many classes you will attend or bunk before it.</p>
+    </div>
+
+    <form action="/scenario/until-date" method="POST" class="what-if-form">
+        <div class="what-if-options">
+            <div class="what-if-field">
+                <label for="until_date">Plan until</label>
+                <input type="date" id="until_date" name="target_date"
+                       min="{{ today_date }}" value="{{ until_date_scenario.target_date if until_date_scenario else today_date }}" required>
+            </div>
+            <div class="what-if-field">
+                <label for="until_attended">Attend</label>
+                <div class="what-if-input">
+                    <input type="number" id="until_attended" name="attended" min="0"
+                           value="{{ until_date_scenario.attended if until_date_scenario else 0 }}" required>
+                    <span>classes</span>
+                </div>
+            </div>
+            <div class="what-if-field">
+                <label for="until_leave">Bunk</label>
+                <div class="what-if-input">
+                    <input type="number" id="until_leave" name="leave" min="0"
+                           value="{{ until_date_scenario.leave if until_date_scenario else 0 }}" required>
+                    <span>classes</span>
+                </div>
+            </div>
+        </div>
+        {% if until_date_scenario and not until_date_scenario.valid %}
+        <div class="what-if-error"><strong>Check the plan</strong><span>{{ until_date_scenario.error }}</span></div>
+        {% endif %}
+        <button class="attendance-button" type="submit">Calculate Projection</button>
+    </form>
+
+    {% if until_date_scenario and until_date_scenario.valid %}
+    <div class="what-if-result">
+        <div class="what-if-projection">
+            <div><span>Right now</span><strong>{{ until_date_scenario.starting.percentage }}%</strong><small>{{ until_date_scenario.starting.attended }} / {{ until_date_scenario.starting.total }}</small></div>
+            <div class="what-if-arrow">→</div>
+            <div><span>{{ until_date_scenario.target_date_display }}</span><strong>{{ until_date_scenario.projected_percentage }}%</strong><small>{{ until_date_scenario.projected_attended }} / {{ until_date_scenario.projected_total }}</small></div>
+        </div>
+        <p class="what-if-verdict">You planned <strong>{{ until_date_scenario.planned_classes }}</strong> of {{ until_date_scenario.future_classes }} available classes. <strong>{{ until_date_scenario.remaining_after_plan }}</strong> remain unplanned.</p>
+    </div>
+    {% endif %}
+</div>
+
+{% elif scenario == "target" %}
+<div class="what-if-card">
+    <div class="what-if-header">
+        <span class="what-if-kicker">SCENARIO 4</span>
+        <h2>Reach a Target</h2>
+        <p>Find how many consecutive classes you need to attend to reach a chosen attendance percentage.</p>
+    </div>
+
+    <form action="/scenario/target" method="POST" class="what-if-form">
+        <div class="what-if-field">
+            <label for="target_attendance_scenario">Target attendance</label>
+            <div class="what-if-input">
+                <input type="number" id="target_attendance_scenario" name="target_attendance"
+                       min="1" max="99" value="{{ target_scenario.target_attendance if target_scenario else 75 }}" required>
+                <span>%</span>
+            </div>
+        </div>
+        <button class="attendance-button" type="submit">Find Classes Needed</button>
+    </form>
+
+    {% if target_scenario and target_scenario.valid %}
+    <div class="what-if-result">
+        {% if target_scenario.status == "already_reached" %}
+        <p class="what-if-verdict"><strong>Target already reached.</strong> Your current effective attendance is {{ target_scenario.starting.percentage }}%.</p>
+        {% elif target_scenario.status == "reachable" %}
+        <div class="what-if-big-number"><strong>{{ target_scenario.classes_needed }}</strong><span>consecutive classes to attend</span></div>
+        <p class="what-if-verdict">After attending them: <strong>{{ target_scenario.projected_percentage }}%</strong> ({{ target_scenario.projected_attended }} / {{ target_scenario.projected_total }}).</p>
+        {% else %}
+        <p class="what-if-verdict"><strong>This target is not reachable</strong> with the currently available teaching classes.</p>
+        <p class="what-if-note">Available through the academic calendar: {{ target_scenario.available_classes }} classes.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+{% elif scenario == "safe-leaves" %}
+<div class="what-if-card">
+    <div class="what-if-header">
+        <span class="what-if-kicker">SCENARIO 5</span>
+        <h2>Safe Leaves</h2>
+        <p>See the maximum classes you can miss through the end of the current academic calendar while staying at your target.</p>
+    </div>
+
+    <form action="/scenario/safe-leaves" method="POST" class="what-if-form">
+        <div class="what-if-field">
+            <label for="safe_target_attendance">Minimum attendance</label>
+            <div class="what-if-input">
+                <input type="number" id="safe_target_attendance" name="target_attendance"
+                       min="1" max="99" value="{{ safe_leaves_scenario.target_attendance if safe_leaves_scenario else 75 }}" required>
+                <span>%</span>
+            </div>
+        </div>
+        <button class="attendance-button" type="submit">Calculate Safe Leaves</button>
+    </form>
+
+    {% if safe_leaves_scenario and safe_leaves_scenario.valid %}
+    <div class="what-if-result">
+        <div class="safe-leave-box">
+            <span>Maximum Safe Leave</span>
+            <strong>{{ safe_leaves_scenario.maximum_leave }}</strong>
+            <p>{{ safe_leaves_scenario.maximum_leave_days }} day(s) + {{ safe_leaves_scenario.maximum_leave_remaining_classes }} class(es), through {{ safe_leaves_scenario.semester_end_display }}.</p>
+        </div>
+        <p class="what-if-verdict">If you use every safe leave and attend all other available classes, projected attendance is <strong>{{ safe_leaves_scenario.projected_percentage }}%</strong>.</p>
+        {% if safe_leaves_scenario.starting.percentage < safe_leaves_scenario.target_attendance %}
+        <p class="what-if-note">You are currently below the selected minimum, so no additional safe leave is available until attendance recovers.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
