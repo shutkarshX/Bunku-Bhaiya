@@ -2,16 +2,21 @@
 <div class="what-if-card">
     <div class="what-if-header">
         <span class="what-if-kicker">SCENARIO 3</span>
-        <h2>Plan Until a Date</h2>
-        <p>Choose a date and simulate how many classes you will attend or bunk before it.</p>
+        <h2>Plan Between Dates</h2>
+        <p>What happens to your effective attendance if you attend or bunk classes between two selected dates?</p>
     </div>
 
     <form action="/scenario/until-date" method="POST" class="what-if-form">
         <div class="what-if-options">
             <div class="what-if-field">
-                <label for="until_date">Plan until</label>
-                <input type="date" id="until_date" name="target_date"
-                       min="{{ today_date }}" value="{{ until_date_scenario.target_date if until_date_scenario else today_date }}" required>
+                <label for="until_start_date">From</label>
+                <input type="date" id="until_start_date" name="start_date"
+                       min="{{ today_date }}" value="{{ until_date_scenario.start_date if until_date_scenario else today_date }}" required>
+            </div>
+            <div class="what-if-field">
+                <label for="until_end_date">To</label>
+                <input type="date" id="until_end_date" name="end_date"
+                       min="{{ today_date }}" value="{{ until_date_scenario.end_date if until_date_scenario else today_date }}" required>
             </div>
             <div class="what-if-field">
                 <label for="until_attended">Attend</label>
@@ -39,11 +44,11 @@
     {% if until_date_scenario and until_date_scenario.valid %}
     <div class="what-if-result">
         <div class="what-if-projection">
-            <div><span>Right now</span><strong>{{ until_date_scenario.starting.percentage }}%</strong><small>{{ until_date_scenario.starting.attended }} / {{ until_date_scenario.starting.total }}</small></div>
+            <div><span>Starting point</span><strong>{{ until_date_scenario.starting.percentage }}%</strong><small>{{ until_date_scenario.starting.attended }} / {{ until_date_scenario.starting.total }}</small></div>
             <div class="what-if-arrow">→</div>
-            <div><span>{{ until_date_scenario.target_date_display }}</span><strong>{{ until_date_scenario.projected_percentage }}%</strong><small>{{ until_date_scenario.projected_attended }} / {{ until_date_scenario.projected_total }}</small></div>
+            <div><span>{{ until_date_scenario.end_date_display }}</span><strong>{{ until_date_scenario.projected_percentage }}%</strong><small>{{ until_date_scenario.projected_attended }} / {{ until_date_scenario.projected_total }}</small></div>
         </div>
-        <p class="what-if-verdict">You planned <strong>{{ until_date_scenario.planned_classes }}</strong> of {{ until_date_scenario.future_classes }} available classes. <strong>{{ until_date_scenario.remaining_after_plan }}</strong> remain unplanned.</p>
+        <p class="what-if-verdict"><strong>{{ until_date_scenario.future_classes }}</strong> teaching classes fall between {{ until_date_scenario.start_date_display }} and {{ until_date_scenario.end_date_display }}. You planned <strong>{{ until_date_scenario.planned_classes }}</strong>; <strong>{{ until_date_scenario.remaining_after_plan }}</strong> remain unplanned.</p>
     </div>
     {% endif %}
 </div>
