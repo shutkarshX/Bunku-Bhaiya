@@ -24,13 +24,13 @@ def calculate_percentage(attended, total):
     return (attended / total) * 100
 
 
-def classes_needed_to_reach_target(attended, total_classes):
+def classes_needed_to_reach_target(attended, total_classes, target_attendance=TARGET_ATTENDANCE):
     if total_classes == 0:
         return 0
-    if calculate_percentage(attended, total_classes) >= TARGET_ATTENDANCE:
+    if calculate_percentage(attended, total_classes) >= target_attendance:
         return 0
     required_classes = math.ceil(
-        ((TARGET_ATTENDANCE / 100) * total_classes - attended)
+        ((target_attendance / 100) * total_classes - attended)
         / (1 - (TARGET_ATTENDANCE / 100))
     )
     return max(0, required_classes)
@@ -73,15 +73,15 @@ def count_teaching_days(start_date, end_date):
     return count
 
 
-def find_maximum_safe_leave(attended, total_classes, future_classes):
-    if calculate_percentage(attended, total_classes) < TARGET_ATTENDANCE:
+def find_maximum_safe_leave(attended, total_classes, future_classes, target_attendance=TARGET_ATTENDANCE):
+    if calculate_percentage(attended, total_classes) < target_attendance:
         return 0
     maximum_leave_classes = 0
     for missed_classes in range(future_classes + 1):
         future_attended = future_classes - missed_classes
         final_attended = attended + future_attended
         final_total = total_classes + future_classes
-        if calculate_percentage(final_attended, final_total) >= TARGET_ATTENDANCE:
+        if calculate_percentage(final_attended, final_total) >= target_attendance:
             maximum_leave_classes = missed_classes
         else:
             break
@@ -116,13 +116,13 @@ def calculate_requested_leave(
     }
 
 
-def determine_status(attended, total_classes, future_classes):
-    if calculate_percentage(attended, total_classes) >= TARGET_ATTENDANCE:
+def determine_status(attended, total_classes, future_classes, target_attendance=TARGET_ATTENDANCE):
+    if calculate_percentage(attended, total_classes) >= target_attendance:
         return "safe"
     maximum_attended = attended + future_classes
     maximum_total = total_classes + future_classes
     maximum_possible_percentage = calculate_percentage(maximum_attended, maximum_total)
-    if maximum_possible_percentage >= TARGET_ATTENDANCE:
+    if maximum_possible_percentage >= target_attendance:
         return "recovery"
     return "impossible"
 
@@ -197,6 +197,7 @@ def _future_checkpoint(
     actual_total,
     requested_leaves,
     remaining_today,
+    target_attendance=TARGET_ATTENDANCE,
 ):
     checkpoint_key = checkpoint_date.strftime("%Y-%m-%d")
     if index == active_index:
@@ -215,12 +216,12 @@ def _future_checkpoint(
         future_classes += remaining_today
 
     starting_percentage = calculate_percentage(actual_attended, actual_total)
-    status = determine_status(actual_attended, actual_total, future_classes)
-    classes_needed = classes_needed_to_reach_target(actual_attended, actual_total)
+    status = determine_status(actual_attended, actual_total, future_classes, target_attendance)
+    classes_needed = classes_needed_to_reach_target(actual_attended, actual_total, target_attendance)
     maximum_attended_if_no_leave = actual_attended + future_classes
     maximum_total_if_no_leave = actual_total + future_classes
     maximum_possible_percentage = calculate_percentage(maximum_attended_if_no_leave, maximum_total_if_no_leave)
-    maximum_leave_classes = find_maximum_safe_leave(actual_attended, actual_total, future_classes)
+    maximum_leave_classes = find_maximum_safe_leave(actual_attended, actual_total, future_classes, target_attendance)
     maximum_leave_days, maximum_leave_remaining_classes = divmod(maximum_leave_classes, CLASSES_PER_DAY)
 
     raw_requested = requested_leaves.get(checkpoint_key, 0)
@@ -243,7 +244,7 @@ def _future_checkpoint(
     requested_leave_days, requested_leave_remaining_classes = divmod(requested_leave_classes, CLASSES_PER_DAY)
     requested_leave_is_safe = (
         requested_leave_classes <= maximum_leave_classes
-        and requested_result["projected_percentage"] >= TARGET_ATTENDANCE
+        and requested_result["projected_percentage"] >= target_attendance
     )
     projected_without_leave = calculate_percentage(maximum_attended_if_no_leave, maximum_total_if_no_leave)
     remaining_safe_leave_classes = max(0, maximum_leave_classes - requested_leave_classes)
@@ -321,9 +322,10 @@ def _get_remaining_today(attendance_data):
     return max(0, value)
 
 
-def run_phase_1(attendance_data, requested_leaves=None, pending_event=None):
+def run_phase_1(attendance_data, requested_leaves=None, pending_event=None, checkpoint_targets=None):
     """Run checkpoint planning from normalized effective attendance state."""
     requested_leaves = requested_leaves or {}
+    checkpoint_targets = checkpoint_targets or {}
     state = build_attendance_state(attendance_data)
     remaining_today = _get_remaining_today(attendance_data)
     event_classes, event_attended = _get_pending_event_adjustment(pending_event)
@@ -353,6 +355,10 @@ def run_phase_1(attendance_data, requested_leaves=None, pending_event=None):
         if get_checkpoint_state(checkpoint_date, current_date) == "completed":
             results.append(_completed_checkpoint(checkpoint_name, checkpoint_date, actual_attended, actual_total))
             continue
+        target_attendance = checkpoint_targets.get(
+            checkpoint_date.strftime("%Y-%m-%d"),
+            TARGET_ATTENDANCE,
+        )
         result = _future_checkpoint(
             checkpoint_name,
             checkpoint_date,
@@ -363,6 +369,7 @@ def run_phase_1(attendance_data, requested_leaves=None, pending_event=None):
             actual_total,
             requested_leaves,
             remaining_today,
+            target_attendance,
         )
         results.append(result)
         actual_attended = result["final_attended"]
