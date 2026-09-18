@@ -198,3 +198,7 @@ def sessional_3():
 def reset_session():
     session.clear()
     return render_dashboard(empty_attendance())
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
