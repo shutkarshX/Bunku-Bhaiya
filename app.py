@@ -23,7 +23,7 @@ from academic_calendar import TEACHING_DAYS, TEACHING_CLASSES_PER_DAY, CALENDAR_
 from scenario_engine import (
     calculate_today_scenario, get_effective_starting_state,
     calculate_date_range_scenario, calculate_date_selection_scenario,
-    calculate_target_scenario,
+    calculate_target_scenario, get_target_capacity,
     calculate_safe_leaves_scenario,
 )
 
@@ -253,6 +253,7 @@ def render_dashboard(
         semester_end_date=max(date.fromisoformat(value) for value in TEACHING_DAYS).isoformat(),
         teaching_days_json=json.dumps(sorted(TEACHING_DAYS)),
         calendar_events_json=json.dumps(CALENDAR_EVENTS),
+        target_capacity=get_target_capacity(attendance, get_pending_event()),
         tracker_checkpoints=build_checkpoint_tracker_data(
             phase_1,
             session.get("planner_choice_made", False),
@@ -565,7 +566,9 @@ def target_scenario():
         return redirect("/what-if?scenario=target")
     if not session.get("planner_event_checked", False):
         return redirect("/what-if?scenario=target")
-    result = calculate_target_scenario(attendance_data, get_pending_event(), request.form.get("target_attendance", 75))
+    pending_event = get_pending_event()
+    raw_target = request.form.get("target_attendance", 75)
+    result = calculate_target_scenario(attendance_data, pending_event, raw_target)
     session["target_scenario"] = result
     session.modified = True
     return redirect("/what-if?scenario=target")
