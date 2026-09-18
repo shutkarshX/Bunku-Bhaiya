@@ -216,6 +216,109 @@ def calculate_date_range_scenario(
     }
 
 
+def calculate_date_selection_scenario(
+    attendance_data,
+    pending_event=None,
+    plan=None,
+):
+    """Project attendance from today's effective state using selected teaching dates.
+
+    plan maps ISO dates to {"action": "attend"|"bunk", "classes": optional int}.
+    A selected day defaults to its full available class count.
+    """
+    starting = get_effective_starting_state(attendance_data, pending_event)
+    plan = plan if isinstance(plan, dict) else {}
+
+    today = date.today()
+    selected = []
+    invalid_dates = []
+
+    for date_key, item in plan.items():
+        try:
+            selected_date = date.fromisoformat(str(date_key))
+        except (TypeError, ValueError):
+            invalid_dates.append(str(date_key))
+            continue
+
+        if selected_date < today:
+            invalid_dates.append(str(date_key))
+            continue
+
+        if not is_teaching_day(selected_date.isoformat()):
+            invalid_dates.append(str(date_key))
+            continue
+
+        action = item.get("action") if isinstance(item, dict) else str(item)
+        if action not in {"attend", "bunk"}:
+            invalid_dates.append(str(date_key))
+            continue
+
+        available = (
+            starting["today_remaining"]
+            if selected_date == today
+            else CLASSES_PER_DAY
+        )
+
+        requested_classes = available
+        if isinstance(item, dict) and item.get("classes") not in (None, ""):
+            requested_classes = _safe_nonnegative_int(item.get("classes"))
+            requested_classes = min(requested_classes, available)
+
+        if requested_classes <= 0:
+            continue
+
+        selected.append({
+            "date": selected_date,
+            "action": action,
+            "classes": requested_classes,
+        })
+
+    if invalid_dates:
+        return {
+            "valid": False,
+            "error": "One or more selected dates are not available teaching days.",
+            "starting": starting,
+        }
+
+    selected.sort(key=lambda item: item["date"])
+
+    attended_classes = sum(
+        item["classes"] for item in selected if item["action"] == "attend"
+    )
+    bunk_classes = sum(
+        item["classes"] for item in selected if item["action"] == "bunk"
+    )
+    planned_classes = attended_classes + bunk_classes
+
+    projected_attended = starting["attended"] + attended_classes
+    projected_total = starting["total"] + planned_classes
+
+    return {
+        "valid": True,
+        "starting": starting,
+        "selected_dates": [
+            {
+                "date": item["date"].isoformat(),
+                "date_display": item["date"].strftime("%d %b"),
+                "action": item["action"],
+                "classes": item["classes"],
+            }
+            for item in selected
+        ],
+        "attended": attended_classes,
+        "leave": bunk_classes,
+        "attended_days": sum(1 for item in selected if item["action"] == "attend"),
+        "bunk_days": sum(1 for item in selected if item["action"] == "bunk"),
+        "planned_days": len(selected),
+        "planned_classes": planned_classes,
+        "projected_attended": projected_attended,
+        "projected_total": projected_total,
+        "projected_percentage": round(
+            calculate_percentage(projected_attended, projected_total), 2
+        ),
+    }
+
+
 def calculate_until_date_scenario(
     attendance_data,
     pending_event=None,
