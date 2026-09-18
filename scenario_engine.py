@@ -34,9 +34,17 @@ def get_effective_starting_state(attendance_data, pending_event=None):
 
     event_classes = 0
     event_attended = 0
-    if isinstance(pending_event, dict) and pending_event.get("date") == date.today().isoformat():
+
+    # An event is valid only for today's planning context. Never let a stale
+    # session event leak into a later day's scenario calculations.
+    if (
+        isinstance(pending_event, dict)
+        and pending_event.get("date") == date.today().isoformat()
+    ):
         event_classes, event_attended = _get_pending_event_adjustment(pending_event)
-        remaining_today = max(0, remaining_today - event_classes)
+        event_classes = min(event_classes, remaining_today)
+        event_attended = min(event_attended, event_classes)
+        remaining_today -= event_classes
 
     starting_attended = effective_attended + event_attended
     starting_total = effective_total + event_classes
