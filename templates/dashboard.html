@@ -624,7 +624,7 @@
     <!-- CHECKPOINT REQUIREMENT -->
     <!-- ================================= -->
 
-    {% if not phase_1 and planner_loaded and target_checkpoint_required %}
+    {% if not phase_1 and planner_loaded and planner_target_required %}
 
     {% set target_index = namespace(value=0) %}
     <div class="summary checkpoint-target-card">
@@ -634,11 +634,11 @@
         <p>
             What minimum attendance percentage do you need at
             <strong>
-                {{ target_checkpoint_name or "the current sessional checkpoint" }}
+                all sessional checkpoints
             </strong>?
         </p>
 
-        <form action="/checkpoint-target" method="POST">
+        <form action="/planner-target" method="POST">
 
             <label for="target_attendance">
                 Required attendance percentage
@@ -660,7 +660,7 @@
             </div>
 
             <p>
-                Enter the requirement for this checkpoint. It is not assumed by BunkMaster.
+                This requirement is chosen once and applies to all sessional checkpoints.
             </p>
 
             <button type="submit" class="attendance-button">
@@ -1088,7 +1088,7 @@
 
                 <p>
                     You are currently above the
-                    75% attendance requirement.
+                    {{ first.target_attendance }}% attendance requirement.
                 </p>
 
             </div>
@@ -1101,7 +1101,7 @@
 
                 <p>
                     Your attendance is currently
-                    below 75%.
+                    below {{ first.target_attendance }}%.
                 </p>
 
                 <p>
@@ -1109,7 +1109,7 @@
                     <strong>
                         {{ second.classes_needed_for_75 }}
                     </strong>
-                    consecutive classes to reach 75%.
+                    consecutive classes to reach {{ first.target_attendance }}%.
                 </p>
 
             </div>
@@ -1118,11 +1118,11 @@
 
             <div class="summary">
 
-                <h3>🔴 75% Not Reachable</h3>
+                <h3>🔴 {{ first.target_attendance }}% Not Reachable</h3>
 
                 <p>
                     Even if you attend every remaining
-                    class before this checkpoint, 75%
+                    class before this checkpoint, {{ first.target_attendance }}%
                     cannot be reached.
                 </p>
 
@@ -1191,7 +1191,7 @@
 
                 <p>
                     This is the maximum you can miss
-                    while staying at or above 75%.
+                    while staying at or above {{ second.target_attendance }}%.
                 </p>
 
             </div>
@@ -1358,7 +1358,7 @@
 
                 <p>
                     You are currently above the
-                    75% attendance requirement.
+                    {{ first.target_attendance }}% attendance requirement.
                 </p>
 
             </div>
@@ -1371,7 +1371,7 @@
 
                 <p>
                     Your attendance is currently
-                    below 75%.
+                    below {{ first.target_attendance }}%.
                 </p>
 
                 <p>
@@ -1379,7 +1379,7 @@
                     <strong>
                         {{ third.classes_needed_for_75 }}
                     </strong>
-                    consecutive classes to reach 75%.
+                    consecutive classes to reach {{ first.target_attendance }}%.
                 </p>
 
             </div>
@@ -1388,11 +1388,11 @@
 
             <div class="summary">
 
-                <h3>🔴 75% Not Reachable</h3>
+                <h3>🔴 {{ first.target_attendance }}% Not Reachable</h3>
 
                 <p>
                     Even if you attend every remaining
-                    class before this checkpoint, 75%
+                    class before this checkpoint, {{ first.target_attendance }}%
                     cannot be reached.
                 </p>
 
@@ -1461,7 +1461,7 @@
 
                 <p>
                     This is the maximum you can miss
-                    while staying at or above 75%.
+                    while staying at or above {{ second.target_attendance }}%.
                 </p>
 
             </div>
