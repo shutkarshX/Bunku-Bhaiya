@@ -424,20 +424,13 @@ def handle_checkpoint_submission(checkpoint_index):
         session.modified = True
         return redirect("/what-if?scenario=sessional")
 
-    phase_1_result = run_phase_1(
-        attendance_data,
-        selected_leaves,
-        get_pending_event(),
-        get_planner_target(),
-    )
     session["sessional_step"] = 4
     session.modified = True
-    return render_dashboard(
-        attendance_data,
-        phase_1_result,
-        calculator_step=4,
-        page="what_if",
-    )
+
+    # Keep the user inside Scenario 2 after the final checkpoint.
+    # Redirecting also makes /what-if?scenario=sessional the single source
+    # of truth for rendering the completed planner state.
+    return redirect("/what-if?scenario=sessional")
 
 
 @app.route("/event", methods=["POST"])
