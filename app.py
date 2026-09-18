@@ -386,7 +386,7 @@ def load_planner():
 
         session.modified = True
 
-    return redirect("/planner")
+    return redirect(request.form.get("next", "/planner"))
 
 
 def handle_checkpoint_submission(checkpoint_index):
@@ -418,7 +418,7 @@ def handle_checkpoint_submission(checkpoint_index):
         attendance_data,
         phase_1_result,
         calculator_step=checkpoint_index + 2,
-        page="planner",
+        page="sessional",
     )
 
 
@@ -471,7 +471,7 @@ def save_event():
 
     # Redirect after the event decision so the planner route becomes the
     # single source of truth for the next screen/state.
-    return redirect("/planner")
+    return redirect(request.form.get("return_to", "/planner"))
 
 
 @app.route("/planner-target", methods=["POST"])
@@ -483,7 +483,7 @@ def planner_target():
     if not save_planner_target(request.form.get("target_attendance")):
         return redirect("/planner")
 
-    return redirect("/planner")
+    return redirect(request.form.get("return_to", "/planner"))
 
 
 @app.route("/scenario/today", methods=["POST"])
@@ -504,7 +504,37 @@ def today_scenario():
     )
     session["today_scenario_result"] = result
     session.modified = True
-    return redirect("/planner")
+    return redirect(request.form.get("return_to", "/planner"))
+
+
+@app.route("/what-if/today")
+def today_scenario_page():
+    """Show the Today What-If scenario on its own page."""
+    attendance_data = get_user_attendance()
+    if not attendance_data.get("subjects"):
+        return render_dashboard(attendance_data, page="home")
+    return render_dashboard(attendance_data, page="today_scenario")
+
+
+@app.route("/sessional")
+def sessional_scenario_page():
+    """Show the sessional checkpoint scenario on its own page."""
+    attendance_data = get_user_attendance()
+    if not attendance_data.get("subjects"):
+        return render_dashboard(attendance_data, page="home")
+    if not session.get("planner_loaded", False):
+        return render_dashboard(attendance_data, page="planner")
+    if not session.get("planner_event_checked", False):
+        return render_dashboard(attendance_data, page="planner")
+    if get_planner_target() is None:
+        return render_dashboard(attendance_data, page="planner")
+    phase_1_result = run_phase_1(
+        attendance_data,
+        get_user_leaves(),
+        get_pending_event(),
+        get_planner_target(),
+    )
+    return render_dashboard(attendance_data, phase_1_result, page="sessional")
 
 
 @app.route("/sessional-1", methods=["POST"])
