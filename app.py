@@ -12,8 +12,8 @@ from bunk_calculator import (
     run_phase_1,
     classes_to_leave_display,
     days_and_classes_to_classes,
+    CHECKPOINTS,
 )
-from academic_calendar import CHECKPOINTS
 from attendance_state import build_attendance_state
 
 
@@ -29,7 +29,11 @@ app.secret_key = SECRET_KEY
 
 app.jinja_env.globals["classes_to_leave_display"] = classes_to_leave_display
 
-DEFAULT_SELECTED_LEAVES = {checkpoint: 0 for checkpoint in CHECKPOINTS}
+CHECKPOINT_KEYS = tuple(
+    checkpoint_date.strftime("%Y-%m-%d")
+    for _, checkpoint_date in CHECKPOINTS
+)
+DEFAULT_SELECTED_LEAVES = {checkpoint: 0 for checkpoint in CHECKPOINT_KEYS}
 
 
 def empty_attendance():
@@ -166,7 +170,7 @@ def handle_checkpoint_submission(checkpoint_index):
     attendance_data = get_user_attendance()
     selected_leaves = get_user_leaves()
     form_step = checkpoint_index + 1
-    checkpoint_key = CHECKPOINTS[checkpoint_index]
+    checkpoint_key = CHECKPOINTS[checkpoint_index][1].strftime("%Y-%m-%d")
 
     selected_leaves[checkpoint_key] = get_requested_leave_classes(
         request.form,
