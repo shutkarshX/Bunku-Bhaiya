@@ -20,6 +20,7 @@ class PortalLoginError(Exception):
 # Raw subject-wise attendance responses are kept server-side so the Flask
 # cookie session does not have to carry hundreds of attendance records.
 _SUBJECT_DETAILS_CACHE = {}
+_PORTAL_SESSION_CACHE = {}
 
 
 def get_subject_details(details_token):
@@ -27,6 +28,52 @@ def get_subject_details(details_token):
     if not details_token:
         return []
     return _SUBJECT_DETAILS_CACHE.get(details_token, [])
+
+
+def _get_portal_session(details_token):
+    """Return the short-lived authenticated portal state for a token."""
+    return _PORTAL_SESSION_CACHE.get(details_token)
+
+
+def get_today_attendance(details_token):
+    """Load today's subject-wise attendance only when planning needs it."""
+    portal_session = _get_portal_session(details_token)
+    if not portal_session:
+        raise PortalUnavailableError(
+            "The saved portal session is no longer available. Please log in again."
+        )
+
+    with sync_playwright() as p:
+        browser = None
+        try:
+            browser = p.chromium.launch(headless=True)
+            context = browser.new_context(
+                storage_state=portal_session["storage_state"]
+            )
+            page = context.new_page()
+            (
+                today_logged,
+                remaining_today,
+                subject_details,
+            ) = _today_logged_classes(
+                page,
+                portal_session["course_data"],
+            )
+            _SUBJECT_DETAILS_CACHE[details_token] = subject_details
+            return today_logged, remaining_today
+        except PortalUnavailableError:
+            raise
+        except Exception as e:
+            print("Could not load deferred portal attendance:", e)
+            raise PortalUnavailableError(
+                "The portal did not return today's class data."
+            )
+        finally:
+            if browser is not None:
+                try:
+                    browser.close()
+                except Exception as e:
+                    print("Browser cleanup warning:", e)
 
 
 def _parse_portal_date(value):
@@ -64,7 +111,7 @@ def _today_logged_classes(page, course_data):
     subject_details = []
 
     print(
-        "Checking today's logged classes across",
+        "Loading subject-wise attendance across",
         len(subject_ids),
         "subjects..."
     )
@@ -294,39 +341,21 @@ def get_attendance(username, password):
                     "The course data could not be retrieved from the NIET portal."
                 )
 
-            # Use the authenticated portal session to inspect every subject.
-            # These calls are also the source for the dashboard's subject
-            # attendance details.
-            (
-                today_logged,
-                remaining_today,
-                subject_details,
-            ) = _today_logged_classes(
-                page,
-                course_data
-            )
-
-            # Keep the raw subject-wise responses server-side. The token is
-            # small enough to safely carry in the Flask cookie session.
+            # Do not scan every subject on the initial dashboard load.
+            # Keep the authenticated portal state server-side so expensive
+            # subject-wise requests can be loaded only when a feature needs
+            # them (for example, the attendance planner).
             details_token = uuid.uuid4().hex
-            _SUBJECT_DETAILS_CACHE[details_token] = subject_details
-
-            # Preserve today's portal state inside the existing subject-list
-            # shape so the calculator/session can carry it across requests.
-            attendance_data[0][
-                "_bunkmaster_today_logged"
-            ] = today_logged
-
-            attendance_data[0][
-                "_bunkmaster_remaining_today"
-            ] = remaining_today
+            _PORTAL_SESSION_CACHE[details_token] = {
+                "storage_state": page.context.storage_state(),
+                "course_data": list(course_data),
+            }
 
             attendance_data[0][
                 "_bunkmaster_subject_details_token"
             ] = details_token
 
-            print("Today's logged classes:", today_logged)
-            print("Today's remaining classes:", remaining_today)
+            print("Portal session prepared for deferred subject-wise loading.")
             print(
                 f"[TIME] TOTAL: {time.perf_counter() - total_start:.2f}s"
             )
