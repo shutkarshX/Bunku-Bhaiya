@@ -41,15 +41,15 @@
         <div class="what-if-scenario-heading">
             <span class="what-if-kicker">PLANNING CONTEXT</span>
             <h2>Your current planning state</h2>
-            <p>This scenario uses your current attendance and today's class context.</p>
+            
         </div>
         {% if not planner_loaded %}
             <div class="summary">
-                <h3>Load today\'s classes</h3>
-                <p>BunkMaster needs today\'s remaining class information before it can project attendance through your selected date.</p>
+                <h3>Ready to calculate</h3>
+                <p>BunkMaster needs today\'s class information before this scenario can be calculated.</p>
                 <form action="/load-planner" method="POST" onsubmit="showLoading()">
                     <input type="hidden" name="next" value="/what-if?scenario={{ scenario }}">
-                    <button type="submit" class="attendance-button">Start Scenario</button>
+                    <button type="submit" class="attendance-button">Start Plan Until a Date</button>
                 </form>
             </div>
         {% elif not session.get("planner_event_checked", False) %}
