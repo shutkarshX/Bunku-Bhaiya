@@ -359,6 +359,7 @@ def get_attendance_page():
     session["planner_loaded"] = False
     session["planner_choice_made"] = False
     session["checkpoint_targets"] = {}
+    session.pop("target_checkpoint_index", None)
     session.pop("planner_event_checked", None)
     session.pop("pending_event", None)
 
