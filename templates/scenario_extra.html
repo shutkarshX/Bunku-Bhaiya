@@ -266,9 +266,6 @@
             plan[key] = { action: action, classes: classes };
             dragChanged = true;
 
-            // Do not rebuild the calendar while the pointer is travelling.
-            // Rebuilding would replace the element currently receiving pointer
-            // events and make drag selection feel broken.
             cell.classList.remove("attend", "bunk");
             cell.classList.add(action);
 
@@ -374,7 +371,20 @@
         document.getElementById("date-plan-input").value = JSON.stringify(plan);
     }
 
-    window.addEventListener("pointerup", stopDragging);
+    document.addEventListener("pointermove", function (event) {
+        if (!isDragging) return;
+
+        const target = document.elementFromPoint(event.clientX, event.clientY);
+        const cell = target && target.closest ? target.closest(".calendar-day:not(:disabled)") : null;
+        if (!cell || !planner.contains(cell)) return;
+
+        const key = cell.dataset.date;
+        if (!key) return;
+        const current = new Date(key + "T00:00:00");
+        paintDate(cell, current, key);
+    });
+
+        window.addEventListener("pointerup", stopDragging);
     window.addEventListener("pointercancel", stopDragging);
     window.addEventListener("blur", stopDragging);
 
