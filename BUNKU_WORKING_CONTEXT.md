@@ -2457,3 +2457,131 @@ If there are zero remaining classes today, the existing loader automatically mar
 ## Reversible/reverted?
 
 No.
+
+
+# 69. VERSION-D — EDITABLE CHECKPOINT REQUIREMENTS + EVENT FLOW
+
+Date: 2026-09-18
+
+Status: **ACTIVE**
+
+## User-selected checkpoint requirement
+
+The planner no longer treats 75% as the user-facing requirement for a checkpoint.
+
+Before planning leave for a checkpoint, the user is asked:
+
+> What minimum attendance percentage do you need at this checkpoint?
+
+The value is required and stored per checkpoint.
+
+The planner then uses that value for safe leave calculation, recovery calculation, maximum possible attendance comparison, requested leave safety, and checkpoint projection context.
+
+The underlying academic calendar still keeps the system reference value in academic_calendar.py, but the planner requirement is now explicitly chosen by the user rather than silently presented as 75%.
+
+## Sequential checkpoint requirements
+
+Checkpoint requirements are collected one at a time.
+
+    Current effective attendance
+            ↓
+    Today's event decision
+            ↓
+    Required attendance for current checkpoint
+            ↓
+    Maximum safe leave
+            ↓
+    User's planned leave
+            ↓
+    Projected checkpoint attendance
+            ↓
+    Ask required attendance for next checkpoint
+            ↓
+    Continue
+
+The next checkpoint requirement is not silently assumed from the previous checkpoint.
+
+## Event button correction
+
+The "No event today" action now redirects through /planner after saving the decision.
+
+This makes /planner the single route that decides which planner state should be shown next.
+
+    No event today
+        ↓
+    planner_event_checked = True
+        ↓
+    /planner
+        ↓
+    checkpoint requirement question
+
+The same redirect flow is used after saving an event.
+
+## Editable file structure
+
+The sessional tracker presentation is now separated from Python logic.
+
+    app.py
+        → prepares checkpoint tracker data/state
+
+    templates/checkpoint_tracker.html
+        → checkpoint tracker HTML/Jinja structure
+
+    static/style.css
+        → checkpoint tracker styling
+
+    academic_calendar.py
+        → checkpoint dates / teaching calendar / reference constants
+
+    bunk_calculator.py
+        → checkpoint calculations
+
+Do not put tracker CSS or large HTML blocks back into app.py.
+
+Future UI edits to the tracker should normally happen in:
+- templates/checkpoint_tracker.html
+- static/style.css
+
+Future checkpoint/calendar edits should normally happen in:
+- academic_calendar.py
+
+Future attendance calculation edits should normally happen in:
+- bunk_calculator.py
+
+This separation is intentional so the project remains easy to edit during rapid/vibe coding.
+
+## Files changed
+
+- app.py
+- bunk_calculator.py
+- templates/dashboard.html
+- templates/checkpoint_tracker.html
+- static/style.css
+- BUNKU_WORKING_CONTEXT.md
+
+## Commits
+
+- 0b8677b — Add user checkpoint attendance requirement
+- 2c0df30 — Use editable target for checkpoint planning
+- e450738 — Expose checkpoint target in planner result
+- 29a4c63 — Pass checkpoint targets through planner flow
+- 4f607fb — Make no-event planner action redirect cleanly
+- a400485 — Extract sessional tracker into editable template
+- 30d59f1 — Keep checkpoint tracker structure out of Python
+- cd86203 — Include editable checkpoint tracker template
+- 57edcaf — Move checkpoint tracker styling into stylesheet
+- 76197f5 — Expose current checkpoint name to planner UI
+- fc087? — Show current checkpoint name in requirement question
+- 0a3402f — Sequence checkpoint requirements through planner
+- df08793 — Use checkpoint-specific requirement in planner UI
+- 0eb1aeb — Reset checkpoint planning inputs on fresh login
+
+## Calculation impact
+
+The attendance formulas themselves are unchanged.
+
+The planner's checkpoint target is now a parameter rather than an implicit user-facing 75%.
+
+## Reversible/reverted?
+
+No.
