@@ -1507,3 +1507,37 @@ body {
         border-radius: 14px;
     }
 }
+
+/* =========================================
+   EXTRA WHAT-IF SCENARIOS
+   ========================================= */
+
+.what-if-big-number {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-top: 22px;
+    padding: 20px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+}
+
+.what-if-big-number strong {
+    font-size: 42px;
+    line-height: 1;
+}
+
+.what-if-big-number span {
+    font-size: 15px;
+    opacity: 0.7;
+}
+
+@media (max-width: 600px) {
+    .what-if-big-number {
+        padding: 16px;
+    }
+
+    .what-if-big-number strong {
+        font-size: 34px;
+    }
+}
