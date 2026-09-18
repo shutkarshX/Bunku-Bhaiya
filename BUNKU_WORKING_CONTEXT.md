@@ -2631,3 +2631,150 @@ Keep the requirement as one planner-level value. Do not reintroduce checkpoint-s
 ## Reversible/reverted?
 
 No.
+
+
+
+# 71. VERSION-D — WHAT-IF SCENARIO ENGINE FOUNDATION
+
+Date: 2026-09-18
+
+Status: **ACTIVE**
+
+## Product direction
+
+BunkMaster now begins a separate What-If/Scenario system. Checkpoint polishing is intentionally separate and is not part of this feature.
+
+The core product rule is:
+
+> Every scenario starts from NOW.
+
+The starting point is today's effective attendance, not raw portal Present/Absent totals.
+
+## Scenario starting state
+
+The starting state is built from:
+
+```
+Current Effective Attendance
++
+Today's known/unposted event adjustment, if one has been recorded
+```
+
+The event is not a standalone scenario. It is information that makes the "right now" starting state more accurate.
+
+If a pending event belongs to today:
+
+- attended event classes increase effective planning attended and total by the same amount
+- non-attended event classes increase planning total without increasing planning attended
+- event-covered classes are removed from today's remaining ordinary classes
+- the actual portal/effective attendance state is never mutated
+
+Every later scenario reuses this same starting state.
+
+## First scenario — Today
+
+Route:
+
+```
+/scenario/today
+```
+
+The first implemented What-If scenario answers:
+
+> If I attend X classes and leave Y classes today, what will my effective attendance be?
+
+The user enters:
+
+- classes to attend
+- classes to leave
+
+The engine validates that the combined choice does not exceed today's remaining classes.
+
+The result shows:
+
+- effective attendance starting now
+- projected effective attendance after today's choice
+- attended classes
+- leave classes
+- classes still unplanned today
+
+## Architecture
+
+```
+attendance_state.py
+        ↓
+effective current state
+        ↓
+scenario_engine.py
+        ↓
+today / future scenario calculations
+```
+
+The scenario engine currently provides:
+
+```
+get_effective_starting_state(...)
+calculate_today_scenario(...)
+```
+
+The calculations are planning-only. They do not modify portal attendance.
+
+## UI rule
+
+The Today What-If card is shown after today's event decision has been resolved and does not depend on the checkpoint requirement.
+
+This keeps What-If scenarios independent from checkpoint planning.
+
+## Future scenarios planned
+
+The same engine will later support:
+
+1. Today
+   - attend/leave today
+2. Plan until a date
+   - choose attendance behavior across calendar dates
+3. Reach a target
+   - calculate classes required to reach X%
+4. Safe leaves
+   - calculate how many classes can be missed while staying at/above X%
+
+A future date scenario will also start from NOW and use today's event/remaining classes before moving into later teaching days.
+
+## Important calculation rule
+
+What-If projections use **Effective Attendance**.
+
+They must not start from:
+
+```
+Portal Present / Portal Present + Portal Absent
+```
+
+They start from:
+
+```
+(P + U) / (P + A + U)
+```
+
+with today's known event information applied on top when appropriate.
+
+## Files added/changed
+
+- `scenario_engine.py`
+- `templates/scenario_today.html`
+- `templates/dashboard.html`
+- `app.py`
+
+## Commits
+
+- `b63135c` — Add effective attendance scenario engine foundation
+- `c36fe49` — Add today what-if scenario route
+- `4b6008a` — Expose shared effective starting state to scenarios
+- `05354a2` — Add today what-if scenario interface
+- `12f5e5f` — Add quick today what-if scenario
+- `f3d8c65` — Show today what-if independently of checkpoints
+- `e1fe219` — Enforce whole-number planner target
+
+## Reversible/reverted?
+
+No.
