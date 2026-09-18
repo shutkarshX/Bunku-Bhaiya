@@ -120,6 +120,7 @@ def render_dashboard(attendance_data, phase_1=None, portal_error=None, calculato
         calculator_step=calculator_step,
         portal_error=portal_error,
         planner_loaded=session.get("planner_loaded", False),
+        planner_choice_made=session.get("planner_choice_made", False),
         page=page,
     )
 
@@ -157,11 +158,11 @@ def subjects_page():
 
     token = get_planner_token(attendance_data)
     try:
-        # The first feature that needs subject history loads it.
-        # Later features reuse the same token/cache without another portal scan.
         load_subject_details(token)
     except PortalUnavailableError as e:
-        print("\nSubject attendance load failed\n", e)
+        print("
+Subject attendance load failed
+", e)
         return render_dashboard(
             attendance_data,
             portal_error="unavailable",
@@ -176,18 +177,25 @@ def get_attendance_page():
     username = request.form.get("username")
     password = request.form.get("password")
 
-    print("\nStarting attendance retrieval...")
+    print("
+Starting attendance retrieval...")
 
     try:
         subjects = get_attendance(username, password)
     except PortalUnavailableError as e:
-        print("\nNIET PORTAL UNAVAILABLE\n", e)
+        print("
+NIET PORTAL UNAVAILABLE
+", e)
         return render_dashboard(empty_attendance(), portal_error="unavailable")
     except PortalLoginError as e:
-        print("\nNIET LOGIN FAILED\n", e)
+        print("
+NIET LOGIN FAILED
+", e)
         return render_dashboard(empty_attendance(), portal_error="login")
     except Exception as e:
-        print("\nUnexpected portal error:\n", e)
+        print("
+Unexpected portal error:
+", e)
         return render_dashboard(empty_attendance(), portal_error="unavailable")
 
     if not subjects:
@@ -207,6 +215,7 @@ def get_attendance_page():
     selected_leaves = dict(DEFAULT_SELECTED_LEAVES)
     save_user_leaves(selected_leaves)
     session["planner_loaded"] = False
+    session["planner_choice_made"] = False
     session.pop("planner_event_checked", None)
     session.pop("pending_event", None)
 
@@ -241,7 +250,7 @@ def load_planner():
     try:
         today_logged, remaining_today = get_today_attendance(token)
     except PortalUnavailableError as e:
-        print("\\nDeferred planner load failed\\n", e)
+        print("\nDeferred planner load failed\n", e)
         return render_dashboard(
             attendance_data,
             portal_error="unavailable",
@@ -254,6 +263,7 @@ def load_planner():
         attendance_data["subjects"] = subjects
         session["attendance_data"] = attendance_data
         session["planner_loaded"] = True
+        session["planner_choice_made"] = False
         session.pop("planner_event_checked", None)
         session.pop("pending_event", None)
 
@@ -279,6 +289,8 @@ def handle_checkpoint_submission(checkpoint_index):
         form_step,
     )
     save_user_leaves(selected_leaves)
+    session["planner_choice_made"] = True
+    session.modified = True
 
     phase_1_result = run_phase_1(
         attendance_data,
@@ -291,8 +303,6 @@ def handle_checkpoint_submission(checkpoint_index):
         calculator_step=checkpoint_index + 2,
         page="planner",
     )
-
-
 
 
 @app.route("/event", methods=["POST"])
@@ -359,6 +369,7 @@ def sessional_2():
 @app.route("/sessional-3", methods=["POST"])
 def sessional_3():
     return handle_checkpoint_submission(2)
+
 
 @app.route("/reset")
 def reset_session():
