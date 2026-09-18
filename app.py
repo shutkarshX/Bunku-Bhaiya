@@ -130,226 +130,87 @@ def get_requested_leave_classes(form, step):
     return days_and_classes_to_classes(days, classes)
 
 
-def build_checkpoint_tracker(phase_1_result=None, choice_made=False):
+def build_checkpoint_tracker_data(phase_1_result=None, choice_made=False):
     current_date = date.today()
 
     if phase_1_result:
-        checkpoints = phase_1_result.get("checkpoints", [])
+        source = phase_1_result.get("checkpoints", [])
         active_index = phase_1_result.get("active_checkpoint_index")
-    else:
-        active_index = next(
-            (
-                index
-                for index, (_, checkpoint_date) in enumerate(CHECKPOINTS)
-                if current_date < checkpoint_date
-            ),
-            None,
-        )
-        checkpoints = [
+        return [
             {
-                "checkpoint": checkpoint_name,
-                "date": checkpoint_date.strftime("%d %B %Y"),
-                "is_completed": current_date >= checkpoint_date,
+                "checkpoint": item.get("checkpoint", ""),
+                "state_class": (
+                    "passed"
+                    if item.get("is_completed")
+                    else "current"
+                    if index == active_index
+                    else "upcoming"
+                ),
+                "icon": (
+                    "✓"
+                    if item.get("is_completed")
+                    else "●"
+                    if index == active_index
+                    else "○"
+                ),
+                "label": (
+                    "Passed"
+                    if item.get("is_completed")
+                    else "Current"
+                    if index == active_index
+                    else "Upcoming"
+                ),
+                "show_projection": (
+                    choice_made
+                    and index == active_index
+                    and not item.get("is_completed")
+                ),
+                "projected_percentage": item.get("requested_projected_percentage", 0),
+                "projected_attended": item.get("requested_projected_attended", 0),
+                "projected_total": item.get("requested_projected_total", 0),
             }
-            for checkpoint_name, checkpoint_date in CHECKPOINTS
+            for index, item in enumerate(source)
         ]
 
-    cards = []
-
-    for index, checkpoint in enumerate(checkpoints):
-        if checkpoint.get("is_completed"):
-            state_class = "passed"
-            icon = "✓"
-            label = "Passed"
-        elif index == active_index:
-            state_class = "current"
-            icon = "●"
-            label = "Current"
-        else:
-            state_class = "upcoming"
-            icon = "○"
-            label = "Upcoming"
-
-        carry_forward = ""
-        if (
-            phase_1_result
-            and choice_made
-            and index == active_index
-            and not checkpoint.get("is_completed")
-        ):
-            carry_forward = f"""
-                <div class="checkpoint-projection">
-                    <span>Your checkpoint attendance</span>
-                    <strong>{checkpoint.get("requested_projected_percentage", 0):.2f}%</strong>
-                    <small>
-                        {checkpoint.get("requested_projected_attended", 0)}
-                        /
-                        {checkpoint.get("requested_projected_total", 0)}
-                        classes
-                    </small>
-                    <em>This becomes the starting attendance for the next sessional.</em>
-                </div>
-            """
-
-        cards.append(f"""
-            <div class="checkpoint-item {state_class}">
-                <div class="checkpoint-marker">{icon}</div>
-                <div class="checkpoint-copy">
-                    <strong>{checkpoint.get("checkpoint", "")}</strong>
-                    <span>{label}</span>
-                    {carry_forward}
-                </div>
-            </div>
-        """)
-
-    return f"""
-        <style>
-            .sessional-tracker {{
-                position: fixed;
-                top: 132px;
-                right: max(24px, calc((100vw - 1180px) / 2));
-                width: 270px;
-                box-sizing: border-box;
-                padding: 20px;
-                border: 1px solid #e5e7eb;
-                border-radius: 18px;
-                background: rgba(255, 255, 255, 0.97);
-                box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
-                z-index: 20;
-            }}
-
-            .sessional-tracker h3 {{
-                margin: 0 0 18px;
-                font-size: 17px;
-            }}
-
-            .checkpoint-item {{
-                display: flex;
-                gap: 11px;
-                position: relative;
-                padding-bottom: 18px;
-            }}
-
-            .checkpoint-item:not(:last-child)::after {{
-                content: "";
-                position: absolute;
-                left: 8px;
-                top: 21px;
-                bottom: 0;
-                width: 2px;
-                background: #e5e7eb;
-            }}
-
-            .checkpoint-marker {{
-                width: 18px;
-                height: 18px;
-                flex: 0 0 18px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 13px;
-                font-weight: 800;
-                position: relative;
-                z-index: 1;
-                background: #fff;
-            }}
-
-            .checkpoint-copy {{
-                min-width: 0;
-                display: flex;
-                flex-direction: column;
-                gap: 2px;
-            }}
-
-            .checkpoint-copy > strong {{
-                font-size: 14px;
-            }}
-
-            .checkpoint-copy > span {{
-                font-size: 12px;
-                color: #6b7280;
-            }}
-
-            .checkpoint-item.passed .checkpoint-marker {{
-                color: #15803d;
-                border: 2px solid #22c55e;
-            }}
-
-            .checkpoint-item.current .checkpoint-marker {{
-                color: #2563eb;
-                border: 2px solid #3b82f6;
-                background: #eff6ff;
-            }}
-
-            .checkpoint-item.current .checkpoint-copy > strong {{
-                color: #1d4ed8;
-            }}
-
-            .checkpoint-item.upcoming .checkpoint-marker {{
-                color: #9ca3af;
-                border: 2px solid #d1d5db;
-            }}
-
-            .checkpoint-projection {{
-                margin-top: 10px;
-                padding: 12px;
-                border-radius: 12px;
-                background: #eff6ff;
-                border: 1px solid #bfdbfe;
-            }}
-
-            .checkpoint-projection span,
-            .checkpoint-projection small,
-            .checkpoint-projection em {{
-                display: block;
-            }}
-
-            .checkpoint-projection span {{
-                font-size: 11px;
-                color: #1e40af;
-            }}
-
-            .checkpoint-projection strong {{
-                display: block;
-                margin: 3px 0;
-                font-size: 23px;
-                color: #1d4ed8;
-            }}
-
-            .checkpoint-projection small {{
-                font-size: 11px;
-                color: #475569;
-            }}
-
-            .checkpoint-projection em {{
-                margin-top: 7px;
-                font-size: 10px;
-                font-style: normal;
-                color: #64748b;
-            }}
-
-            @media (min-width: 1050px) {{
-                body:has(.sessional-tracker) .container {{
-                    padding-right: 330px;
-                    box-sizing: border-box;
-                }}
-            }}
-
-            @media (max-width: 1049px) {{
-                .sessional-tracker {{
-                    position: static;
-                    width: 100%;
-                    margin: 0 0 24px;
-                }}
-            }}
-        </style>
-
-        <aside class="sessional-tracker" aria-label="Sessional checkpoint tracker">
-            <h3>Sessional Checkpoints</h3>
-            {''.join(cards)}
-        </aside>
-    """
+    active_index = next(
+        (
+            index
+            for index, (_, checkpoint_date) in enumerate(CHECKPOINTS)
+            if current_date < checkpoint_date
+        ),
+        None,
+    )
+    return [
+        {
+            "checkpoint": checkpoint_name,
+            "state_class": (
+                "passed"
+                if current_date >= checkpoint_date
+                else "current"
+                if index == active_index
+                else "upcoming"
+            ),
+            "icon": (
+                "✓"
+                if current_date >= checkpoint_date
+                else "●"
+                if index == active_index
+                else "○"
+            ),
+            "label": (
+                "Passed"
+                if current_date >= checkpoint_date
+                else "Current"
+                if index == active_index
+                else "Upcoming"
+            ),
+            "show_projection": False,
+            "projected_percentage": 0,
+            "projected_attended": 0,
+            "projected_total": 0,
+        }
+        for index, (checkpoint_name, checkpoint_date) in enumerate(CHECKPOINTS)
+    ]
 
 
 def render_dashboard(
@@ -369,7 +230,7 @@ def render_dashboard(
     attendance["subject_details"] = get_subject_details(token)
     current_state = build_attendance_state(attendance)
 
-    rendered = render_template(
+    return render_template(
         "dashboard.html",
         attendance=attendance,
         current_state=current_state,
@@ -380,21 +241,12 @@ def render_dashboard(
         planner_choice_made=session.get("planner_choice_made", False),
         checkpoint_targets=get_checkpoint_targets(),
         active_checkpoint_target=get_active_checkpoint_target()[1],
+        tracker_checkpoints=build_checkpoint_tracker_data(
+            phase_1,
+            session.get("planner_choice_made", False),
+        ),
         page=page,
     )
-
-    if page == "planner" and (
-        phase_1 is not None or session.get("planner_loaded", False)
-    ):
-        rendered = rendered.replace(
-            "</body>",
-            build_checkpoint_tracker(
-                phase_1,
-                session.get("planner_choice_made", False),
-            ) + "</body>",
-        )
-
-    return rendered
 
 
 @app.route("/")
