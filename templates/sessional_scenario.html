@@ -968,3 +968,7 @@
 
 
 {% endif %}
+
+{% if phase_1 or planner_loaded %}
+{% include "checkpoint_tracker.html" %}
+{% endif %}
