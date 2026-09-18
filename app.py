@@ -112,6 +112,13 @@ def get_planner_token(attendance_data):
 
 
 def get_dashboard_step(phase_1_result):
+    # The active checkpoint determines the initial screen. Once the user
+    # submits a checkpoint choice, sessional_step controls the next screen
+    # so a valid "0 classes" choice still advances the flow.
+    saved_step = session.get("sessional_step")
+    if isinstance(saved_step, int) and 1 <= saved_step <= 4:
+        return saved_step
+
     active_index = phase_1_result.get("active_checkpoint_index")
     if active_index is None:
         return 4
@@ -339,6 +346,7 @@ def get_attendance_page():
     save_user_leaves(dict(DEFAULT_SELECTED_LEAVES))
     session["planner_loaded"] = False
     session["planner_choice_made"] = False
+    session.pop("sessional_step", None)
     session.pop("planner_target_attendance", None)
     session.pop("planner_event_checked", None)
     session.pop("pending_event", None)
@@ -415,6 +423,8 @@ def handle_checkpoint_submission(checkpoint_index):
 
     next_index = checkpoint_index + 1
     if next_index < len(CHECKPOINTS):
+        session["sessional_step"] = next_index + 1
+        session.modified = True
         return redirect("/what-if?scenario=sessional")
 
     phase_1_result = run_phase_1(
@@ -423,10 +433,12 @@ def handle_checkpoint_submission(checkpoint_index):
         get_pending_event(),
         get_planner_target(),
     )
+    session["sessional_step"] = 4
+    session.modified = True
     return render_dashboard(
         attendance_data,
         phase_1_result,
-        calculator_step=checkpoint_index + 2,
+        calculator_step=4,
         page="what_if",
     )
 
