@@ -355,8 +355,14 @@ def calculate_target_scenario(attendance_data, pending_event=None, target_attend
         starting["total"],
         target_attendance,
     )
+    # TEACHING_DAYS stores ISO date strings, so convert the latest
+    # calendar date explicitly before passing it to the projection helper.
+    semester_end = max(
+        date.fromisoformat(value)
+        for value in TEACHING_DAYS
+    )
     available = get_future_classes_until(
-        date(max(TEACHING_DAYS)),
+        semester_end,
         attendance_data,
         pending_event,
     )
