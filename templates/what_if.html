@@ -22,10 +22,45 @@
             <small>Plan attendance through First, Second and Third Sessional</small>
         </a>
 
-        {# Future scenarios get their own button here. #}
+        <a href="/what-if?scenario=until-date" class="what-if-scenario-button {% if scenario == 'until-date' %}active{% endif %}">
+            <span>Scenario 3</span><strong>Plan Until a Date</strong>
+            <small>Project attendance through any date in the academic calendar</small>
+        </a>
+        <a href="/what-if?scenario=target" class="what-if-scenario-button {% if scenario == 'target' %}active{% endif %}">
+            <span>Scenario 4</span><strong>Reach a Target</strong>
+            <small>Find how many classes you need to attend to reach a target</small>
+        </a>
+        <a href="/what-if?scenario=safe-leaves" class="what-if-scenario-button {% if scenario == 'safe-leaves' %}active{% endif %}">
+            <span>Scenario 5</span><strong>Safe Leaves</strong>
+            <small>Calculate the maximum classes you can miss safely</small>
+        </a>
     </div>
 
-    {% if scenario == "today" %}
+    {% if scenario in ["until-date", "target", "safe-leaves"] %}
+    <div class="what-if-scenario-box">
+        <div class="what-if-scenario-heading">
+            <span class="what-if-kicker">PLANNING CONTEXT</span>
+            <h2>Your current planning state</h2>
+            <p>All three scenarios use the same attendance and today's event context.</p>
+        </div>
+        {% if not planner_loaded %}
+            <div class="summary">
+                <h3>Ready to calculate</h3>
+                <p>BunkMaster needs today's class information before this scenario can be calculated.</p>
+                <form action="/load-planner" method="POST" onsubmit="showLoading()">
+                    <input type="hidden" name="next" value="/what-if?scenario={{ scenario }}">
+                    <button type="submit" class="attendance-button">Start Scenario</button>
+                </form>
+            </div>
+        {% elif not session.get("planner_event_checked", False) %}
+            {% set today_context_return_to = "/what-if?scenario=" ~ scenario %}
+            {% include "_today_context.html" %}
+        {% else %}
+            {% include "scenario_extra.html" %}
+        {% endif %}
+    </div>
+
+    {% elif scenario == "today" %}
 
     <div class="what-if-scenario-box">
         <div class="what-if-scenario-heading">
