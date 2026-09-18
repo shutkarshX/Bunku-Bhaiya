@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from scenario_engine import calculate_today_scenario, get_effective_starting_state
+from scenario_engine import (calculate_today_scenario, calculate_until_date_scenario, get_effective_starting_state)
 
 
 def attendance(remaining=8):
@@ -61,6 +61,32 @@ class TodayScenarioTests(unittest.TestCase):
             result = calculate_today_scenario(attendance(8), event, attended=3, leave=3)
         self.assertTrue(result["valid"])
         self.assertEqual(result["planned_classes"], 6)
+        self.assertEqual(result["remaining_after_plan"], 0)
+
+
+class UntilDateScenarioTests(unittest.TestCase):
+    def test_today_uses_event_adjusted_remaining_classes(self):
+        event = {"date": "2026-09-18", "classes": 3, "attended": True}
+        result = calculate_until_date_scenario(attendance(8), event, "2026-09-18", attended=2, leave=3)
+        self.assertTrue(result["valid"])
+        self.assertEqual(result["future_classes"], 5)
+        self.assertEqual(result["planned_classes"], 5)
+        self.assertEqual(result["projected_attended"], 251)
+        self.assertEqual(result["projected_total"], 271)
+
+    def test_until_date_rejects_plan_above_available_classes(self):
+        result = calculate_until_date_scenario(attendance(2), None, "2026-09-18", attended=2, leave=1)
+        self.assertFalse(result["valid"])
+        self.assertEqual(result["future_classes"], 2)
+
+    def test_until_date_rejects_past_date(self):
+        result = calculate_until_date_scenario(attendance(8), None, "2026-09-17", attended=0, leave=0)
+        self.assertFalse(result["valid"])
+
+    def test_until_date_counts_only_listed_teaching_days(self):
+        result = calculate_until_date_scenario(attendance(8), None, "2026-09-21", attended=8, leave=8)
+        self.assertTrue(result["valid"])
+        self.assertEqual(result["future_classes"], 16)
         self.assertEqual(result["remaining_after_plan"], 0)
 
 
