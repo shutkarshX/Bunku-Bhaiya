@@ -100,7 +100,7 @@ def get_requested_leave_classes(form, step):
     return days_and_classes_to_classes(days, classes)
 
 
-def render_dashboard(attendance_data, phase_1=None, portal_error=None, calculator_step=None):
+def render_dashboard(attendance_data, phase_1=None, portal_error=None, calculator_step=None, page="home"):
     if phase_1 is None:
         calculator_step = 0
     elif calculator_step is None:
@@ -119,6 +119,7 @@ def render_dashboard(attendance_data, phase_1=None, portal_error=None, calculato
         calculator_step=calculator_step,
         portal_error=portal_error,
         planner_loaded=session.get("planner_loaded", False),
+        page=page,
     )
 
 
@@ -137,6 +138,34 @@ def dashboard():
         get_pending_event(),
     )
     return render_dashboard(attendance_data, phase_1_result)
+
+
+@app.route("/planner")
+def planner_page():
+    """Show the attendance planner without re-fetching portal data."""
+    attendance_data = get_user_attendance()
+    if not attendance_data.get("subjects"):
+        return render_dashboard(attendance_data, page="home")
+
+    if not session.get("planner_loaded", False):
+        return render_dashboard(attendance_data, page="planner")
+
+    phase_1_result = run_phase_1(
+        attendance_data,
+        get_user_leaves(),
+        get_pending_event(),
+    )
+    return render_dashboard(attendance_data, phase_1_result, page="planner")
+
+
+@app.route("/subjects")
+def subjects_page():
+    """Show the existing subject-wise attendance view."""
+    attendance_data = get_user_attendance()
+    if not attendance_data.get("subjects"):
+        return render_dashboard(attendance_data, page="home")
+
+    return render_dashboard(attendance_data, page="subjects")
 
 
 @app.route("/get-attendance", methods=["POST"])
@@ -231,15 +260,7 @@ def load_planner():
 
         session.modified = True
 
-    if not session.get("planner_event_checked", False):
-        return render_dashboard(attendance_data)
-
-    phase_1_result = run_phase_1(
-        attendance_data,
-        get_user_leaves(),
-        get_pending_event(),
-    )
-    return render_dashboard(attendance_data, phase_1_result)
+    return planner_page()
 
 
 def handle_checkpoint_submission(checkpoint_index):
@@ -264,6 +285,7 @@ def handle_checkpoint_submission(checkpoint_index):
         attendance_data,
         phase_1_result,
         calculator_step=checkpoint_index + 2,
+        page="planner",
     )
 
 
@@ -317,7 +339,7 @@ def save_event():
         get_user_leaves(),
         get_pending_event(),
     )
-    return render_dashboard(attendance_data, phase_1_result)
+    return render_dashboard(attendance_data, phase_1_result, page="planner")
 
 
 @app.route("/sessional-1", methods=["POST"])
@@ -337,7 +359,7 @@ def sessional_3():
 @app.route("/reset")
 def reset_session():
     session.clear()
-    return render_dashboard(empty_attendance())
+    return render_dashboard(empty_attendance(), page="home")
 
 
 if __name__ == "__main__":
