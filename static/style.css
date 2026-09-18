@@ -1989,3 +1989,32 @@ body {
         display: none;
     }
 }
+
+
+/* =========================================
+   CALENDAR DRAG-TO-SELECT
+   ========================================= */
+
+/* Prevent accidental text selection while painting across dates. */
+.calendar-grid {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.calendar-day:not(:disabled) {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.calendar-day:not(:disabled):active {
+    transform: scale(0.98);
+}
+
+/* On touch devices, keep the gesture feeling deliberate without changing
+   normal page scrolling outside the calendar. */
+@media (pointer: coarse) {
+    .calendar-day:not(:disabled) {
+        touch-action: manipulation;
+    }
+}
