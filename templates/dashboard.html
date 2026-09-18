@@ -550,16 +550,23 @@
             BunkMaster needs this only if an event actually happened.
         </p>
 
-        <form action="/event" method="POST">
+        <form action="/event" method="POST" style="display:inline;">
 
             <button type="submit" name="event_action" value="none" class="attendance-button">
                 No event today
             </button>
 
-            <button type="button" class="attendance-button" onclick="showEventDetails()">
-                Yes, there was an event
-            </button>
+        </form>
 
+        <button
+            type="button"
+            class="attendance-button"
+            onclick="showEventDetails()"
+        >
+            Yes, there was an event
+        </button>
+
+        <form action="/event" method="POST">
             <div id="event-details" style="display:none; margin-top:20px;">
 
                 <label for="event_classes">How many of the unaccounted classes did it cover?</label>
@@ -596,7 +603,6 @@
                 </button>
 
             </div>
-
         </form>
 
     </div>
@@ -651,7 +657,7 @@
                     name="target_attendance"
                     min="1"
                     max="100"
-                    step="0.01"
+                    step="1"
                     placeholder="e.g. 75"
                     required
                     autofocus
