@@ -181,7 +181,7 @@
         <form
             action="/get-attendance"
             method="POST"
-            onsubmit="updateManualUsername(); showLoading()">
+            onsubmit="return handleLoginSubmit(event)">
 
             <div class="login-methods">
 
@@ -291,11 +291,14 @@
 
             <button
                 type="submit"
-                class="attendance-button">
+                class="attendance-button"
+                id="get-attendance-button">
 
                 Get Attendance
 
             </button>
+
+            <p id="login-error" style="display:none; margin-top:12px; color:#b42318; font-weight:600;"></p>
 
         </form>
 
@@ -993,6 +996,55 @@ document
         updateLeavePreview(form);
 
     });
+
+
+/* =========================================
+   LOGIN SUBMISSION
+   ========================================= */
+
+function handleLoginSubmit(event) {
+
+    const password = document.querySelector('input[name="password"]');
+    const generated = document.getElementById("generated-username-input");
+    const manual = document.getElementById("manual-username-input");
+    const error = document.getElementById("login-error");
+
+    if (error) {
+        error.style.display = "none";
+        error.textContent = "";
+    }
+
+    let username = "";
+
+    if (generated && !generated.disabled) {
+        updateGeneratedUsername();
+        username = generated.value.trim();
+    } else if (manual && !manual.disabled) {
+        updateManualUsername();
+        username = manual.value.trim();
+    }
+
+    if (!username) {
+        event.preventDefault();
+        if (error) {
+            error.textContent = "Please enter or generate your NIET email first.";
+            error.style.display = "block";
+        }
+        return false;
+    }
+
+    if (!password || !password.value) {
+        event.preventDefault();
+        if (error) {
+            error.textContent = "Please enter your college password.";
+            error.style.display = "block";
+        }
+        return false;
+    }
+
+    showLoading();
+    return true;
+}
 
 
 /* =========================================
