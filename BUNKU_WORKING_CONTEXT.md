@@ -2585,3 +2585,53 @@ The planner's checkpoint target is now a parameter rather than an implicit user-
 ## Reversible/reverted?
 
 No.
+
+
+# 70. VERSION-D — ONE USER-LEVEL PLANNER ATTENDANCE REQUIREMENT
+
+Date: 2026-09-18
+
+Status: **ACTIVE**
+
+The planner attendance requirement is now a **single user-level choice** for the current planner token/session.
+
+## Rule
+
+The user is asked once:
+
+> What minimum attendance percentage do you need?
+
+That value is stored as:
+
+```
+planner_target_attendance
+```
+
+It applies uniformly to every sessional checkpoint:
+
+```
+First Sessional  → same target
+Second Sessional → same target
+Third Sessional  → same target
+```
+
+The application no longer stores separate targets by checkpoint/date.
+
+## Fresh portal login
+
+A fresh `/get-attendance` clears the planner target so the new portal snapshot starts a new planning context.
+
+## Files
+
+- `app.py`
+- `bunk_calculator.py`
+- `templates/dashboard.html`
+- `BUNKU_WORKING_CONTEXT.md`
+
+## Architecture rule
+
+Keep the requirement as one planner-level value. Do not reintroduce checkpoint-specific target dictionaries unless the product decision explicitly changes.
+
+## Reversible/reverted?
+
+No.
