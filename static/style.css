@@ -2335,3 +2335,157 @@ body:has(.sessional-tracker) .carried-forward .carry-message {
         min-width: 0;
     }
 }
+
+
+/* =========================================
+   SESSIONAL SCENARIO — DECISION-FIRST LAYOUT
+   ========================================= */
+
+body:has(.sessional-tracker) .what-if-scenario-heading .what-if-kicker {
+    margin-bottom: 3px;
+}
+
+body:has(.sessional-tracker) .what-if-scenario-heading p {
+    font-size: 13px;
+    max-width: 560px;
+}
+
+body:has(.sessional-tracker) .bunk-card:not(.carried-forward) {
+    border: 1px solid #e5e7eb;
+    background: #fff;
+}
+
+body:has(.sessional-tracker) .bunk-card:not(.carried-forward) > h3:first-child {
+    font-size: 21px;
+    letter-spacing: -0.2px;
+}
+
+body:has(.sessional-tracker) .bunk-card:not(.carried-forward) > p:nth-of-type(1) {
+    color: #6b7280;
+}
+
+body:has(.sessional-tracker) .bunk-card:not(.carried-forward) > p:nth-of-type(2) {
+    display: none;
+}
+
+/* The status is the answer the student needs first. */
+body:has(.sessional-tracker) .bunk-card > .summary {
+    border: 0;
+    border-left: 3px solid #d1d5db;
+    background: #f8fafc;
+    padding: 12px 14px;
+}
+
+body:has(.sessional-tracker) .bunk-card > .summary h3 {
+    margin: 0 0 3px;
+}
+
+body:has(.sessional-tracker) .bunk-card > .summary p {
+    color: #6b7280;
+}
+
+/* Turn the calculation into a quiet two-line context row. */
+body:has(.sessional-tracker) .attendance-flow {
+    grid-template-columns: 1fr auto 1fr;
+}
+
+body:has(.sessional-tracker) .flow-card {
+    min-height: 82px;
+    justify-content: center;
+}
+
+body:has(.sessional-tracker) .flow-card span {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+body:has(.sessional-tracker) .flow-card small {
+    font-size: 12px;
+}
+
+/* Safe leave is the useful number, so give it emphasis without making
+   another giant card. */
+body:has(.sessional-tracker) .safe-leave-box {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: 14px;
+}
+
+body:has(.sessional-tracker) .safe-leave-box span {
+    grid-column: 1 / -1;
+    margin-bottom: 0;
+}
+
+body:has(.sessional-tracker) .safe-leave-box strong {
+    font-size: 25px;
+}
+
+body:has(.sessional-tracker) .safe-leave-box p {
+    margin: 0;
+    font-size: 12px;
+}
+
+/* Make the actual decision area feel like the next step, rather than
+   another paragraph-heavy section. */
+body:has(.sessional-tracker) .bunk-card form {
+    max-width: 500px;
+    margin-top: 0;
+}
+
+body:has(.sessional-tracker) .bunk-card form > h3,
+body:has(.sessional-tracker) .bunk-card form > p {
+    display: none;
+}
+
+body:has(.sessional-tracker) .leave-inputs {
+    max-width: 360px;
+}
+
+body:has(.sessional-tracker) .leave-inputs label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+body:has(.sessional-tracker) .leave-preview {
+    max-width: 360px;
+}
+
+body:has(.sessional-tracker) .projection-box {
+    max-width: 500px;
+}
+
+body:has(.sessional-tracker) .projection-box span {
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+/* On the second step, the already-passed checkpoint stays as context,
+   never competing with the current checkpoint. */
+body:has(.sessional-tracker) .carried-forward {
+    border-style: dashed;
+}
+
+body:has(.sessional-tracker) .carried-forward > p:not(.carry-message) {
+    color: #6b7280;
+    font-size: 12px;
+}
+
+@media (max-width: 700px) {
+    body:has(.sessional-tracker) .attendance-flow {
+        grid-template-columns: 1fr;
+    }
+
+    body:has(.sessional-tracker) .safe-leave-box {
+        grid-template-columns: 1fr;
+        row-gap: 3px;
+    }
+
+    body:has(.sessional-tracker) .safe-leave-box strong {
+        margin-bottom: 2px;
+    }
+}
