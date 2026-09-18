@@ -857,28 +857,6 @@
 
             </div>
 
-            {% elif checkpoint.requested_projected_percentage is defined %}
-
-            <div class="summary">
-
-                <h3>📊 Projected Attendance</h3>
-
-                <p>
-                    <strong>
-                        {{ checkpoint.requested_projected_attended }}
-                        /
-                        {{ checkpoint.requested_projected_total }}
-                    </strong>
-                    — {{ checkpoint.requested_projected_percentage }}%
-                </p>
-
-                <p>
-                    This is the attendance projected for this checkpoint
-                    from your final attendance plan.
-                </p>
-
-            </div>
-
             {% endif %}
 
         </div>
