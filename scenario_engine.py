@@ -374,6 +374,14 @@ def calculate_target_scenario(attendance_data, pending_event=None, target_attend
     else:
         status = "not_reachable"
 
+    # Maximum possible attendance is reached by attending every remaining
+    # teaching class through the academic calendar end.
+    maximum_attended = starting["attended"] + available
+    maximum_total = starting["total"] + available
+    maximum_percentage = round(
+        calculate_percentage(maximum_attended, maximum_total), 2
+    )
+
     projected_attended = starting["attended"] + needed
     projected_total = starting["total"] + needed
 
@@ -383,6 +391,9 @@ def calculate_target_scenario(attendance_data, pending_event=None, target_attend
         "target_attendance": target_attendance,
         "classes_needed": needed,
         "available_classes": available,
+        "maximum_percentage": maximum_percentage,
+        "maximum_attended": maximum_attended,
+        "maximum_total": maximum_total,
         "status": status,
         "projected_attended": projected_attended,
         "projected_total": projected_total,
