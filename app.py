@@ -18,7 +18,11 @@ from bunk_calculator import (
     CHECKPOINTS,
 )
 from attendance_state import build_attendance_state
-from scenario_engine import (\n    calculate_today_scenario, get_effective_starting_state,\n    calculate_until_date_scenario, calculate_target_scenario,\n    calculate_safe_leaves_scenario,\n)
+from scenario_engine import (
+    calculate_today_scenario, get_effective_starting_state,
+    calculate_until_date_scenario, calculate_target_scenario,
+    calculate_safe_leaves_scenario,
+)
 
 
 app = Flask(__name__)
@@ -235,7 +239,11 @@ def render_dashboard(
         planner_target_attendance=get_planner_target(),
         planner_target_required=get_planner_target() is None,
         today_scenario=get_today_scenario_result(),
-        today_scenario_start=get_effective_starting_state(attendance, get_pending_event()),\n        until_date_scenario=session.get("until_date_scenario"),\n        target_scenario=session.get("target_scenario"),\n        safe_leaves_scenario=session.get("safe_leaves_scenario"),\n        today_date=date.today().isoformat(),
+        today_scenario_start=get_effective_starting_state(attendance, get_pending_event()),
+        until_date_scenario=session.get("until_date_scenario"),
+        target_scenario=session.get("target_scenario"),
+        safe_leaves_scenario=session.get("safe_leaves_scenario"),
+        today_date=date.today().isoformat(),
         tracker_checkpoints=build_checkpoint_tracker_data(
             phase_1,
             session.get("planner_choice_made", False),
@@ -268,7 +276,9 @@ def subjects_page():
     try:
         load_subject_details(token)
     except PortalUnavailableError as e:
-        print("\nSubject attendance load failed\n", e)
+        print("
+Subject attendance load failed
+", e)
         return render_dashboard(
             attendance_data,
             portal_error="unavailable",
@@ -283,18 +293,25 @@ def get_attendance_page():
     username = request.form.get("username")
     password = request.form.get("password")
 
-    print("\nStarting attendance retrieval...")
+    print("
+Starting attendance retrieval...")
 
     try:
         subjects = get_attendance(username, password)
     except PortalUnavailableError as e:
-        print("\nNIET PORTAL UNAVAILABLE\n", e)
+        print("
+NIET PORTAL UNAVAILABLE
+", e)
         return render_dashboard(empty_attendance(), portal_error="unavailable")
     except PortalLoginError as e:
-        print("\nNIET LOGIN FAILED\n", e)
+        print("
+NIET LOGIN FAILED
+", e)
         return render_dashboard(empty_attendance(), portal_error="login")
     except Exception as e:
-        print("\nUnexpected portal error:\n", e)
+        print("
+Unexpected portal error:
+", e)
         return render_dashboard(empty_attendance(), portal_error="unavailable")
 
     if not subjects:
@@ -317,7 +334,10 @@ def get_attendance_page():
     session.pop("planner_target_attendance", None)
     session.pop("planner_event_checked", None)
     session.pop("pending_event", None)
-    session.pop("today_scenario_result", None)\n    session.pop("until_date_scenario", None)\n    session.pop("target_scenario", None)\n    session.pop("safe_leaves_scenario", None)
+    session.pop("today_scenario_result", None)
+    session.pop("until_date_scenario", None)
+    session.pop("target_scenario", None)
+    session.pop("safe_leaves_scenario", None)
 
     print("Website received:", len(subjects), "subjects")
     print("Portal attendance:", state["portal"]["present"], "/", state["portal"]["total"])
@@ -345,7 +365,9 @@ def load_planner():
     try:
         today_logged, remaining_today = get_today_attendance(token)
     except PortalUnavailableError as e:
-        print("\nDeferred planner load failed\n", e)
+        print("
+Deferred planner load failed
+", e)
         return render_dashboard(
             attendance_data,
             portal_error="unavailable",
@@ -516,7 +538,43 @@ def what_if_page():
     )
 
 
-@app.route("/scenario/until-date", methods=["POST"])\ndef until_date_scenario():\n    attendance_data = get_user_attendance()\n    if not attendance_data.get("subjects") or not session.get("planner_loaded", False):\n        return redirect("/what-if?scenario=until-date")\n    if not session.get("planner_event_checked", False):\n        return redirect("/what-if?scenario=until-date")\n    result = calculate_until_date_scenario(attendance_data, get_pending_event(), request.form.get("target_date"), request.form.get("attended", 0), request.form.get("leave", 0))\n    session["until_date_scenario"] = result\n    session.modified = True\n    return redirect("/what-if?scenario=until-date")\n\n@app.route("/scenario/target", methods=["POST"])\ndef target_scenario():\n    attendance_data = get_user_attendance()\n    if not attendance_data.get("subjects") or not session.get("planner_loaded", False):\n        return redirect("/what-if?scenario=target")\n    if not session.get("planner_event_checked", False):\n        return redirect("/what-if?scenario=target")\n    result = calculate_target_scenario(attendance_data, get_pending_event(), request.form.get("target_attendance", 75))\n    session["target_scenario"] = result\n    session.modified = True\n    return redirect("/what-if?scenario=target")\n\n@app.route("/scenario/safe-leaves", methods=["POST"])\ndef safe_leaves_scenario():\n    attendance_data = get_user_attendance()\n    if not attendance_data.get("subjects") or not session.get("planner_loaded", False):\n        return redirect("/what-if?scenario=safe-leaves")\n    if not session.get("planner_event_checked", False):\n        return redirect("/what-if?scenario=safe-leaves")\n    result = calculate_safe_leaves_scenario(attendance_data, get_pending_event(), request.form.get("target_attendance", 75))\n    session["safe_leaves_scenario"] = result\n    session.modified = True\n    return redirect("/what-if?scenario=safe-leaves")\n\n@app.route("/what-if/today")
+@app.route("/scenario/until-date", methods=["POST"])
+def until_date_scenario():
+    attendance_data = get_user_attendance()
+    if not attendance_data.get("subjects") or not session.get("planner_loaded", False):
+        return redirect("/what-if?scenario=until-date")
+    if not session.get("planner_event_checked", False):
+        return redirect("/what-if?scenario=until-date")
+    result = calculate_until_date_scenario(attendance_data, get_pending_event(), request.form.get("target_date"), request.form.get("attended", 0), request.form.get("leave", 0))
+    session["until_date_scenario"] = result
+    session.modified = True
+    return redirect("/what-if?scenario=until-date")
+
+@app.route("/scenario/target", methods=["POST"])
+def target_scenario():
+    attendance_data = get_user_attendance()
+    if not attendance_data.get("subjects") or not session.get("planner_loaded", False):
+        return redirect("/what-if?scenario=target")
+    if not session.get("planner_event_checked", False):
+        return redirect("/what-if?scenario=target")
+    result = calculate_target_scenario(attendance_data, get_pending_event(), request.form.get("target_attendance", 75))
+    session["target_scenario"] = result
+    session.modified = True
+    return redirect("/what-if?scenario=target")
+
+@app.route("/scenario/safe-leaves", methods=["POST"])
+def safe_leaves_scenario():
+    attendance_data = get_user_attendance()
+    if not attendance_data.get("subjects") or not session.get("planner_loaded", False):
+        return redirect("/what-if?scenario=safe-leaves")
+    if not session.get("planner_event_checked", False):
+        return redirect("/what-if?scenario=safe-leaves")
+    result = calculate_safe_leaves_scenario(attendance_data, get_pending_event(), request.form.get("target_attendance", 75))
+    session["safe_leaves_scenario"] = result
+    session.modified = True
+    return redirect("/what-if?scenario=safe-leaves")
+
+@app.route("/what-if/today")
 def today_scenario_page():
     """Compatibility route for the Today scenario."""
     return redirect("/what-if?scenario=today")
