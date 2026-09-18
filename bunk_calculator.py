@@ -295,6 +295,21 @@ def _future_checkpoint(
     }
 
 
+def _get_pending_event_adjustment(pending_event):
+    """Return planning-only classes/attendance for an event not yet posted."""
+    if not isinstance(pending_event, dict):
+        return 0, 0
+
+    try:
+        event_classes = int(pending_event.get("classes", 0) or 0)
+    except (TypeError, ValueError):
+        event_classes = 0
+
+    event_classes = max(0, min(CLASSES_PER_DAY, event_classes))
+    event_attended = event_classes if pending_event.get("attended") is True else 0
+    return event_classes, event_attended
+
+
 def _get_remaining_today(attendance_data):
     subjects = attendance_data.get("subjects", [])
     if not subjects:
@@ -306,11 +321,12 @@ def _get_remaining_today(attendance_data):
     return max(0, value)
 
 
-def run_phase_1(attendance_data, requested_leaves=None):
+def run_phase_1(attendance_data, requested_leaves=None, pending_event=None):
     """Run checkpoint planning from normalized effective attendance state."""
     requested_leaves = requested_leaves or {}
     state = build_attendance_state(attendance_data)
     remaining_today = _get_remaining_today(attendance_data)
+    event_classes, event_attended = _get_pending_event_adjustment(pending_event)
 
     portal_attended = state["portal"]["present"]
     portal_total = state["portal"]["total"]
@@ -324,9 +340,14 @@ def run_phase_1(attendance_data, requested_leaves=None):
 
     current_date = date.today()
     active_index = get_active_checkpoint_index(current_date)
+    if event_classes and pending_event.get("date") == current_date.isoformat():
+        remaining_today = max(0, remaining_today - event_classes)
+
+    # Pending event classes have already happened but are not yet portal-posted.
+    # They affect planning only; the raw portal/effective state remains unchanged.
+    actual_attended = effective_attended + event_attended
+    actual_total = effective_total + event_classes
     results = []
-    actual_attended = effective_attended
-    actual_total = effective_total
 
     for index, (checkpoint_name, checkpoint_date) in enumerate(CHECKPOINTS):
         if get_checkpoint_state(checkpoint_date, current_date) == "completed":
@@ -361,6 +382,12 @@ def run_phase_1(attendance_data, requested_leaves=None):
         "effective_attended": effective_attended,
         "effective_total": effective_total,
         "effective_percentage": round(effective_percentage, 2),
+        "pending_event": {
+            "classes": event_classes,
+            "attended": event_attended == event_classes and event_classes > 0,
+        },
+        "planning_attended": actual_attended,
+        "planning_total": actual_total,
         "checkpoints": results,
         "active_checkpoint_index": active_index,
         "active_checkpoint": results[active_index]["checkpoint"] if active_index is not None else None,
