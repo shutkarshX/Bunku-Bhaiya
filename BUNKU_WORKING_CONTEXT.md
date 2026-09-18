@@ -2473,33 +2473,29 @@ Before planning leave for a checkpoint, the user is asked:
 
 > What minimum attendance percentage do you need at this checkpoint?
 
-The value is required and stored per checkpoint.
+The value is required and stored once at planner/user level.
 
-The planner then uses that value for safe leave calculation, recovery calculation, maximum possible attendance comparison, requested leave safety, and checkpoint projection context.
+The planner then uses that same value for safe leave calculation, recovery calculation, maximum possible attendance comparison, requested leave safety, and checkpoint projection context for every sessional checkpoint.
 
 The underlying academic calendar still keeps the system reference value in academic_calendar.py, but the planner requirement is now explicitly chosen by the user rather than silently presented as 75%.
 
-## Sequential checkpoint requirements
+## One planner-level requirement
 
-Checkpoint requirements are collected one at a time.
+The requirement is collected once after the Today's Event decision:
 
     Current effective attendance
             ↓
     Today's event decision
             ↓
-    Required attendance for current checkpoint
+    Required attendance percentage — ask once
             ↓
-    Maximum safe leave
+    First Sessional planning
             ↓
-    User's planned leave
+    Second Sessional planning — same requirement
             ↓
-    Projected checkpoint attendance
-            ↓
-    Ask required attendance for next checkpoint
-            ↓
-    Continue
+    Third Sessional planning — same requirement
 
-The next checkpoint requirement is not silently assumed from the previous checkpoint.
+There is no checkpoint-specific target dictionary. A single planner target applies uniformly to all checkpoints.
 
 ## Event button correction
 
