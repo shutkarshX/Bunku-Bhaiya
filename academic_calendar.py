@@ -6,17 +6,42 @@
 TEACHING_CLASSES_PER_DAY = 8
 ATTENDANCE_TARGET = 75
 
+# Milestone/checkpoint dates. These are independent from teaching days:
+# a checkpoint may also be a working day if that date is present in TEACHING_DAYS.
 CHECKPOINTS = (
     ("First Sessional", "2026-08-29"),
     ("Second Sessional", "2026-10-10"),
     ("Third Sessional", "2026-11-16"),
 )
 
+# Visual calendar events. These describe what a date represents; they do NOT
+# decide whether attendance classes exist. TEACHING_DAYS remains the source
+# of truth for attendance-bearing days.
+CALENDAR_EVENTS = {
+    "2026-08-29": {"type": "detain_list", "label": "Detain List"},
+    "2026-10-10": {"type": "detain_list", "label": "Detain List"},
+    "2026-11-16": {"type": "detain_list", "label": "Detain List"},
+
+    "2026-08-31": {"type": "sessional_exam", "label": "First Sessional Exam"},
+    "2026-09-01": {"type": "sessional_exam", "label": "First Sessional Exam"},
+    "2026-09-02": {"type": "sessional_exam", "label": "First Sessional Exam"},
+    "2026-09-03": {"type": "sessional_exam", "label": "First Sessional Exam"},
+
+    "2026-10-12": {"type": "sessional_exam", "label": "Second Sessional Exam"},
+    "2026-10-13": {"type": "sessional_exam", "label": "Second Sessional Exam"},
+    "2026-10-14": {"type": "sessional_exam", "label": "Second Sessional Exam"},
+    "2026-10-15": {"type": "sessional_exam", "label": "Second Sessional Exam"},
+
+    "2026-11-17": {"type": "sessional_exam", "label": "Third Sessional Exam"},
+    "2026-11-18": {"type": "sessional_exam", "label": "Third Sessional Exam"},
+    "2026-11-19": {"type": "sessional_exam", "label": "Third Sessional Exam"},
+    "2026-11-20": {"type": "sessional_exam", "label": "Third Sessional Exam"},
+}
+
 # ONLY these dates are teaching days.
 # Weekdays are NOT automatically teaching days.
-# Sessional examination days are also teaching days because
-# attendance is recorded for the normal 8 classes on those days.
-
+# Sessional examination days are teaching days because attendance is recorded
+# for the normal 8 classes on those days.
 TEACHING_DAYS = {
 
     # July 2026
@@ -50,7 +75,7 @@ TEACHING_DAYS = {
     "2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05",
     "2026-11-06", "2026-11-16",
 
-    # Sessional examination days — attendance is recorded for these days too.
+    # Sessional examination days
     # First Sessional Exam: Aug 31 - Sep 3
     "2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03",
 
