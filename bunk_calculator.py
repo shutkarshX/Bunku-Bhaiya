@@ -261,6 +261,7 @@ def _future_checkpoint(
         "is_active": index == active_index,
         "is_upcoming": True,
         "status": status,
+        "target_attendance": target_attendance,
         "starting_attended": actual_attended,
         "starting_total": actual_total,
         "starting_percentage": round(starting_percentage, 2),
