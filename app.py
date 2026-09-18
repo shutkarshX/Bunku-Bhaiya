@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, session
 from portal import (
     get_attendance,
     get_subject_details,
+    get_today_attendance,
     PortalUnavailableError,
     PortalLoginError,
 )
@@ -59,6 +60,13 @@ def save_user_leaves(leaves):
     session.modified = True
 
 
+def get_planner_token(attendance_data):
+    subjects = attendance_data.get("subjects") or []
+    if not subjects:
+        return None
+    return subjects[0].get("_bunkmaster_subject_details_token")
+
+
 def get_dashboard_step(phase_1_result):
     active_index = phase_1_result.get("active_checkpoint_index")
     if active_index is None:
@@ -85,8 +93,7 @@ def render_dashboard(attendance_data, phase_1=None, portal_error=None, calculato
         calculator_step = get_dashboard_step(phase_1)
 
     attendance = dict(attendance_data)
-    subjects = attendance.get("subjects") or []
-    token = subjects[0].get("_bunkmaster_subject_details_token") if subjects else None
+    token = get_planner_token(attendance)
     attendance["subject_details"] = get_subject_details(token)
 
     return render_template(
@@ -153,15 +160,51 @@ def get_attendance_page():
     print("Site:", state["site"]["percentage"], "%")
     print("Effective:", state["effective"]["percentage"], "%")
 
-    phase_1_result = run_phase_1(
-        attendance_data,
-        selected_leaves,
-    )
+    # The initial login intentionally does not fetch subject-wise attendance
+    # history. That expensive request is deferred until the planner is opened.
+    phase_1_result = None
 
-    print("Active checkpoint:", phase_1_result.get("active_checkpoint"))
+    print("Planner data is deferred until the user opens the planner.")
+
     print("Active index:", phase_1_result.get("active_checkpoint_index"))
     print("Semester completed:", phase_1_result.get("semester_completed"))
 
+    return render_dashboard(attendance_data, phase_1_result)
+
+
+@app.route("/load-planner", methods=["POST"])
+def load_planner():
+    """Load expensive subject-wise data only when planning is requested."""
+    attendance_data = get_user_attendance()
+    token = get_planner_token(attendance_data)
+
+    if not token:
+        return render_dashboard(
+            attendance_data,
+            portal_error="unavailable",
+        )
+
+    try:
+        today_logged, remaining_today = get_today_attendance(token)
+    except PortalUnavailableError as e:
+        print("\\nDeferred planner load failed\\n", e)
+        return render_dashboard(
+            attendance_data,
+            portal_error="unavailable",
+        )
+
+    subjects = attendance_data.get("subjects") or []
+    if subjects:
+        subjects[0]["_bunkmaster_today_logged"] = today_logged
+        subjects[0]["_bunkmaster_remaining_today"] = remaining_today
+        attendance_data["subjects"] = subjects
+        session["attendance_data"] = attendance_data
+        session.modified = True
+
+    phase_1_result = run_phase_1(
+        attendance_data,
+        get_user_leaves(),
+    )
     return render_dashboard(attendance_data, phase_1_result)
 
 
