@@ -20,7 +20,7 @@ from bunk_calculator import (
 from attendance_state import build_attendance_state
 from scenario_engine import (
     calculate_today_scenario, get_effective_starting_state,
-    calculate_until_date_scenario, calculate_target_scenario,
+    calculate_date_range_scenario, calculate_target_scenario,
     calculate_safe_leaves_scenario,
 )
 
@@ -534,7 +534,7 @@ def until_date_scenario():
         return redirect("/what-if?scenario=until-date")
     if not session.get("planner_event_checked", False):
         return redirect("/what-if?scenario=until-date")
-    result = calculate_until_date_scenario(attendance_data, get_pending_event(), request.form.get("target_date"), request.form.get("attended", 0), request.form.get("leave", 0))
+    result = calculate_date_range_scenario(attendance_data, get_pending_event(), request.form.get("start_date"), request.form.get("end_date"), request.form.get("attended", 0), request.form.get("leave", 0))
     session["until_date_scenario"] = result
     session.modified = True
     return redirect("/what-if?scenario=until-date")
