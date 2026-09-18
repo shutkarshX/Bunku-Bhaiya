@@ -630,7 +630,7 @@
     <!-- TODAY WHAT-IF SCENARIO -->
     <!-- ================================= -->
 
-    {% if phase_1 and planner_loaded %}
+    {% if planner_loaded and session.get("planner_event_checked", False) %}
 
     {% include "scenario_today.html" %}
 
