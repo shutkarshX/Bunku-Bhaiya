@@ -35,8 +35,17 @@ def _get_portal_session(details_token):
     return _PORTAL_SESSION_CACHE.get(details_token)
 
 
-def get_today_attendance(details_token):
-    """Load today's subject-wise attendance only when planning needs it."""
+def load_subject_details(details_token):
+    """Load subject-wise attendance once and reuse it everywhere."""
+    if not details_token:
+        raise PortalUnavailableError(
+            "Subject attendance data is not available for this session."
+        )
+
+    cached = _SUBJECT_DETAILS_CACHE.get(details_token)
+    if cached:
+        return cached
+
     portal_session = _get_portal_session(details_token)
     if not portal_session:
         raise PortalUnavailableError(
@@ -51,22 +60,19 @@ def get_today_attendance(details_token):
                 storage_state=portal_session["storage_state"]
             )
             page = context.new_page()
-            (
-                today_logged,
-                remaining_today,
-                subject_details,
-            ) = _today_logged_classes(
+            subject_details = _fetch_subject_details(
                 page,
                 portal_session["course_data"],
             )
             _SUBJECT_DETAILS_CACHE[details_token] = subject_details
-            return today_logged, remaining_today
+            print("Subject-wise attendance cached for token.")
+            return subject_details
         except PortalUnavailableError:
             raise
         except Exception as e:
-            print("Could not load deferred portal attendance:", e)
+            print("Could not load subject-wise attendance:", e)
             raise PortalUnavailableError(
-                "The portal did not return today's class data."
+                "The portal did not return subject-wise attendance data."
             )
         finally:
             if browser is not None:
@@ -74,6 +80,36 @@ def get_today_attendance(details_token):
                     browser.close()
                 except Exception as e:
                     print("Browser cleanup warning:", e)
+
+
+def get_today_attendance(details_token):
+    """Use the shared subject cache to calculate today's planning state."""
+    subject_details = load_subject_details(details_token)
+    today = date.today()
+    today_logged = 0
+
+    for detail in subject_details:
+        for record in detail.get("records", []):
+            if not isinstance(record, dict):
+                continue
+
+            if _parse_portal_date(record.get("Date")) != today:
+                continue
+
+            try:
+                count = int(record.get("noOfConsicativeLectur") or 1)
+            except (TypeError, ValueError):
+                count = 1
+
+            today_logged += max(1, count)
+
+    if is_teaching_day(today.isoformat()):
+        remaining_today = max(0, 8 - today_logged)
+    else:
+        remaining_today = 0
+        print("Today is not a teaching day; remaining classes: 0")
+
+    return today_logged, remaining_today
 
 
 def _parse_portal_date(value):
@@ -92,8 +128,8 @@ def _parse_portal_date(value):
     return None
 
 
-def _today_logged_classes(page, course_data):
-    """Count today's classes while retaining the exact portal responses."""
+def _fetch_subject_details(page, course_data):
+    """Fetch and normalize each subject's raw attendance response once."""
     subject_ids = []
 
     for course in course_data:
@@ -106,8 +142,6 @@ def _today_logged_classes(page, course_data):
             "The course data did not contain subject attendance IDs."
         )
 
-    today = date.today()
-    today_logged = 0
     subject_details = []
 
     print(
@@ -125,8 +159,6 @@ def _today_logged_classes(page, course_data):
                 timeout=15000,
             )
 
-            # Playwright APIResponse exposes ok/status rather than
-            # requests.Response.raise_for_status().
             if not response.ok:
                 raise RuntimeError(
                     f"HTTP {response.status} while retrieving subject attendance"
@@ -137,8 +169,6 @@ def _today_logged_classes(page, course_data):
             if not isinstance(records, list):
                 raise ValueError("Subject attendance response was not a list")
 
-            # Keep the response exactly as returned by the portal. Only the
-            # subject label is added outside the raw records for display.
             subject_name = f"Subject {index}"
             for course in course_data:
                 if course.get("encoSubjectwiseStudentId") == encrypted_id:
@@ -164,52 +194,16 @@ def _today_logged_classes(page, course_data):
                 "columns": columns,
             })
 
-            subject_today = 0
-
-            for record in records:
-                if not isinstance(record, dict):
-                    continue
-
-                if _parse_portal_date(record.get("Date")) != today:
-                    continue
-
-                # A record normally represents one lecture. If the portal
-                # reports consecutive lectures, count all of them.
-                try:
-                    count = int(
-                        record.get("noOfConsicativeLectur") or 1
-                    )
-                except (TypeError, ValueError):
-                    count = 1
-
-                subject_today += max(1, count)
-
-            today_logged += subject_today
-            print(
-                f"  Subject {index}/{len(subject_ids)}: "
-                f"{subject_today} logged today"
-            )
-
         except Exception as e:
             print(
-                f"Could not retrieve today's sessions for subject "
+                f"Could not retrieve subject attendance for subject "
                 f"{index}: {e}"
             )
-            # Accuracy matters here: do not silently return a partial count.
             raise PortalUnavailableError(
-                "The portal did not return today's class data for all subjects."
+                "The portal did not return subject attendance data for all subjects."
             )
 
-    # Today only contributes classes if the academic calendar says it is a
-    # teaching day. Off days must never be treated as eight remaining classes.
-    if is_teaching_day(today.isoformat()):
-        remaining_today = max(0, 8 - today_logged)
-    else:
-        remaining_today = 0
-        print("Today is not a teaching day; remaining classes: 0")
-
-    return today_logged, remaining_today, subject_details
-
+    return subject_details
 
 def get_attendance(username, password):
     total_start = time.perf_counter()
