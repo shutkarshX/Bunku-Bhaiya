@@ -400,7 +400,7 @@ def calculate_target_scenario(attendance_data, pending_event=None, target_attend
         target_attendance = 0
 
     capacity = get_target_capacity(attendance_data, pending_event)
-    maximum_input = int(capacity["maximum_percentage"])
+    maximum_input = capacity["maximum_percentage"]
 
     if target_attendance <= 0:
         return {
