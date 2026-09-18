@@ -246,6 +246,11 @@ def render_dashboard(
         target_scenario=session.get("target_scenario"),
         safe_leaves_scenario=session.get("safe_leaves_scenario"),
         today_date=date.today().isoformat(),
+        today_date_display=date.today().strftime("%d %B %Y"),
+        today_remaining_classes=get_effective_starting_state(attendance, get_pending_event())["today_remaining"],
+        classes_per_day=8,
+        semester_end_date=max(__import__("datetime").date.fromisoformat(value) for value in __import__("academic_calendar").TEACHING_DAYS).isoformat(),
+        teaching_days_json=__import__("json").dumps(sorted(__import__("academic_calendar").TEACHING_DAYS)),
         tracker_checkpoints=build_checkpoint_tracker_data(
             phase_1,
             session.get("planner_choice_made", False),
