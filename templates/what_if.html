@@ -49,55 +49,8 @@
 
         {% elif not session.get("planner_event_checked", False) %}
 
-        <div class="summary">
-            <h3>One quick question about today</h3>
-            <p>
-                Before calculating, tell BunkMaster whether today's unposted classes were affected by an event.
-            </p>
-
-            <form action="/event" method="POST" style="display:inline;">
-                <input type="hidden" name="return_to" value="/what-if?scenario=today">
-                <button type="submit" name="event_action" value="none" class="attendance-button">
-                    No event today
-                </button>
-            </form>
-
-            <button type="button" class="attendance-button" onclick="showEventDetails()">
-                Yes, there was an event
-            </button>
-
-            <form action="/event" method="POST">
-                <input type="hidden" name="return_to" value="/what-if?scenario=today">
-                <div id="event-details" style="display:none; margin-top:20px;">
-                    <label for="event_classes">How many of the unaccounted classes did it cover?</label>
-                    <input
-                        type="number"
-                        id="event_classes"
-                        name="event_classes"
-                        min="1"
-                        max="{{ attendance.subjects[0].get('_bunkmaster_remaining_today', 0) if attendance.subjects else 0 }}"
-                        value="{{ attendance.subjects[0].get('_bunkmaster_remaining_today', 0) if attendance.subjects else 0 }}"
-                        required
-                    >
-                    <p>
-                        Maximum possible event coverage:
-                        <strong>{{ attendance.subjects[0].get('_bunkmaster_remaining_today', 0) if attendance.subjects else 0 }}</strong>
-                    </p>
-                    <p>Did you attend the event?</p>
-                    <label>
-                        <input type="radio" name="event_attended" value="yes" required>
-                        Yes, I attended
-                    </label>
-                    <label>
-                        <input type="radio" name="event_attended" value="no" required>
-                        No, I didn't attend
-                    </label>
-                    <button type="submit" name="event_action" value="save" class="attendance-button">
-                        Continue
-                    </button>
-                </div>
-            </form>
-        </div>
+        {% set today_context_return_to = "/what-if?scenario=today" %}
+        {% include "_today_context.html" %}
 
         {% else %}
 
@@ -130,55 +83,8 @@
 
         {% elif not session.get("planner_event_checked", False) %}
 
-        <div class="summary">
-            <h3>One quick question about today</h3>
-            <p>
-                This information is shared with the checkpoint scenario so you do not have to enter it again.
-            </p>
-
-            <form action="/event" method="POST" style="display:inline;">
-                <input type="hidden" name="return_to" value="/what-if?scenario=sessional">
-                <button type="submit" name="event_action" value="none" class="attendance-button">
-                    No event today
-                </button>
-            </form>
-
-            <button type="button" class="attendance-button" onclick="showEventDetails()">
-                Yes, there was an event
-            </button>
-
-            <form action="/event" method="POST">
-                <input type="hidden" name="return_to" value="/what-if?scenario=sessional">
-                <div id="event-details" style="display:none; margin-top:20px;">
-                    <label for="event_classes_sessional">How many of the unaccounted classes did it cover?</label>
-                    <input
-                        type="number"
-                        id="event_classes_sessional"
-                        name="event_classes"
-                        min="1"
-                        max="{{ attendance.subjects[0].get('_bunkmaster_remaining_today', 0) if attendance.subjects else 0 }}"
-                        value="{{ attendance.subjects[0].get('_bunkmaster_remaining_today', 0) if attendance.subjects else 0 }}"
-                        required
-                    >
-                    <p>
-                        Maximum possible event coverage:
-                        <strong>{{ attendance.subjects[0].get('_bunkmaster_remaining_today', 0) if attendance.subjects else 0 }}</strong>
-                    </p>
-                    <p>Did you attend the event?</p>
-                    <label>
-                        <input type="radio" name="event_attended" value="yes" required>
-                        Yes, I attended
-                    </label>
-                    <label>
-                        <input type="radio" name="event_attended" value="no" required>
-                        No, I didn't attend
-                    </label>
-                    <button type="submit" name="event_action" value="save" class="attendance-button">
-                        Continue
-                    </button>
-                </div>
-            </form>
-        </div>
+        {% set today_context_return_to = "/what-if?scenario=sessional" %}
+        {% include "_today_context.html" %}
 
         {% elif planner_target_required %}
 
