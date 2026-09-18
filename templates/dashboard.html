@@ -634,9 +634,7 @@
         <p>
             What minimum attendance percentage do you need at
             <strong>
-                {% if active_checkpoint_target is none %}
-                    {{ "the current sessional checkpoint" }}
-                {% endif %}
+                {{ active_checkpoint_name or "the current sessional checkpoint" }}
             </strong>?
         </p>
 
