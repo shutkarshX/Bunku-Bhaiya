@@ -223,6 +223,12 @@ def load_planner():
         session["planner_loaded"] = True
         session.pop("planner_event_checked", None)
         session.pop("pending_event", None)
+
+        # If every class for today is already accounted for, there is no
+        # unaccounted window in which an event can be declared.
+        if remaining_today <= 0:
+            session["planner_event_checked"] = True
+
         session.modified = True
 
     if not session.get("planner_event_checked", False):
@@ -289,7 +295,7 @@ def save_event():
             except (TypeError, ValueError):
                 today_remaining = 0
 
-        classes = max(1, min(classes, today_remaining))
+        classes = min(max(0, classes), max(0, today_remaining))
         attended = request.form.get("event_attended") == "yes"
 
         if classes <= 0:
