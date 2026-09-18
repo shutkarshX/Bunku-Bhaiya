@@ -465,22 +465,6 @@
     <!-- TODAY'S EVENT -->
     <!-- ================================= -->
 
-    {% if false %}
-
-    <div class="summary">
-
-        <h2>Today's Event</h2>
-
-        <p>
-            {{ phase_1.checkpoints[phase_1.active_checkpoint_index].future_classes if phase_1.active_checkpoint_index is not none else 0 }}
-            classes are in today's planning window. If an event happened,
-            tell BunkMaster so those classes are not treated as ordinary bunkable classes.
-        </p>
-
-    </div>
-
-    {% endif %}
-
     {% if not phase_1 and planner_loaded %}
 
     <div class="summary">
