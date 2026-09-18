@@ -1628,8 +1628,54 @@ body {
 .calendar-weekdays,
 .calendar-grid {
     display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-columns: 34px repeat(7, minmax(0, 1fr));
     gap: 7px;
+}
+
+.calendar-week-spacer {
+    min-width: 0;
+}
+
+.calendar-week-select {
+    width: 30px;
+    height: 30px;
+    align-self: start;
+    justify-self: center;
+    margin-top: 1px;
+    padding: 0;
+    border: 1px solid #d1d5db;
+    border-radius: 9px;
+    background: #fff;
+    color: #9ca3af;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+    transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+
+.calendar-week-select:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: #9ca3af;
+}
+
+.calendar-week-select.checked {
+    border-color: #111827;
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.calendar-week-select.mixed {
+    border-color: #6b7280;
+    background: #f9fafb;
+    color: #374151;
+}
+
+.calendar-week-select.empty {
+    border-color: transparent;
+    background: transparent;
+    color: #d1d5db;
+    cursor: default;
 }
 
 .calendar-weekdays {
@@ -1838,7 +1884,15 @@ body {
 
     .calendar-weekdays,
     .calendar-grid {
+        grid-template-columns: 28px repeat(7, minmax(0, 1fr));
         gap: 4px;
+    }
+
+    .calendar-week-select {
+        width: 25px;
+        height: 25px;
+        border-radius: 8px;
+        font-size: 11px;
     }
 
     .calendar-day {
