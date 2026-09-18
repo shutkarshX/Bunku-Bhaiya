@@ -1832,6 +1832,10 @@
 
     {% endif %}
 
+    {% if page == "planner" and (phase_1 or planner_loaded) %}
+    {% include "checkpoint_tracker.html" %}
+    {% endif %}
+
 </div>
 
 
