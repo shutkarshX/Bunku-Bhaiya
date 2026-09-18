@@ -7,6 +7,7 @@ from bunk_calculator import (
     calculate_percentage,
     classes_needed_to_reach_target,
     CLASSES_PER_DAY,
+    _get_pending_event_adjustment,
 )
 
 
@@ -35,7 +36,6 @@ def get_effective_starting_state(attendance_data, pending_event=None):
         and pending_event.get("date") == date.today().isoformat()
     ):
         event_classes, event_attended = _get_pending_event_adjustment(pending_event)
-        event_attended = event_classes if pending_event.get("attended") else 0
         event_classes = min(event_classes, remaining_today)
         event_attended = min(event_attended, event_classes)
         remaining_today -= event_classes
