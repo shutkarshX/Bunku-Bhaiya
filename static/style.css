@@ -1385,3 +1385,49 @@ body {
         transform: rotate(90deg);
     }
 }
+
+
+/* =========================================
+   WHAT-IF SCENARIO PAGE
+   ========================================= */
+
+.what-if-page {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.what-if-scenario-box {
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 24px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+}
+
+.what-if-scenario-heading {
+    margin-bottom: 20px;
+}
+
+.what-if-scenario-heading h2 {
+    margin: 4px 0 6px;
+}
+
+.what-if-scenario-heading p {
+    margin: 0;
+    color: #6b7280;
+}
+
+.what-if-scenario-box > .what-if-card {
+    margin: 0;
+    box-shadow: none;
+    border: 0;
+    padding: 0;
+}
+
+@media (max-width: 600px) {
+    .what-if-scenario-box {
+        padding: 18px;
+        border-radius: 14px;
+    }
+}
