@@ -519,8 +519,18 @@
         input.setCustomValidity("");
     }
 
+    input.addEventListener("input", enforceMaximum);
     input.addEventListener("blur", enforceMaximum);
     input.addEventListener("change", enforceMaximum);
+
+    // Mouse-wheel scrolling should also stop exactly at the maximum.
+    input.addEventListener("wheel", function (event) {
+        const value = Number(input.value);
+        if (event.deltaY < 0 && value >= maximum) {
+            event.preventDefault();
+            input.value = maximum;
+        }
+    }, { passive: false });
 
     form.addEventListener("submit", function (event) {
         enforceMaximum();
