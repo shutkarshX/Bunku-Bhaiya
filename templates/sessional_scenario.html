@@ -318,32 +318,9 @@
 
         <!-- FIRST SESSIONAL / STARTING ATTENDANCE -->
 
+        {% if first.state != "completed" %}
+
         <div class="bunk-card carried-forward">
-
-            {% if first.state == "completed" %}
-
-            <h3>
-                First Sessional
-            </h3>
-
-            <p>
-                <strong>✅ Completed</strong>
-            </p>
-
-            <p>
-                The First Sessional has already passed.
-                BunkMaster does not know your exact
-                attendance at that checkpoint because
-                you did not make a plan for it.
-            </p>
-
-            <p class="carry-message">
-                Your current attendance from the college
-                portal is being used as the starting
-                attendance for the Second Sessional.
-            </p>
-
-            {% else %}
 
             <h3>
                 First Sessional — Expected Attendance
@@ -387,9 +364,9 @@
                 Second Sessional.
             </p>
 
-            {% endif %}
-
         </div>
+
+        {% endif %}
 
 
         <!-- CURRENT CHECKPOINT -->
