@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from scenario_engine import (calculate_today_scenario, calculate_until_date_scenario, get_effective_starting_state)
+from scenario_engine import (calculate_today_scenario, calculate_date_range_scenario, calculate_until_date_scenario, get_effective_starting_state)
 
 
 def attendance(remaining=8):
@@ -87,6 +87,34 @@ class UntilDateScenarioTests(unittest.TestCase):
         self.assertTrue(result["valid"])
         self.assertEqual(result["future_classes"], 16)
         self.assertEqual(result["remaining_after_plan"], 0)
+
+
+class DateRangeScenarioTests(unittest.TestCase):
+    def test_today_to_future_range_counts_today_and_later_teaching_days(self):
+        result = calculate_date_range_scenario(attendance(8), None, "2026-09-18", "2026-09-21", attended=8, leave=8)
+        self.assertTrue(result["valid"])
+        self.assertEqual(result["future_classes"], 16)
+        self.assertEqual(result["remaining_after_plan"], 0)
+
+    def test_future_to_future_range_counts_only_selected_range(self):
+        result = calculate_date_range_scenario(attendance(8), None, "2026-09-21", "2026-09-22", attended=8, leave=8)
+        self.assertTrue(result["valid"])
+        self.assertEqual(result["future_classes"], 16)
+        self.assertEqual(result["planned_classes"], 16)
+
+    def test_range_rejects_end_before_start(self):
+        result = calculate_date_range_scenario(attendance(8), None, "2026-09-22", "2026-09-21", attended=0, leave=0)
+        self.assertFalse(result["valid"])
+
+    def test_range_rejects_past_start(self):
+        result = calculate_date_range_scenario(attendance(8), None, "2026-09-17", "2026-09-21", attended=0, leave=0)
+        self.assertFalse(result["valid"])
+
+    def test_future_to_future_range_does_not_apply_today_event(self):
+        event = {"date": "2026-09-18", "classes": 3, "attended": True}
+        result = calculate_date_range_scenario(attendance(8), event, "2026-09-21", "2026-09-21", attended=8, leave=0)
+        self.assertTrue(result["valid"])
+        self.assertEqual(result["future_classes"], 8)
 
 
 if __name__ == "__main__":
