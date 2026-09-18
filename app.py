@@ -75,6 +75,35 @@ def save_user_leaves(leaves):
     session.modified = True
 
 
+def get_checkpoint_targets():
+    return session.get("checkpoint_targets", {})
+
+
+def get_active_checkpoint_target():
+    targets = get_checkpoint_targets()
+    current_date = date.today()
+    for index, (_, checkpoint_date) in enumerate(CHECKPOINTS):
+        if current_date < checkpoint_date:
+            key = checkpoint_date.strftime("%Y-%m-%d")
+            return index, targets.get(key)
+    return None, None
+
+
+def save_checkpoint_target(index, value):
+    try:
+        target = float(value)
+    except (TypeError, ValueError):
+        return False
+    if target < 1 or target > 100:
+        return False
+    key = CHECKPOINTS[index][1].strftime("%Y-%m-%d")
+    targets = get_checkpoint_targets()
+    targets[key] = target
+    session["checkpoint_targets"] = targets
+    session.modified = True
+    return True
+
+
 def get_planner_token(attendance_data):
     subjects = attendance_data.get("subjects") or []
     if not subjects:
@@ -349,6 +378,8 @@ def render_dashboard(
         portal_error=portal_error,
         planner_loaded=session.get("planner_loaded", False),
         planner_choice_made=session.get("planner_choice_made", False),
+        checkpoint_targets=get_checkpoint_targets(),
+        active_checkpoint_target=get_active_checkpoint_target()[1],
         page=page,
     )
 
@@ -384,6 +415,10 @@ def planner_page():
 
     # The event decision must happen before checkpoint calculations.
     if not session.get("planner_event_checked", False):
+        return render_dashboard(attendance_data, page="planner")
+
+    active_index, active_target = get_active_checkpoint_target()
+    if active_index is not None and active_target is None:
         return render_dashboard(attendance_data, page="planner")
 
     phase_1_result = run_phase_1(
@@ -451,6 +486,7 @@ def get_attendance_page():
     save_user_leaves(dict(DEFAULT_SELECTED_LEAVES))
     session["planner_loaded"] = False
     session["planner_choice_made"] = False
+    session["checkpoint_targets"] = {}
     session.pop("planner_event_checked", None)
     session.pop("pending_event", None)
 
@@ -582,6 +618,22 @@ def save_event():
         get_pending_event(),
     )
     return render_dashboard(attendance_data, phase_1_result, page="planner")
+
+
+@app.route("/checkpoint-target", methods=["POST"])
+def checkpoint_target():
+    attendance_data = get_user_attendance()
+    if not attendance_data.get("subjects") or not session.get("planner_loaded", False):
+        return redirect("/")
+
+    active_index, _ = get_active_checkpoint_target()
+    if active_index is None:
+        return redirect("/planner")
+
+    if not save_checkpoint_target(active_index, request.form.get("target_attendance")):
+        return redirect("/planner")
+
+    return redirect("/planner")
 
 
 @app.route("/sessional-1", methods=["POST"])
